@@ -8,9 +8,7 @@
 	let { clientId, entry }: { clientId: string; entry: InvoiceEntry } = $props();
 </script>
 
-<div
-	class="hover:bg-accent/20 -mx-2 grid grid-cols-[1fr_72px_72px_32px] items-center gap-2 rounded-xl px-2 transition-colors"
->
+<div class="grid grid-cols-[1fr_72px_72px_32px] items-center gap-2">
 	<select
 		value={entry.month}
 		onchange={e =>

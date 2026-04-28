@@ -1,13 +1,13 @@
 <script lang="ts">
 	import { session } from "$lib/stores/session.svelte";
 	import type { Client } from "$lib/types";
+	import { cn } from "$lib/utils";
 	import Input from "$lib/components/ui/input.svelte";
 	import Label from "$lib/components/ui/label.svelte";
 	import Separator from "$lib/components/ui/separator.svelte";
+	import { Card } from "$lib/components/ui/card";
 	import InvoiceEntryRow from "./InvoiceEntryRow.svelte";
 	import { Plus, Trash2, ChevronDown } from "@lucide/svelte";
-	import { onMount } from "svelte";
-	import { gsap } from "gsap";
 
 	let {
 		client,
@@ -16,14 +16,9 @@
 		onSelect
 	}: { client: Client; index: number; selected: boolean; onSelect: () => void } = $props();
 
-	let cardEl: HTMLDivElement;
 	let expanded = $state(true);
 	let nameTouched = $state(false);
 	let prefixTouched = $state(false);
-
-	onMount(() => {
-		gsap.from(cardEl, { opacity: 0, y: 16, duration: 0.35, ease: "power2.out" });
-	});
 
 	const update = (updater: (c: Client) => Client) => session.updateClient(client.id, updater);
 	const set = <K extends keyof Client>(key: K, value: Client[K]) => update(c => ({ ...c, [key]: value }));
@@ -36,13 +31,8 @@
 	const badgeNum = $derived(String(index + 1).padStart(2, "0"));
 </script>
 
-<div
-	bind:this={cardEl}
-	class="bg-card overflow-hidden rounded-2xl border transition-all duration-200 {selected
-		? 'border-brand/60 ring-brand/30 ring-1'
-		: 'border-border/60'}"
->
-	<!-- Header: always visible, click to select for preview -->
+<Card class={cn("py-0", selected && "ring-2 ring-brand/50")}>
+	<!-- Header: click to select for preview -->
 	<div
 		role="button"
 		tabindex="0"
@@ -85,7 +75,7 @@
 	</div>
 
 	{#if expanded}
-		<div class="border-border/40 space-y-4 border-t px-4 pt-4 pb-4">
+		<div class="border-border/40 space-y-4 border-t px-4 pb-4 pt-4">
 			<div class="grid grid-cols-2 gap-3">
 				<div>
 					<Label for="name-{client.id}">client name <span class="text-destructive">*</span></Label>
@@ -305,4 +295,4 @@
 			{/if}
 		</div>
 	{/if}
-</div>
+</Card>

@@ -3,11 +3,14 @@
 	import Input from "$lib/components/ui/input.svelte";
 	import Label from "$lib/components/ui/label.svelte";
 	import Separator from "$lib/components/ui/separator.svelte";
+	import { Card, CardContent, CardHeader, CardTitle } from "$lib/components/ui/card";
 </script>
 
-<div class="space-y-5">
-	<div class="space-y-3">
-		<p class="text-muted-foreground text-[11px] font-medium tracking-widest uppercase">Sender</p>
+<Card>
+	<CardHeader>
+		<CardTitle>Sender</CardTitle>
+	</CardHeader>
+	<CardContent class="space-y-4">
 		<div class="grid grid-cols-2 gap-3">
 			<div class="col-span-2">
 				<Label for="from-name">name</Label>
@@ -48,12 +51,11 @@
 				/>
 			</div>
 		</div>
-	</div>
 
-	<Separator />
+		<Separator />
 
-	<div class="space-y-3">
-		<p class="text-muted-foreground text-[11px] font-medium tracking-widest uppercase">Bank Details</p>
+		<p class="text-foreground/70 text-xs font-semibold tracking-wider uppercase">Bank Details</p>
+
 		<div class="grid grid-cols-2 gap-3">
 			<div>
 				<Label for="bank-holder">account holder</Label>
@@ -103,5 +105,5 @@
 				/>
 			</div>
 		</div>
-	</div>
-</div>
+	</CardContent>
+</Card>
