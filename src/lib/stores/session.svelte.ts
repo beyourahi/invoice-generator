@@ -31,15 +31,15 @@ const createSessionStore = () => {
 	};
 
 	const removeClient = (id: string) => {
-		clients = clients.filter(c => c.id !== id);
+		clients = clients.filter((c) => c.id !== id);
 	};
 
 	const updateClient = (id: string, updater: (c: Client) => Client) => {
-		clients = clients.map(c => (c.id === id ? updater(c) : c));
+		clients = clients.map((c) => (c.id === id ? updater(c) : c));
 	};
 
 	const addInvoiceEntry = (clientId: string) => {
-		updateClient(clientId, c => ({
+		updateClient(clientId, (c) => ({
 			...c,
 			invoices: [
 				...c.invoices,
@@ -54,9 +54,9 @@ const createSessionStore = () => {
 	};
 
 	const removeInvoiceEntry = (clientId: string, entryId: string) => {
-		updateClient(clientId, c => ({
+		updateClient(clientId, (c) => ({
 			...c,
-			invoices: c.invoices.filter(e => e.id !== entryId)
+			invoices: c.invoices.filter((e) => e.id !== entryId)
 		}));
 	};
 
@@ -66,11 +66,9 @@ const createSessionStore = () => {
 		field: "month" | "issueDay" | "dueDay",
 		value: string
 	) => {
-		updateClient(clientId, c => ({
+		updateClient(clientId, (c) => ({
 			...c,
-			invoices: c.invoices.map(e =>
-				e.id === entryId ? { ...e, [field]: value } : e
-			)
+			invoices: c.invoices.map((e) => (e.id === entryId ? { ...e, [field]: value } : e))
 		}));
 	};
 
@@ -98,7 +96,7 @@ const createSessionStore = () => {
 
 	const totalInvoiceCount = $derived(clients.reduce((sum, c) => sum + c.invoices.length, 0));
 	const allClientsValid = $derived(
-		clients.every(c => c.name.trim() !== "" && c.invoicePrefix.trim() !== "")
+		clients.every((c) => c.name.trim() !== "" && c.invoicePrefix.trim() !== "")
 	);
 
 	return {

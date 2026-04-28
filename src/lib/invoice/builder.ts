@@ -23,7 +23,7 @@ export const buildInvoiceHtml = (
 	const clientDetails = [
 		client.phone ? `<div>${client.phone}</div>` : "",
 		client.email ? `<div>${client.email}</div>` : "",
-		...client.address.filter(Boolean).map(line => `<div>${line}</div>`)
+		...client.address.filter(Boolean).map((line) => `<div>${line}</div>`)
 	]
 		.filter(Boolean)
 		.join("");
@@ -72,5 +72,4 @@ export const getFileName = (client: Client, entry: InvoiceEntry): string => {
 	return `invoice-${client.invoicePrefix}-${mm}${entry.issueDay}-${client.year}.pdf`;
 };
 
-export const getFolderName = (client: Client): string =>
-	`${client.name}-${client.year}-Invoices`;
+export const getFolderName = (client: Client): string => `${client.name}-${client.year}-Invoices`;

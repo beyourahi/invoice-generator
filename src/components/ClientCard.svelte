@@ -25,8 +25,7 @@
 	});
 
 	const update = (updater: (c: Client) => Client) => session.updateClient(client.id, updater);
-	const set = <K extends keyof Client>(key: K, value: Client[K]) =>
-		update(c => ({ ...c, [key]: value }));
+	const set = <K extends keyof Client>(key: K, value: Client[K]) => update(c => ({ ...c, [key]: value }));
 
 	const totalAmount = $derived(
 		`${client.service.currency === "BDT" ? "৳" : "$"}${client.service.amount.toLocaleString("en-US")}`
@@ -36,13 +35,10 @@
 	const prefixInvalid = $derived(prefixTouched && client.invoicePrefix.trim() === "");
 </script>
 
-<div
-	bind:this={cardEl}
-	class="rounded-2xl border border-border/60 bg-card p-5 space-y-4"
->
+<div bind:this={cardEl} class="border-border/60 bg-card space-y-4 rounded-2xl border p-5">
 	<div class="flex items-start justify-between gap-3">
-		<div class="flex items-center gap-2 min-w-0">
-			<span class="text-sm font-medium text-foreground truncate">
+		<div class="flex min-w-0 items-center gap-2">
+			<span class="text-foreground truncate text-sm font-medium">
 				{client.name || "new client"}
 			</span>
 			<Badge variant="secondary">{client.service.currency}</Badge>
@@ -50,8 +46,8 @@
 		</div>
 		<button
 			onclick={() => session.removeClient(client.id)}
-			class="shrink-0 h-7 w-7 flex items-center justify-center rounded-lg
-                   text-muted-foreground hover:text-destructive hover:bg-destructive/10
+			class="text-muted-foreground hover:text-destructive hover:bg-destructive/10 flex h-7 w-7 shrink-0
+                   items-center justify-center rounded-lg
                    transition-colors"
 			aria-label="Remove client"
 		>
@@ -167,8 +163,8 @@
 							currency: (e.currentTarget as HTMLSelectElement).value as "BDT" | "USD"
 						}
 					}))}
-				class="w-full h-9 rounded-xl border border-border bg-input px-3 text-sm text-foreground
-                       focus-visible:outline-2 focus-visible:outline-ring transition-colors"
+				class="border-border bg-input text-foreground focus-visible:outline-ring h-9 w-full rounded-xl border px-3
+                       text-sm transition-colors focus-visible:outline-2"
 			>
 				<option value="BDT">BDT (৳)</option>
 				<option value="USD">USD ($)</option>
@@ -190,8 +186,8 @@
 							method: (e.currentTarget as HTMLSelectElement).value as "bank" | "wise"
 						}
 					}))}
-				class="w-full h-9 rounded-xl border border-border bg-input px-3 text-sm text-foreground
-                       focus-visible:outline-2 focus-visible:outline-ring transition-colors"
+				class="border-border bg-input text-foreground focus-visible:outline-ring h-9 w-full rounded-xl border px-3
+                       text-sm transition-colors focus-visible:outline-2"
 			>
 				<option value="bank">Bank Transfer</option>
 				<option value="wise">Wise</option>
@@ -238,22 +234,20 @@
 
 	<div class="space-y-3">
 		<div class="flex items-center justify-between">
-			<span class="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+			<span class="text-muted-foreground text-xs font-medium tracking-wider uppercase">
 				invoice schedule
 				{#if client.invoices.length > 0}
-					<span class="ml-1.5 text-foreground/50">({client.invoices.length})</span>
+					<span class="text-foreground/50 ml-1.5">({client.invoices.length})</span>
 				{/if}
 			</span>
-			<div class="flex items-center gap-2 text-xs text-muted-foreground/60 pr-8">
+			<div class="text-muted-foreground/60 flex items-center gap-2 pr-8 text-xs">
 				<span class="w-[80px] text-center">issue day</span>
 				<span class="w-[80px] text-center">due day</span>
 			</div>
 		</div>
 
 		{#if client.invoices.length === 0}
-			<p class="text-xs text-muted-foreground/50 py-2">
-				no invoice entries yet — add one below
-			</p>
+			<p class="text-muted-foreground/50 py-2 text-xs">no invoice entries yet — add one below</p>
 		{:else}
 			<div class="space-y-2">
 				{#each client.invoices as entry (entry.id)}
@@ -264,8 +258,8 @@
 
 		<button
 			onclick={() => session.addInvoiceEntry(client.id)}
-			class="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground
-                   transition-colors py-1"
+			class="text-muted-foreground hover:text-foreground flex items-center gap-1.5 py-1
+                   text-xs transition-colors"
 		>
 			<Plus size={12} />
 			add invoice entry
@@ -273,7 +267,7 @@
 	</div>
 
 	{#if client.invoices.length > 0}
-		<div class="flex items-center justify-between pt-1 text-xs text-muted-foreground/60">
+		<div class="text-muted-foreground/60 flex items-center justify-between pt-1 text-xs">
 			<span>{client.invoices.length} invoice{client.invoices.length !== 1 ? "s" : ""}</span>
 			<span class="tabular-nums">{totalAmount} × {client.invoices.length}</span>
 		</div>

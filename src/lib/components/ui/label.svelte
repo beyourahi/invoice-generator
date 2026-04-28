@@ -14,10 +14,7 @@
 </script>
 
 <label
-	class={cn(
-		"block text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1.5",
-		className
-	)}
+	class={cn("text-muted-foreground mb-1.5 block text-xs font-medium tracking-wider uppercase", className)}
 	{...props}
 >
 	{@render children?.()}

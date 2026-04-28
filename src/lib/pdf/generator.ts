@@ -4,7 +4,7 @@ import jsPDF from "jspdf";
 const A4_WIDTH_PX = 794;
 const A4_HEIGHT_PX = 1123;
 
-const waitForFrame = () => new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
+const waitForFrame = () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 
 export const generatePdf = async (html: string): Promise<Blob> => {
 	const iframe = document.createElement("iframe");

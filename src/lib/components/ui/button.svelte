@@ -20,14 +20,11 @@
 	} & HTMLButtonAttributes = $props();
 
 	const variants: Record<Variant, string> = {
-		default:
-			"bg-primary text-primary-foreground hover:bg-primary/90 active:bg-primary/80",
-		outline:
-			"border border-border bg-transparent hover:bg-accent hover:text-accent-foreground",
+		default: "bg-primary text-primary-foreground hover:bg-primary/90 active:bg-primary/80",
+		outline: "border border-border bg-transparent hover:bg-accent hover:text-accent-foreground",
 		ghost: "bg-transparent hover:bg-accent hover:text-accent-foreground",
 		secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-		destructive:
-			"bg-destructive/10 text-destructive hover:bg-destructive/20 border border-destructive/20"
+		destructive: "bg-destructive/10 text-destructive hover:bg-destructive/20 border border-destructive/20"
 	};
 
 	const sizes: Record<Size, string> = {
@@ -43,9 +40,9 @@
 	class={cn(
 		"inline-flex items-center justify-center font-medium whitespace-nowrap",
 		"transition-all duration-150 select-none",
-		"focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2",
+		"focus-visible:outline-ring focus-visible:outline-2 focus-visible:outline-offset-2",
 		"disabled:pointer-events-none disabled:opacity-40",
-		"active:scale-[0.97] active:translate-y-px",
+		"active:translate-y-px active:scale-[0.97]",
 		variants[variant],
 		sizes[size],
 		className

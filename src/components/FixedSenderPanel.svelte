@@ -9,11 +9,11 @@
 	let bankOpen = $state(false);
 </script>
 
-<div class="rounded-2xl border border-border/60 bg-card overflow-hidden">
+<div class="border-border/60 bg-card overflow-hidden rounded-2xl border">
 	<button
 		onclick={() => (senderOpen = !senderOpen)}
-		class="w-full flex items-center justify-between px-5 py-4 text-left
-               hover:bg-accent/30 transition-colors"
+		class="hover:bg-accent/30 flex w-full items-center justify-between px-5 py-4
+               text-left transition-colors"
 	>
 		<div class="flex items-center gap-2.5">
 			<User size={14} class="text-muted-foreground" />
@@ -21,14 +21,12 @@
 		</div>
 		<ChevronDown
 			size={14}
-			class="text-muted-foreground transition-transform duration-200 {senderOpen
-				? 'rotate-180'
-				: ''}"
+			class="text-muted-foreground transition-transform duration-200 {senderOpen ? 'rotate-180' : ''}"
 		/>
 	</button>
 
 	{#if senderOpen}
-		<div class="px-5 pb-5 space-y-3 border-t border-border/40">
+		<div class="border-border/40 space-y-3 border-t px-5 pb-5">
 			<div class="pt-4">
 				<Label for="from-name">your name</Label>
 				<Input
@@ -64,8 +62,7 @@
 					id="from-address"
 					placeholder="City, Country"
 					value={fixed.value.from.address}
-					oninput={e =>
-						fixed.updateFrom("address", (e.currentTarget as HTMLInputElement).value)}
+					oninput={e => fixed.updateFrom("address", (e.currentTarget as HTMLInputElement).value)}
 				/>
 			</div>
 		</div>
@@ -75,8 +72,8 @@
 
 	<button
 		onclick={() => (bankOpen = !bankOpen)}
-		class="w-full flex items-center justify-between px-5 py-4 text-left
-               hover:bg-accent/30 transition-colors"
+		class="hover:bg-accent/30 flex w-full items-center justify-between px-5 py-4
+               text-left transition-colors"
 	>
 		<div class="flex items-center gap-2.5">
 			<svg
@@ -95,14 +92,12 @@
 		</div>
 		<ChevronDown
 			size={14}
-			class="text-muted-foreground transition-transform duration-200 {bankOpen
-				? 'rotate-180'
-				: ''}"
+			class="text-muted-foreground transition-transform duration-200 {bankOpen ? 'rotate-180' : ''}"
 		/>
 	</button>
 
 	{#if bankOpen}
-		<div class="px-5 pb-5 space-y-3 border-t border-border/40">
+		<div class="border-border/40 space-y-3 border-t px-5 pb-5">
 			<div class="pt-4">
 				<Label for="bank-holder">account holder</Label>
 				<Input
@@ -138,8 +133,7 @@
 						id="bank-branch"
 						placeholder="Branch name"
 						value={fixed.value.bank.branch}
-						oninput={e =>
-							fixed.updateBank("branch", (e.currentTarget as HTMLInputElement).value)}
+						oninput={e => fixed.updateBank("branch", (e.currentTarget as HTMLInputElement).value)}
 					/>
 				</div>
 				<div>
@@ -148,8 +142,7 @@
 						id="bank-routing"
 						placeholder="000000000"
 						value={fixed.value.bank.routing}
-						oninput={e =>
-							fixed.updateBank("routing", (e.currentTarget as HTMLInputElement).value)}
+						oninput={e => fixed.updateBank("routing", (e.currentTarget as HTMLInputElement).value)}
 						class="tabular-nums"
 					/>
 				</div>

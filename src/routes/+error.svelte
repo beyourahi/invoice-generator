@@ -3,13 +3,13 @@
 	import { resolve } from "$app/paths";
 </script>
 
-<div class="min-h-screen bg-background flex items-center justify-center px-4">
-	<div class="text-center space-y-4">
-		<p class="text-6xl font-medium tabular-nums text-foreground/10">{$page.status}</p>
-		<p class="text-sm text-muted-foreground">{$page.error?.message ?? "something went wrong"}</p>
+<div class="bg-background flex min-h-screen items-center justify-center px-4">
+	<div class="space-y-4 text-center">
+		<p class="text-foreground/10 text-6xl font-medium tabular-nums">{$page.status}</p>
+		<p class="text-muted-foreground text-sm">{$page.error?.message ?? "something went wrong"}</p>
 		<a
 			href={resolve("/")}
-			class="inline-flex items-center gap-1.5 text-xs text-muted-foreground/60 hover:text-foreground transition-colors mt-2"
+			class="text-muted-foreground/60 hover:text-foreground mt-2 inline-flex items-center gap-1.5 text-xs transition-colors"
 		>
 			← back to invoice generator
 		</a>

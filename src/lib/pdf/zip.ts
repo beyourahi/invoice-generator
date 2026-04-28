@@ -5,7 +5,7 @@ export const buildZip = async (invoices: GeneratedInvoice[]): Promise<Blob> => {
 	const files: Record<string, Uint8Array> = {};
 
 	await Promise.all(
-		invoices.map(async invoice => {
+		invoices.map(async (invoice) => {
 			const folderName = `${invoice.clientName}-${invoice.year}-Invoices`;
 			const path = `${folderName}/${invoice.fileName}`;
 			const arrayBuffer = await invoice.pdfBlob.arrayBuffer();
