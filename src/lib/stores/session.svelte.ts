@@ -97,6 +97,9 @@ const createSessionStore = () => {
 	};
 
 	const totalInvoiceCount = $derived(clients.reduce((sum, c) => sum + c.invoices.length, 0));
+	const allClientsValid = $derived(
+		clients.every(c => c.name.trim() !== "" && c.invoicePrefix.trim() !== "")
+	);
 
 	return {
 		get clients() {
@@ -113,6 +116,9 @@ const createSessionStore = () => {
 		},
 		get totalInvoiceCount() {
 			return totalInvoiceCount;
+		},
+		get allClientsValid() {
+			return allClientsValid;
 		},
 		addClient,
 		removeClient,

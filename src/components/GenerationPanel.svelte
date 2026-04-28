@@ -6,7 +6,7 @@
 	import { getTheme, ACTIVE_THEME_ID } from "$lib/themes/registry";
 	import type { GeneratedInvoice } from "$lib/types";
 	import { gsap } from "gsap";
-	import { Zap, AlertCircle } from "@lucide/svelte";
+	import { Zap, AlertCircle, TriangleAlert } from "@lucide/svelte";
 
 	let progressEl = $state<HTMLDivElement | undefined>(undefined);
 	let countEl = $state<HTMLSpanElement | undefined>(undefined);
@@ -17,6 +17,7 @@
 	const canGenerate = $derived(
 		session.clients.length > 0 &&
 			totalCount > 0 &&
+			session.allClientsValid &&
 			session.generationState !== "generating"
 	);
 
@@ -77,6 +78,15 @@
 			</span>
 		{/if}
 	</div>
+
+	{#if session.clients.length > 0 && !session.allClientsValid}
+		<div class="flex items-start gap-2.5 rounded-xl bg-destructive/10 border border-destructive/20 p-3">
+			<TriangleAlert size={14} class="text-destructive shrink-0 mt-0.5" />
+			<p class="text-xs text-destructive leading-relaxed">
+				all clients need a name and invoice prefix
+			</p>
+		</div>
+	{/if}
 
 	{#if session.generationState === "error" && session.generationError}
 		<div class="flex items-start gap-2.5 rounded-xl bg-destructive/10 border border-destructive/20 p-3">

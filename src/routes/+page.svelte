@@ -2,9 +2,9 @@
 	import { session } from "$lib/stores/session.svelte";
 	import FixedSenderPanel from "$src/components/FixedSenderPanel.svelte";
 	import ClientCard from "$src/components/ClientCard.svelte";
+	import AddClientButton from "$src/components/AddClientButton.svelte";
 	import GenerationPanel from "$src/components/GenerationPanel.svelte";
 	import DownloadPanel from "$src/components/DownloadPanel.svelte";
-	import { Plus } from "@lucide/svelte";
 	import { onMount } from "svelte";
 	import { gsap } from "gsap";
 
@@ -79,17 +79,7 @@
 					</div>
 				{/if}
 
-				<button
-					onclick={session.addClient}
-					class="w-full h-11 rounded-2xl border border-dashed border-border/50
-                           flex items-center justify-center gap-2
-                           text-sm text-muted-foreground/60
-                           hover:border-border hover:text-muted-foreground hover:bg-accent/20
-                           active:scale-[0.99] transition-all duration-150"
-				>
-					<Plus size={14} />
-					add client
-				</button>
+				<AddClientButton />
 			</section>
 
 			<aside class="space-y-3 lg:sticky lg:top-6">

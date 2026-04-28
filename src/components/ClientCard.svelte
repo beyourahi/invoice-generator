@@ -12,6 +12,8 @@
 
 	let { client }: { client: Client } = $props();
 	let cardEl: HTMLDivElement;
+	let nameTouched = $state(false);
+	let prefixTouched = $state(false);
 
 	onMount(() => {
 		gsap.from(cardEl, {
@@ -29,6 +31,9 @@
 	const totalAmount = $derived(
 		`${client.service.currency === "BDT" ? "৳" : "$"}${client.service.amount.toLocaleString("en-US")}`
 	);
+
+	const nameInvalid = $derived(nameTouched && client.name.trim() === "");
+	const prefixInvalid = $derived(prefixTouched && client.invoicePrefix.trim() === "");
 </script>
 
 <div
@@ -58,21 +63,25 @@
 
 	<div class="grid grid-cols-2 gap-3">
 		<div>
-			<Label for="name-{client.id}">client name</Label>
+			<Label for="name-{client.id}">client name <span class="text-destructive">*</span></Label>
 			<Input
 				id="name-{client.id}"
 				placeholder="Acme Corp"
 				value={client.name}
 				oninput={e => set("name", (e.currentTarget as HTMLInputElement).value)}
+				onblur={() => (nameTouched = true)}
+				class={nameInvalid ? "border-destructive focus-visible:border-destructive" : ""}
 			/>
 		</div>
 		<div>
-			<Label for="prefix-{client.id}">invoice prefix</Label>
+			<Label for="prefix-{client.id}">invoice prefix <span class="text-destructive">*</span></Label>
 			<Input
 				id="prefix-{client.id}"
 				placeholder="ACME"
 				value={client.invoicePrefix}
 				oninput={e => set("invoicePrefix", (e.currentTarget as HTMLInputElement).value)}
+				onblur={() => (prefixTouched = true)}
+				class={prefixInvalid ? "border-destructive focus-visible:border-destructive" : ""}
 			/>
 		</div>
 		<div>

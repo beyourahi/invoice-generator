@@ -1,6 +1,6 @@
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"account_id": "296be85a8b104c75fd05aad6fac79693",
+	"account_id": "75321bb4297a25f524624ba0f3f81443",
 	"name": "invoice-generator",
 	"main": ".svelte-kit/cloudflare/_worker.js",
 	"compatibility_flags": ["nodejs_compat"],
