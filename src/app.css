@@ -32,6 +32,10 @@
 	--color-border: oklch(0.275 0 0);
 	--color-input: oklch(0.325 0 0);
 	--color-ring: oklch(0.556 0 0);
+
+	--color-brand: oklch(0.65 0.14 260);
+	--color-brand-foreground: oklch(0.985 0 0);
+	--color-brand-muted: oklch(0.65 0.14 260 / 0.12);
 }
 
 *,

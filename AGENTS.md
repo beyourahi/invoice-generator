@@ -9,6 +9,7 @@ Multi-agent execution framework for the invoice-generator codebase. Read `CLAUDE
 This project uses a **parallel worktree model**: each agent gets its own git worktree so agents can make independent changes simultaneously without conflicts. An orchestrating agent (or the user) decomposes tasks, assigns scopes, and merges results after validation.
 
 Agents communicate through:
+
 - The shared codebase (read-only access to files outside their worktree scope)
 - This file and `CLAUDE.md` as the shared contract
 - Explicit task boundaries passed in the agent prompt
@@ -47,6 +48,7 @@ Each worktree shares the same repository. Agents commit directly to their worktr
 **Scope**: Read-only on all files. Writes only to `CLAUDE.md` or creates `agent_docs/` reference files.
 
 **Rules**:
+
 - Never change code directly — only defines contracts and structure
 - If a store interface must change, document the migration path before any Implementation Agent begins
 
@@ -63,12 +65,14 @@ Each worktree shares the same repository. Agents commit directly to their worktr
 **Outputs**: Working code that passes `bun run check` and `bun run lint`.
 
 **Scope**: One logical slice at a time. Examples of valid scopes:
+
 - `$lib/invoice/builder.ts` — token substitution logic
 - `$lib/pdf/generator.ts` — PDF rendering pipeline
 - `$lib/stores/session.svelte.ts` — session state shape
 - `src/components/ClientCard.svelte` — single UI component
 
 **Rules**:
+
 - Read the file before editing — always
 - Run `bun run check` and `bun run lint` before marking task complete
 - Validate `.svelte` files with `svelte-autofixer` (svelte MCP) before delivering
@@ -89,6 +93,7 @@ Each worktree shares the same repository. Agents commit directly to their worktr
 **Scope**: Visual layer only — components, styles, layout. Never touches `$lib/invoice/`, `$lib/pdf/`, or store logic.
 
 **Rules**:
+
 - **Invoke `frontend-design` skill** at the start of every session, no exceptions
 - **Mandatory visual verification** — take at least one Playwright MCP screenshot per change, save to `tmp_screenshots/`, analyze against requirements, iterate until correct
 - **Delete `tmp_screenshots/` and `.playwright-mcp/`** after task is complete
@@ -112,6 +117,7 @@ Each worktree shares the same repository. Agents commit directly to their worktr
 **Scope**: Read-only. Never modifies code.
 
 **Checklist** (run all before passing):
+
 1. `bun run check` — zero type errors
 2. `bun run lint` — zero lint errors
 3. Store interfaces match contracts defined by Architecture Agent
@@ -138,6 +144,7 @@ Each worktree shares the same repository. Agents commit directly to their worktr
 **Scope**: One module or pattern at a time. Do not refactor and add features in the same commit.
 
 **Rules**:
+
 - Behavior must be identical before and after — no functional changes
 - One commit per logical refactor (e.g., "normalize arrow functions in $lib/invoice/")
 - Audit Agent must verify before merge
@@ -157,6 +164,7 @@ Each worktree shares the same repository. Agents commit directly to their worktr
 **Scope**: `$lib/themes/` only. Never touches the PDF generation pipeline or stores.
 
 **Rules**:
+
 - Implement the full `Theme` interface: `html`, `css`, `bankPayment`, `wisePayment`
 - CSS in the `css` field must be minified (single-line)
 - Test by setting `ACTIVE_THEME_ID` to the new theme, generating a sample PDF, and screenshotting the result
@@ -171,11 +179,13 @@ Each worktree shares the same repository. Agents commit directly to their worktr
 Agents can run in parallel when their scopes do not share writable files.
 
 **Safe to parallelize**:
+
 - UI/UX Agent on `src/components/` + Implementation Agent on `$lib/invoice/`
 - Theme Agent on `$lib/themes/` + Refactor Agent on `$lib/stores/`
 - Multiple Implementation Agents on non-overlapping files
 
 **Must run sequentially**:
+
 - Architecture Agent → Implementation Agents (contracts must be defined first)
 - Any agent modifying `$lib/stores/session.svelte.ts` → Audit Agent (store shape affects all consumers)
 - Theme Agent → UI/UX Agent (theme must exist before UI references it)
@@ -184,6 +194,7 @@ Agents can run in parallel when their scopes do not share writable files.
 ### Shared File Handling
 
 If two agents need to modify the same file:
+
 1. Do not run them in parallel
 2. First agent completes and commits
 3. Second agent reads the updated file before beginning
@@ -210,11 +221,13 @@ Merge to main
 ### Good Decomposition
 
 Break tasks into atomic units where each unit:
+
 - Has a single clear output (a file, a function, a component)
 - Can be verified independently (`bun run check` passes)
 - Has no hidden dependencies on other in-flight tasks
 
 **Example — "Add a new invoice theme"**:
+
 ```
 Task 1 [Theme Agent]:     Create $lib/themes/minimal.ts
 Task 2 [Theme Agent]:     Register in registry.ts, update ThemeId
@@ -222,6 +235,7 @@ Task 3 [Audit Agent]:     Verify TypeScript types, generate sample PDF
 ```
 
 **Example — "Add per-client invoice numbering"**:
+
 ```
 Task 1 [Architecture]:    Define InvoiceEntry shape changes + token spec
 Task 2 [Implementation]:  Update $lib/stores/session.svelte.ts
@@ -255,13 +269,13 @@ The invoice-generator shares conventions with all other SvelteKit projects in `~
 
 Every agent output must pass before being accepted:
 
-| Check | Command | Owner |
-|---|---|---|
-| Type safety | `bun run check` | Implementation, UI/UX, Refactor |
-| Lint + format | `bun run lint` | All agents |
-| Visual correctness | Playwright MCP screenshot | UI/UX Agent |
-| Behavioral correctness | Manual PDF generation test | Implementation Agent |
-| Audit pass | Full checklist | Audit Agent |
+| Check                  | Command                    | Owner                           |
+| ---------------------- | -------------------------- | ------------------------------- |
+| Type safety            | `bun run check`            | Implementation, UI/UX, Refactor |
+| Lint + format          | `bun run lint`             | All agents                      |
+| Visual correctness     | Playwright MCP screenshot  | UI/UX Agent                     |
+| Behavioral correctness | Manual PDF generation test | Implementation Agent            |
+| Audit pass             | Full checklist             | Audit Agent                     |
 
 **No partial passes.** If `bun run check` fails, the task is not complete. Fix before marking done.
 
@@ -294,6 +308,7 @@ Every agent response must be:
 - **Bounded** — report only what was scoped. Don't silently fix unrelated issues
 
 **Final delivery format**:
+
 ```
 ## Changes Made
 - [file path]: [what changed and why]

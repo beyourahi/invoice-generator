@@ -1,88 +1,86 @@
 <script lang="ts">
 	import { session } from "$lib/stores/session.svelte";
+	import { fixed } from "$lib/stores/fixed.svelte";
 	import FixedSenderPanel from "$src/components/FixedSenderPanel.svelte";
 	import ClientCard from "$src/components/ClientCard.svelte";
 	import AddClientButton from "$src/components/AddClientButton.svelte";
-	import GenerationPanel from "$src/components/GenerationPanel.svelte";
-	import DownloadPanel from "$src/components/DownloadPanel.svelte";
-	import { onMount } from "svelte";
-	import { gsap } from "gsap";
+	import AppHeader from "$src/components/AppHeader.svelte";
+	import InvoicePreview from "$src/components/InvoicePreview.svelte";
+	import StickyActionBar from "$src/components/StickyActionBar.svelte";
+	import JsonEditor from "$src/components/JsonEditor.svelte";
+	import { buildInvoiceHtml } from "$lib/invoice/builder";
+	import { getTheme, ACTIVE_THEME_ID } from "$lib/themes/registry";
 
-	const WORDMARK = "invoice generator".split("");
+	let jsonMode = $state(false);
+	let selectedClientId = $state<string | null>(null);
+	let previewHtml = $state<string | null>(null);
+	let previewLoading = $state(false);
 
-	let charEls: HTMLSpanElement[] = [];
-	let subtitleEl: HTMLParagraphElement;
-	let headerEl: HTMLElement;
+	const previewClient = $derived(session.clients.find(c => c.id === selectedClientId) ?? session.clients[0] ?? null);
 
-	onMount(() => {
-		const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
-
-		tl.from(headerEl, { opacity: 0, duration: 0.3 })
-			.from(
-				charEls,
-				{
-					opacity: 0,
-					y: 12,
-					duration: 0.5,
-					stagger: 0.025
-				},
-				"-=0.1"
-			)
-			.from(
-				subtitleEl,
-				{
-					opacity: 0,
-					y: 8,
-					duration: 0.4
-				},
-				"-=0.2"
-			);
+	$effect(() => {
+		const client = previewClient;
+		const fixedVal = fixed.value;
+		if (!client || client.invoices.length === 0) {
+			previewHtml = null;
+			previewLoading = false;
+			return;
+		}
+		const entry = client.invoices[0];
+		previewLoading = true;
+		const timer = setTimeout(() => {
+			previewHtml = buildInvoiceHtml(client, entry, fixedVal, getTheme(ACTIVE_THEME_ID));
+			previewLoading = false;
+		}, 350);
+		return () => {
+			clearTimeout(timer);
+			previewLoading = false;
+		};
 	});
 </script>
 
 <div class="bg-background text-foreground min-h-screen">
-	<header bind:this={headerEl} class="border-border/40 border-b px-4 py-5 sm:px-6">
-		<div class="mx-auto flex max-w-7xl items-baseline gap-3">
-			<h1 class="text-lg leading-none font-medium tracking-tight">
-				{#each WORDMARK as char, i (i)}
-					<span bind:this={charEls[i]} class={char === " " ? "inline-block w-[0.3em]" : "inline-block"}
-						>{char}</span
-					>
-				{/each}
-			</h1>
-			<p bind:this={subtitleEl} class="text-muted-foreground hidden text-xs sm:block">batch pdf generation</p>
-		</div>
-	</header>
+	<AppHeader bind:jsonMode />
 
-	<main class="mx-auto max-w-7xl px-4 py-6 sm:px-6">
-		<div class="grid grid-cols-1 items-start gap-5 lg:grid-cols-[280px_1fr_280px]">
-			<aside class="space-y-3">
-				<FixedSenderPanel />
-			</aside>
-
-			<section class="min-w-0 space-y-3">
-				{#if session.clients.length === 0}
-					<div class="border-border/40 bg-card/50 space-y-2 rounded-2xl border p-10 text-center">
-						<p class="text-sm font-medium">no clients yet</p>
-						<p class="text-muted-foreground/60 text-xs">add a client to start configuring invoices</p>
-					</div>
+	<main class="mx-auto max-w-7xl px-6 pt-20 pb-24">
+		<div class="grid grid-cols-1 items-start gap-6 lg:grid-cols-[40%_1fr]">
+			<!-- Input panel -->
+			<div class="min-w-0 space-y-4">
+				{#if jsonMode}
+					<JsonEditor onClose={() => (jsonMode = false)} />
 				{:else}
-					<div class="space-y-4">
-						{#each session.clients as client (client.id)}
-							<ClientCard {client} />
-						{/each}
+					<div class="border-border/60 bg-card rounded-2xl border p-5">
+						<FixedSenderPanel />
 					</div>
-				{/if}
 
-				<AddClientButton />
-			</section>
+					{#if session.clients.length === 0}
+						<div class="border-border/40 bg-card/30 space-y-2 rounded-2xl border p-10 text-center">
+							<p class="text-sm font-medium">no clients yet</p>
+							<p class="text-muted-foreground/50 text-xs">add a client to start configuring invoices</p>
+						</div>
+					{:else}
+						<div class="space-y-3">
+							{#each session.clients as client, i (client.id)}
+								<ClientCard
+									{client}
+									index={i}
+									selected={previewClient?.id === client.id}
+									onSelect={() => (selectedClientId = client.id)}
+								/>
+							{/each}
+						</div>
+					{/if}
 
-			<aside class="space-y-3 lg:sticky lg:top-6">
-				{#if session.generationState === "done" && session.generatedInvoices.length > 0}
-					<DownloadPanel />
+					<AddClientButton />
 				{/if}
-				<GenerationPanel />
-			</aside>
+			</div>
+
+			<!-- Preview panel: sticky, hidden on mobile -->
+			<div class="sticky top-[5rem] hidden h-[calc(100vh-5rem-4.5rem)] overflow-hidden lg:block">
+				<InvoicePreview html={previewHtml} loading={previewLoading} />
+			</div>
 		</div>
 	</main>
+
+	<StickyActionBar />
 </div>

@@ -3,32 +3,14 @@
 	import Input from "$lib/components/ui/input.svelte";
 	import Label from "$lib/components/ui/label.svelte";
 	import Separator from "$lib/components/ui/separator.svelte";
-	import { ChevronDown, User } from "@lucide/svelte";
-
-	let senderOpen = $state(true);
-	let bankOpen = $state(false);
 </script>
 
-<div class="border-border/60 bg-card overflow-hidden rounded-2xl border">
-	<button
-		onclick={() => (senderOpen = !senderOpen)}
-		class="hover:bg-accent/30 flex w-full items-center justify-between px-5 py-4
-               text-left transition-colors"
-	>
-		<div class="flex items-center gap-2.5">
-			<User size={14} class="text-muted-foreground" />
-			<span class="text-sm font-medium">sender details</span>
-		</div>
-		<ChevronDown
-			size={14}
-			class="text-muted-foreground transition-transform duration-200 {senderOpen ? 'rotate-180' : ''}"
-		/>
-	</button>
-
-	{#if senderOpen}
-		<div class="border-border/40 space-y-3 border-t px-5 pb-5">
-			<div class="pt-4">
-				<Label for="from-name">your name</Label>
+<div class="space-y-5">
+	<div class="space-y-3">
+		<p class="text-muted-foreground text-[11px] font-medium tracking-widest uppercase">Sender</p>
+		<div class="grid grid-cols-2 gap-3">
+			<div class="col-span-2">
+				<Label for="from-name">name</Label>
 				<Input
 					id="from-name"
 					placeholder="Full Name"
@@ -56,7 +38,7 @@
 					oninput={e => fixed.updateFrom("email", (e.currentTarget as HTMLInputElement).value)}
 				/>
 			</div>
-			<div>
+			<div class="col-span-2">
 				<Label for="from-address">address</Label>
 				<Input
 					id="from-address"
@@ -66,39 +48,14 @@
 				/>
 			</div>
 		</div>
-	{/if}
+	</div>
 
 	<Separator />
 
-	<button
-		onclick={() => (bankOpen = !bankOpen)}
-		class="hover:bg-accent/30 flex w-full items-center justify-between px-5 py-4
-               text-left transition-colors"
-	>
-		<div class="flex items-center gap-2.5">
-			<svg
-				class="text-muted-foreground"
-				width="14"
-				height="14"
-				viewBox="0 0 24 24"
-				fill="none"
-				stroke="currentColor"
-				stroke-width="2"
-			>
-				<rect width="20" height="14" x="2" y="5" rx="2" />
-				<line x1="2" x2="22" y1="10" y2="10" />
-			</svg>
-			<span class="text-sm font-medium">bank details</span>
-		</div>
-		<ChevronDown
-			size={14}
-			class="text-muted-foreground transition-transform duration-200 {bankOpen ? 'rotate-180' : ''}"
-		/>
-	</button>
-
-	{#if bankOpen}
-		<div class="border-border/40 space-y-3 border-t px-5 pb-5">
-			<div class="pt-4">
+	<div class="space-y-3">
+		<p class="text-muted-foreground text-[11px] font-medium tracking-widest uppercase">Bank Details</p>
+		<div class="grid grid-cols-2 gap-3">
+			<div>
 				<Label for="bank-holder">account holder</Label>
 				<Input
 					id="bank-holder"
@@ -126,27 +83,25 @@
 					class="tabular-nums"
 				/>
 			</div>
-			<div class="grid grid-cols-2 gap-3">
-				<div>
-					<Label for="bank-branch">branch</Label>
-					<Input
-						id="bank-branch"
-						placeholder="Branch name"
-						value={fixed.value.bank.branch}
-						oninput={e => fixed.updateBank("branch", (e.currentTarget as HTMLInputElement).value)}
-					/>
-				</div>
-				<div>
-					<Label for="bank-routing">routing</Label>
-					<Input
-						id="bank-routing"
-						placeholder="000000000"
-						value={fixed.value.bank.routing}
-						oninput={e => fixed.updateBank("routing", (e.currentTarget as HTMLInputElement).value)}
-						class="tabular-nums"
-					/>
-				</div>
+			<div>
+				<Label for="bank-branch">branch</Label>
+				<Input
+					id="bank-branch"
+					placeholder="Branch name"
+					value={fixed.value.bank.branch}
+					oninput={e => fixed.updateBank("branch", (e.currentTarget as HTMLInputElement).value)}
+				/>
+			</div>
+			<div class="col-span-2">
+				<Label for="bank-routing">routing</Label>
+				<Input
+					id="bank-routing"
+					placeholder="000000000"
+					value={fixed.value.bank.routing}
+					oninput={e => fixed.updateBank("routing", (e.currentTarget as HTMLInputElement).value)}
+					class="tabular-nums"
+				/>
 			</div>
 		</div>
-	{/if}
+	</div>
 </div>

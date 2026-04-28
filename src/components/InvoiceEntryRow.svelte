@@ -8,7 +8,9 @@
 	let { clientId, entry }: { clientId: string; entry: InvoiceEntry } = $props();
 </script>
 
-<div class="grid grid-cols-[1fr_80px_80px_32px] items-center gap-2">
+<div
+	class="hover:bg-accent/20 -mx-2 grid grid-cols-[1fr_72px_72px_32px] items-center gap-2 rounded-xl px-2 transition-colors"
+>
 	<select
 		value={entry.month}
 		onchange={e =>
@@ -18,8 +20,7 @@
 				"month",
 				(e.currentTarget as HTMLSelectElement).value as MonthName
 			)}
-		class="border-border bg-input text-foreground focus-visible:outline-ring h-9 rounded-xl border px-3
-               text-sm transition-colors focus-visible:outline-2"
+		class="border-border bg-input text-foreground focus-visible:outline-ring h-8 rounded-lg border px-2.5 text-xs transition-colors focus-visible:outline-2"
 	>
 		{#each MONTHS as month (month)}
 			<option value={month}>{month}</option>
@@ -34,7 +35,7 @@
 		value={entry.issueDay}
 		oninput={e =>
 			session.updateInvoiceEntry(clientId, entry.id, "issueDay", (e.currentTarget as HTMLInputElement).value)}
-		class="text-center tabular-nums"
+		class="h-8 text-center text-xs tabular-nums"
 	/>
 
 	<Input
@@ -45,15 +46,14 @@
 		value={entry.dueDay}
 		oninput={e =>
 			session.updateInvoiceEntry(clientId, entry.id, "dueDay", (e.currentTarget as HTMLInputElement).value)}
-		class="text-center tabular-nums"
+		class="h-8 text-center text-xs tabular-nums"
 	/>
 
 	<button
 		onclick={() => session.removeInvoiceEntry(clientId, entry.id)}
-		class="text-muted-foreground hover:text-destructive hover:bg-destructive/10 flex h-8 w-8 items-center
-               justify-center rounded-lg transition-colors"
+		class="text-muted-foreground/30 hover:bg-destructive/10 hover:text-destructive flex h-8 w-8 items-center justify-center rounded-lg transition-colors"
 		aria-label="Remove entry"
 	>
-		<Trash2 size={14} />
+		<Trash2 size={12} />
 	</button>
 </div>

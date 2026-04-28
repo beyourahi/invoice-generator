@@ -41,7 +41,7 @@ A client-side-only SvelteKit app that generates batches of PDF invoices. Users c
 
 | Layer           | Technology                                       |
 | --------------- | ------------------------------------------------ |
-| Framework       | SvelteKit 2.x (Svelte 5 with runes)             |
+| Framework       | SvelteKit 2.x (Svelte 5 with runes)              |
 | Language        | TypeScript (strict mode)                         |
 | Styling         | Tailwind CSS v4 (CSS-first config, OKLCH colors) |
 | UI Components   | shadcn-svelte                                    |
@@ -73,6 +73,7 @@ bun run cf-typegen # Regenerate worker-configuration.d.ts from wrangler.jsonc
 ### Path Aliases
 
 Two aliases are configured in `svelte.config.js`:
+
 - `$lib` → `src/lib/` (SvelteKit default)
 - `$src` → `src/` (custom, used in route files to import from `src/components/`)
 
@@ -107,6 +108,7 @@ To add a theme: implement the `Theme` interface in a new file, register it in `t
 ### UI Layout
 
 Single-page, three-column grid at `lg` breakpoint:
+
 - **Left aside** — `FixedSenderPanel` (sender identity + bank details, persists to localStorage)
 - **Center** — `ClientCard` list + `AddClientButton` (ephemeral session state)
 - **Right aside** (sticky) — `DownloadPanel` (visible only after generation) + `GenerationPanel`
@@ -136,14 +138,14 @@ GSAP is used for entrance animations only (header stagger, card mount, download 
 
 ```svelte
 <script lang="ts">
-    // Props
-    let { client, onUpdate }: ClientCardProps = $props();
+	// Props
+	let { client, onUpdate }: ClientCardProps = $props();
 
-    // State
-    let expanded = $state(false);
+	// State
+	let expanded = $state(false);
 
-    // Derived
-    let isValid = $derived(client.name.length > 0);
+	// Derived
+	let isValid = $derived(client.name.length > 0);
 </script>
 ```
 
@@ -244,6 +246,7 @@ No test framework is currently configured. Validation is done through:
 - Manual testing: generate PDFs, verify file names, verify ZIP structure, test with multiple clients and months
 
 When adding tests:
+
 - Use Vitest (compatible with the Vite setup)
 - Priority test targets: `resolver.ts` (token substitution), `builder.ts` (invoice ID format), `zip.ts` (path generation)
 - Place test files alongside source: `*.test.ts`
@@ -293,6 +296,7 @@ No environment variables required. All state is browser-local (localStorage for 
 ### Cloudflare Bindings
 
 Configured in `wrangler.jsonc`:
+
 - **Assets**: static SvelteKit output
 - **Compatibility**: `nodejs_compat` flag
 - Run `bun run cf-typegen` after any `wrangler.jsonc` changes

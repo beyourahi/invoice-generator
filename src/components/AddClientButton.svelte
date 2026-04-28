@@ -5,12 +5,8 @@
 
 <button
 	onclick={session.addClient}
-	class="border-border/50 text-muted-foreground/60 hover:border-border hover:text-muted-foreground hover:bg-accent/20 flex
-           h-11 w-full items-center justify-center
-           gap-2 rounded-2xl
-           border border-dashed text-sm
-           transition-all duration-150 active:scale-[0.99]"
+	class="border-border/40 text-muted-foreground/50 hover:border-brand/50 hover:text-brand flex h-10 w-full items-center justify-center gap-2 rounded-2xl border border-dashed text-xs transition-all duration-150 active:scale-[0.99]"
 >
-	<Plus size={14} />
+	<Plus size={13} />
 	add client
 </button>
