@@ -1,0 +1,27 @@
+<script lang="ts">
+	import { cn } from "$lib/utils";
+	import type { HTMLInputAttributes } from "svelte/elements";
+
+	let {
+		class: className = "",
+		value = $bindable(""),
+		...props
+	}: {
+		class?: string;
+		value?: string | number;
+	} & HTMLInputAttributes = $props();
+</script>
+
+<input
+	class={cn(
+		"w-full h-9 rounded-xl border border-border bg-input px-3 text-sm",
+		"text-foreground placeholder:text-muted-foreground",
+		"transition-colors duration-150",
+		"focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-0",
+		"focus-visible:border-ring/50",
+		"disabled:opacity-40 disabled:cursor-not-allowed",
+		className
+	)}
+	bind:value
+	{...props}
+/>
