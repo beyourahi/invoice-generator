@@ -13,9 +13,7 @@
 	let previewHtml = $state<string | null>(null);
 	let previewLoading = $state(false);
 
-	const previewClient = $derived(
-		session.clients.find(c => c.id === selectedClientId) ?? session.clients[0] ?? null
-	);
+	const previewClient = $derived(session.clients.find(c => c.id === selectedClientId) ?? session.clients[0] ?? null);
 
 	$effect(() => {
 		const client = previewClient;

@@ -100,9 +100,7 @@
 				</div>
 			{:else if session.generationState === "done"}
 				<p class="text-muted-foreground/50 text-xs">
-					{session.generatedInvoices.length} invoice{session.generatedInvoices.length !== 1
-						? "s"
-						: ""} ready
+					{session.generatedInvoices.length} invoice{session.generatedInvoices.length !== 1 ? "s" : ""} ready
 				</p>
 			{/if}
 

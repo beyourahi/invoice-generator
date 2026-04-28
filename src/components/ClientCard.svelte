@@ -31,7 +31,7 @@
 	const badgeNum = $derived(String(index + 1).padStart(2, "0"));
 </script>
 
-<Card class={cn("py-0", selected && "ring-2 ring-brand/50")}>
+<Card class={cn("py-0", selected && "ring-brand/50 ring-2")}>
 	<!-- Header: click to select for preview -->
 	<div
 		role="button"
@@ -75,7 +75,7 @@
 	</div>
 
 	{#if expanded}
-		<div class="border-border/40 space-y-4 border-t px-4 pb-4 pt-4">
+		<div class="border-border/40 space-y-4 border-t px-4 pt-4 pb-4">
 			<div class="grid grid-cols-2 gap-3">
 				<div>
 					<Label for="name-{client.id}">client name <span class="text-destructive">*</span></Label>
