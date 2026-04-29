@@ -1,17 +1,27 @@
 <script lang="ts">
 	import { page } from "$app/stores";
 	import { resolve } from "$app/paths";
+	import { Card, CardContent, CardHeader, CardTitle } from "$lib/components/ui/card";
+	import { ArrowLeft, TriangleAlert } from "@lucide/svelte";
 </script>
 
-<div class="bg-background flex min-h-screen items-center justify-center px-4">
-	<div class="space-y-4 text-center">
-		<p class="text-foreground/10 text-6xl font-medium tabular-nums">{$page.status}</p>
-		<p class="text-muted-foreground text-sm">{$page.error?.message ?? "something went wrong"}</p>
-		<a
-			href={resolve("/")}
-			class="text-muted-foreground/60 hover:text-foreground mt-2 inline-flex items-center gap-1.5 text-xs transition-colors"
-		>
-			← back to invoice generator
-		</a>
-	</div>
+<div class="bg-background text-foreground flex min-h-screen items-center justify-center px-4">
+	<Card class="w-full max-w-md">
+		<CardHeader class="items-center text-center">
+			<div class="bg-destructive/10 text-destructive flex size-10 items-center justify-center rounded-lg">
+				<TriangleAlert size={18} />
+			</div>
+			<CardTitle class="text-base">{$page.status}</CardTitle>
+		</CardHeader>
+		<CardContent class="space-y-5 text-center">
+			<p class="text-muted-foreground text-sm">{$page.error?.message ?? "Something went wrong."}</p>
+			<a
+				href={resolve("/")}
+				class="border-border hover:bg-accent hover:text-accent-foreground inline-flex h-7 items-center justify-center gap-1.5 rounded-lg border px-3 text-xs font-medium transition-colors"
+			>
+				<ArrowLeft size={13} />
+				Back to generator
+			</a>
+		</CardContent>
+	</Card>
 </div>

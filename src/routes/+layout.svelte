@@ -10,4 +10,9 @@
 	});
 </script>
 
+<svelte:head>
+	<title>Invoice Generator</title>
+	<meta name="description" content="Client-side batch invoice PDF generator for recurring billing." />
+</svelte:head>
+
 {@render children()}

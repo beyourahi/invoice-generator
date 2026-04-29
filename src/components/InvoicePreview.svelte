@@ -1,45 +1,81 @@
 <script lang="ts">
 	import { cn } from "$lib/utils";
-	import { Card, CardContent, CardHeader, CardTitle } from "$lib/components/ui/card";
+	import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "$lib/components/ui/card";
 	import { Skeleton } from "$lib/components/ui/skeleton";
+	import { FileText, ScanLine } from "@lucide/svelte";
 
 	let { html, loading }: { html: string | null; loading: boolean } = $props();
 
-	let containerEl = $state<HTMLDivElement | undefined>(undefined);
 	let containerWidth = $state(0);
 
-	const scale = $derived(containerWidth > 0 ? containerWidth / 794 : 1);
-	const scaledHeight = $derived(Math.round(1123 * scale));
+	const scale = $derived(containerWidth > 0 ? Math.min(containerWidth / 794, 1) : 1);
+	const scaledHeight = $derived(`${Math.round(1123 * scale)}px`);
+	const previewScale = $derived(String(scale));
+
+	const measurePreview = (node: HTMLDivElement) => {
+		let frame = 0;
+
+		const updateContainerWidth = () => {
+			containerWidth = node.clientWidth;
+		};
+
+		frame = requestAnimationFrame(updateContainerWidth);
+		window.addEventListener("resize", updateContainerWidth);
+
+		return {
+			destroy: () => {
+				cancelAnimationFrame(frame);
+				window.removeEventListener("resize", updateContainerWidth);
+			}
+		};
+	};
 </script>
 
 <Card class="gap-0 py-0">
-	<CardHeader class="border-border/40 border-b px-4 py-3">
-		<CardTitle class="text-sm">Preview</CardTitle>
+	<CardHeader class="border-border border-b px-4 py-3">
+		<div class="flex items-center justify-between gap-3">
+			<div>
+				<CardTitle class="flex items-center gap-2 text-sm">
+					<ScanLine size={15} />
+					Preview
+				</CardTitle>
+				<CardDescription class="text-xs">First scheduled invoice for the selected client.</CardDescription>
+			</div>
+			{#if html}
+				<span class="bg-muted text-muted-foreground rounded-md px-2 py-1 font-mono text-[10px]"> A4 </span>
+			{/if}
+		</div>
 	</CardHeader>
-	<CardContent class={cn("p-0", !html && !loading && "px-4 py-8")}>
+	<CardContent class={cn("p-0", !html && !loading && "p-4")}>
 		{#if loading}
-			<div class="space-y-3 p-4">
+			<div class="space-y-3 p-4" aria-live="polite">
 				<Skeleton class="h-4 w-3/4" />
 				<Skeleton class="h-4 w-1/2" />
-				<Skeleton class="h-48 w-full" />
+				<Skeleton class="h-64 w-full" />
 				<Skeleton class="h-4 w-2/3" />
 				<Skeleton class="h-4 w-1/3" />
 			</div>
 		{:else if !html}
-			<p class="text-muted-foreground/50 text-xs">Select a client to preview</p>
+			<div
+				class="border-border text-muted-foreground grid min-h-72 place-items-center rounded-lg border border-dashed text-center"
+			>
+				<div class="space-y-2">
+					<div class="bg-muted mx-auto flex size-10 items-center justify-center rounded-lg">
+						<FileText size={17} />
+					</div>
+					<p class="text-sm font-medium">No preview available</p>
+					<p class="max-w-56 text-xs">Select a client with at least one invoice entry.</p>
+				</div>
+			</div>
 		{:else}
 			<div
-				bind:this={containerEl}
-				bind:clientWidth={containerWidth}
-				class="bg-white"
-				style="height: {scaledHeight}px"
+				use:measurePreview
+				class="invoice-preview-stage overflow-hidden"
+				style:--preview-height={scaledHeight}
+				style:--preview-scale={previewScale}
 			>
 				{#if containerWidth > 0}
-					<iframe
-						srcdoc={html}
-						title="invoice preview"
-						style="width: 794px; height: 1123px; transform: scale({scale}); transform-origin: top left; border: none; display: block;"
-					></iframe>
+					<iframe srcdoc={html} title="Invoice preview" class="invoice-preview-frame"></iframe>
 				{/if}
 			</div>
 		{/if}

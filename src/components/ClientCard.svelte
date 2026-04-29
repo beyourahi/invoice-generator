@@ -1,17 +1,18 @@
 <script lang="ts">
 	import { session } from "$lib/stores/session.svelte";
-	import type { Client } from "$lib/types";
-	import type { Currency, PaymentMethod } from "$lib/types";
+	import type { Client, Currency, PaymentMethod } from "$lib/types";
 	import { cn } from "$lib/utils";
-	import Input from "$lib/components/ui/input.svelte";
-	import Label from "$lib/components/ui/label.svelte";
-	import Separator from "$lib/components/ui/separator.svelte";
 	import Button from "$lib/components/ui/button.svelte";
-	import { Card } from "$lib/components/ui/card";
+	import Input from "$lib/components/ui/input.svelte";
+	import Textarea from "$lib/components/ui/textarea.svelte";
+	import Separator from "$lib/components/ui/separator.svelte";
+	import { Card, CardContent, CardHeader } from "$lib/components/ui/card";
+	import * as Field from "$lib/components/ui/field";
 	import * as Select from "$lib/components/ui/select";
 	import * as Table from "$lib/components/ui/table";
-	import InvoiceEntryRow from "./InvoiceEntryRow.svelte";
-	import { Plus, Trash2, ChevronDown } from "@lucide/svelte";
+	import InvoiceEntryRow from "$src/components/InvoiceEntryRow.svelte";
+	import { ChevronDown, Landmark, Plus, ReceiptText, Trash2 } from "@lucide/svelte";
+	import { z } from "zod";
 
 	let {
 		client,
@@ -23,146 +24,189 @@
 	let expanded = $state(true);
 	let nameTouched = $state(false);
 	let prefixTouched = $state(false);
+	let emailTouched = $state(false);
+	let wiseTouched = $state(false);
 
+	const nameSchema = z.string().trim().min(1, "Client name is required.");
+	const prefixSchema = z.string().trim().min(1, "Invoice prefix is required.");
+	const optionalEmailSchema = z.union([z.literal(""), z.string().trim().email("Enter a valid client email.")]);
+	const optionalUrlSchema = z.union([z.literal(""), z.string().trim().url("Enter a valid Wise URL.")]);
 	const update = (updater: (c: Client) => Client) => session.updateClient(client.id, updater);
 	const set = <K extends keyof Client>(key: K, value: Client[K]) => update(c => ({ ...c, [key]: value }));
+	const valueFromInput = (e: Event) => (e.currentTarget as HTMLInputElement).value;
+	const valueFromTextArea = (e: Event) => (e.currentTarget as HTMLTextAreaElement).value;
+	const selectCard = (e: KeyboardEvent) => {
+		if (e.key === "Enter" || e.key === " ") onSelect();
+	};
 
 	const totalAmount = $derived(
 		`${client.service.currency === "BDT" ? "৳" : "$"}${client.service.amount.toLocaleString("en-US")}`
 	);
-	const nameInvalid = $derived(nameTouched && client.name.trim() === "");
-	const prefixInvalid = $derived(prefixTouched && client.invoicePrefix.trim() === "");
+	const nameError = $derived(
+		nameTouched && !nameSchema.safeParse(client.name).success ? "Client name is required." : ""
+	);
+	const prefixError = $derived(
+		prefixTouched && !prefixSchema.safeParse(client.invoicePrefix).success ? "Invoice prefix is required." : ""
+	);
+	const emailError = $derived(
+		emailTouched && !optionalEmailSchema.safeParse(client.email).success ? "Enter a valid client email." : ""
+	);
+	const wiseLink = $derived(client.payment.wiseLink ?? "");
+	const wiseError = $derived(
+		wiseTouched && client.payment.method === "wise" && !optionalUrlSchema.safeParse(wiseLink).success
+			? "Enter a valid Wise URL."
+			: ""
+	);
 	const badgeNum = $derived(String(index + 1).padStart(2, "0"));
 </script>
 
-<Card class={cn("py-0", selected && "ring-brand/50 ring-2")}>
-	<!-- Header: click to select for preview -->
-	<div
-		role="button"
-		tabindex="0"
-		onclick={onSelect}
-		onkeydown={e => e.key === "Enter" && onSelect()}
-		class="hover:bg-accent/20 flex cursor-pointer items-center gap-3 px-4 py-3 transition-colors"
-	>
-		<span class="text-brand w-5 shrink-0 font-mono text-[11px] tabular-nums">{badgeNum}</span>
-		<span class="text-foreground/90 min-w-0 flex-1 truncate text-sm font-medium">
-			{client.name || "new client"}
-		</span>
-		<div class="flex shrink-0 items-center gap-1.5">
-			<span class="bg-muted/50 text-muted-foreground/60 rounded-md px-1.5 py-0.5 font-mono text-[10px]">
-				{client.service.currency}
-			</span>
-			<span class="bg-muted/50 text-muted-foreground/60 rounded-md px-1.5 py-0.5 text-[10px]">
-				{client.payment.method}
-			</span>
+<Card class={cn("py-0", selected && "ring-brand ring-2")}>
+	<CardHeader class="px-0 py-0">
+		<div
+			role="button"
+			tabindex="0"
+			aria-pressed={selected}
+			onclick={onSelect}
+			onkeydown={selectCard}
+			class="hover:bg-accent/40 flex cursor-pointer items-center gap-3 px-4 py-3 transition-colors"
+		>
+			<span class="text-brand w-6 shrink-0 font-mono text-[11px] tabular-nums">{badgeNum}</span>
+			<div class="min-w-0 flex-1">
+				<p class="truncate text-sm font-medium">{client.name || "New client"}</p>
+				<p class="text-muted-foreground truncate text-xs">
+					{client.invoicePrefix || "No prefix"} · {client.invoices.length} scheduled
+				</p>
+			</div>
+			<div class="hidden shrink-0 items-center gap-1.5 sm:flex">
+				<span class="bg-muted text-muted-foreground rounded-md px-1.5 py-0.5 font-mono text-[10px]">
+					{client.service.currency}
+				</span>
+				<span class="bg-muted text-muted-foreground rounded-md px-1.5 py-0.5 text-[10px]">
+					{client.payment.method}
+				</span>
+			</div>
+			<Button
+				variant="ghost"
+				size="icon-sm"
+				class="text-muted-foreground hover:bg-destructive/10 hover:text-destructive shrink-0"
+				onclick={e => {
+					e.stopPropagation();
+					session.removeClient(client.id);
+				}}
+				aria-label="Remove client"
+			>
+				<Trash2 size={12} />
+			</Button>
+			<Button
+				variant="ghost"
+				size="icon-sm"
+				class="text-muted-foreground hover:text-foreground shrink-0"
+				onclick={e => {
+					e.stopPropagation();
+					expanded = !expanded;
+				}}
+				aria-label={expanded ? "Collapse client" : "Expand client"}
+			>
+				<ChevronDown size={14} class={cn("transition-transform duration-200", expanded && "rotate-180")} />
+			</Button>
 		</div>
-		<Button
-			variant="ghost"
-			size="icon"
-			class="text-muted-foreground/40 hover:bg-destructive/10 hover:text-destructive h-6 w-6 shrink-0"
-			onclick={e => {
-				e.stopPropagation();
-				session.removeClient(client.id);
-			}}
-			aria-label="Remove client"
-		>
-			<Trash2 size={11} />
-		</Button>
-		<Button
-			variant="ghost"
-			size="icon"
-			class="text-muted-foreground/40 hover:text-foreground h-6 w-6 shrink-0"
-			onclick={e => {
-				e.stopPropagation();
-				expanded = !expanded;
-			}}
-			aria-label={expanded ? "Collapse" : "Expand"}
-		>
-			<ChevronDown size={13} class="transition-transform duration-200 {expanded ? 'rotate-180' : ''}" />
-		</Button>
-	</div>
+	</CardHeader>
 
 	{#if expanded}
-		<div class="border-border/40 space-y-4 border-t px-4 pt-4 pb-4">
-			<div class="grid grid-cols-2 gap-3">
-				<div>
-					<Label for="name-{client.id}">client name <span class="text-destructive">*</span></Label>
+		<CardContent class="border-border space-y-5 border-t pb-4">
+			<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+				<Field.Field class="gap-1.5" data-invalid={nameError !== ""}>
+					<Field.FieldLabel for="name-{client.id}">Client name</Field.FieldLabel>
 					<Input
 						id="name-{client.id}"
 						placeholder="Acme Corp"
 						value={client.name}
-						oninput={e => set("name", (e.currentTarget as HTMLInputElement).value)}
+						aria-invalid={nameError !== ""}
+						oninput={e => set("name", valueFromInput(e))}
 						onblur={() => (nameTouched = true)}
-						class={nameInvalid ? "border-destructive focus-visible:border-destructive" : ""}
+						class={nameError ? "border-destructive focus-visible:border-destructive" : ""}
 					/>
-				</div>
-				<div>
-					<Label for="prefix-{client.id}">invoice prefix <span class="text-destructive">*</span></Label>
+					{#if nameError}
+						<Field.FieldError>{nameError}</Field.FieldError>
+					{/if}
+				</Field.Field>
+				<Field.Field class="gap-1.5" data-invalid={prefixError !== ""}>
+					<Field.FieldLabel for="prefix-{client.id}">Invoice prefix</Field.FieldLabel>
 					<Input
 						id="prefix-{client.id}"
 						placeholder="ACME"
 						value={client.invoicePrefix}
-						oninput={e => set("invoicePrefix", (e.currentTarget as HTMLInputElement).value)}
+						aria-invalid={prefixError !== ""}
+						oninput={e => set("invoicePrefix", valueFromInput(e))}
 						onblur={() => (prefixTouched = true)}
-						class={prefixInvalid ? "border-destructive focus-visible:border-destructive" : ""}
+						class={prefixError ? "border-destructive focus-visible:border-destructive" : ""}
 					/>
-				</div>
-				<div>
-					<Label for="phone-{client.id}">phone</Label>
+					{#if prefixError}
+						<Field.FieldError>{prefixError}</Field.FieldError>
+					{/if}
+				</Field.Field>
+				<Field.Field class="gap-1.5">
+					<Field.FieldLabel for="phone-{client.id}">Phone</Field.FieldLabel>
 					<Input
 						id="phone-{client.id}"
 						type="tel"
 						placeholder="+880..."
 						value={client.phone}
-						oninput={e => set("phone", (e.currentTarget as HTMLInputElement).value)}
+						oninput={e => set("phone", valueFromInput(e))}
 					/>
-				</div>
-				<div>
-					<Label for="email-{client.id}">email</Label>
+				</Field.Field>
+				<Field.Field class="gap-1.5" data-invalid={emailError !== ""}>
+					<Field.FieldLabel for="email-{client.id}">Email</Field.FieldLabel>
 					<Input
 						id="email-{client.id}"
 						type="email"
 						placeholder="hello@client.com"
 						value={client.email}
-						oninput={e => set("email", (e.currentTarget as HTMLInputElement).value)}
+						aria-invalid={emailError !== ""}
+						oninput={e => set("email", valueFromInput(e))}
+						onblur={() => (emailTouched = true)}
+						class={emailError ? "border-destructive focus-visible:border-destructive" : ""}
 					/>
-				</div>
-				<div class="col-span-2">
-					<Label for="address-{client.id}">address</Label>
-					<Input
+					{#if emailError}
+						<Field.FieldError>{emailError}</Field.FieldError>
+					{/if}
+				</Field.Field>
+				<Field.Field class="gap-1.5 sm:col-span-2">
+					<Field.FieldLabel for="address-{client.id}">Address</Field.FieldLabel>
+					<Textarea
 						id="address-{client.id}"
 						placeholder="City, Country"
 						value={client.address[0] ?? ""}
 						oninput={e =>
 							update(c => ({
 								...c,
-								address: [(e.currentTarget as HTMLInputElement).value]
+								address: [valueFromTextArea(e)]
 							}))}
 					/>
-				</div>
+				</Field.Field>
 			</div>
 
 			<Separator />
 
-			<div class="grid grid-cols-2 gap-3">
-				<div class="col-span-2">
-					<Label for="desc-{client.id}">service description</Label>
-					<Input
+			<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+				<Field.Field class="gap-1.5 sm:col-span-2">
+					<Field.FieldLabel for="desc-{client.id}">Service description</Field.FieldLabel>
+					<Textarea
 						id="desc-{client.id}"
-						placeholder="E-commerce Storefront {'{MONTH}'} Fee"
+						placeholder="E-commerce storefront {'{MONTH}'} fee"
 						value={client.service.description}
 						oninput={e =>
 							update(c => ({
 								...c,
 								service: {
 									...c.service,
-									description: (e.currentTarget as HTMLInputElement).value
+									description: valueFromTextArea(e)
 								}
 							}))}
 					/>
-				</div>
-				<div>
-					<Label for="amount-{client.id}">amount</Label>
+				</Field.Field>
+				<Field.Field class="gap-1.5">
+					<Field.FieldLabel for="amount-{client.id}">Amount</Field.FieldLabel>
 					<Input
 						id="amount-{client.id}"
 						type="number"
@@ -174,14 +218,14 @@
 								...c,
 								service: {
 									...c.service,
-									amount: parseFloat((e.currentTarget as HTMLInputElement).value) || 0
+									amount: parseFloat(valueFromInput(e)) || 0
 								}
 							}))}
 						class="tabular-nums"
 					/>
-				</div>
-				<div>
-					<Label for="currency-{client.id}">currency</Label>
+				</Field.Field>
+				<Field.Field class="gap-1.5">
+					<Field.FieldLabel for="currency-{client.id}">Currency</Field.FieldLabel>
 					<Select.Root
 						type="single"
 						value={client.service.currency}
@@ -197,12 +241,12 @@
 							<Select.Item value="USD" label="USD ($)">USD ($)</Select.Item>
 						</Select.Content>
 					</Select.Root>
-				</div>
+				</Field.Field>
 			</div>
 
-			<div class="grid grid-cols-2 gap-3">
-				<div>
-					<Label for="payment-{client.id}">payment method</Label>
+			<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+				<Field.Field class="gap-1.5">
+					<Field.FieldLabel for="payment-{client.id}">Payment method</Field.FieldLabel>
 					<Select.Root
 						type="single"
 						value={client.payment.method}
@@ -211,17 +255,17 @@
 					>
 						<Select.Trigger id="payment-{client.id}" class="h-9 w-full">
 							<span data-slot="select-value">
-								{client.payment.method === "bank" ? "Bank Transfer" : "Wise"}
+								{client.payment.method === "bank" ? "Bank transfer" : "Wise"}
 							</span>
 						</Select.Trigger>
 						<Select.Content>
-							<Select.Item value="bank" label="Bank Transfer">Bank Transfer</Select.Item>
+							<Select.Item value="bank" label="Bank transfer">Bank transfer</Select.Item>
 							<Select.Item value="wise" label="Wise">Wise</Select.Item>
 						</Select.Content>
 					</Select.Root>
-				</div>
-				<div>
-					<Label for="year-{client.id}">year</Label>
+				</Field.Field>
+				<Field.Field class="gap-1.5">
+					<Field.FieldLabel for="year-{client.id}">Year</Field.FieldLabel>
 					<Input
 						id="year-{client.id}"
 						type="number"
@@ -231,60 +275,69 @@
 						oninput={e =>
 							update(c => ({
 								...c,
-								year: parseInt((e.currentTarget as HTMLInputElement).value) || new Date().getFullYear()
+								year: parseInt(valueFromInput(e)) || new Date().getFullYear()
 							}))}
 						class="tabular-nums"
 					/>
-				</div>
+				</Field.Field>
 				{#if client.payment.method === "wise"}
-					<div class="col-span-2">
-						<Label for="wise-{client.id}">wise payment link</Label>
+					<Field.Field class="gap-1.5 sm:col-span-2" data-invalid={wiseError !== ""}>
+						<Field.FieldLabel for="wise-{client.id}">Wise payment link</Field.FieldLabel>
 						<Input
 							id="wise-{client.id}"
 							type="url"
 							placeholder="https://wise.com/pay/..."
-							value={client.payment.wiseLink ?? ""}
+							value={wiseLink}
+							aria-invalid={wiseError !== ""}
 							oninput={e =>
 								update(c => ({
 									...c,
 									payment: {
 										...c.payment,
-										wiseLink: (e.currentTarget as HTMLInputElement).value || null
+										wiseLink: valueFromInput(e) || null
 									}
 								}))}
+							onblur={() => (wiseTouched = true)}
+							class={wiseError ? "border-destructive focus-visible:border-destructive" : ""}
 						/>
-					</div>
+						{#if wiseError}
+							<Field.FieldError>{wiseError}</Field.FieldError>
+						{/if}
+					</Field.Field>
 				{/if}
 			</div>
 
 			<Separator />
 
-			<div class="space-y-1.5">
-				<div class="flex items-center justify-between">
-					<span class="text-muted-foreground text-[11px] font-medium tracking-widest uppercase">
-						Invoice Schedule
-						{#if client.invoices.length > 0}
-							<span class="text-foreground/40 ml-1.5 tracking-normal normal-case">
-								({client.invoices.length})
-							</span>
-						{/if}
-					</span>
+			<div class="space-y-3">
+				<div class="flex items-center justify-between gap-3">
+					<div class="flex items-center gap-2">
+						<ReceiptText size={14} class="text-muted-foreground" />
+						<p class="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+							Invoice schedule
+						</p>
+					</div>
+					{#if client.invoices.length > 0}
+						<p class="text-muted-foreground text-xs">{client.invoices.length} rows</p>
+					{/if}
 				</div>
 
 				{#if client.invoices.length === 0}
-					<p class="text-muted-foreground/40 py-1 text-xs">no entries yet</p>
+					<div class="border-border text-muted-foreground rounded-lg border border-dashed px-3 py-4 text-xs">
+						No invoice months scheduled.
+					</div>
 				{:else}
 					<Table.Root>
 						<Table.Header>
-							<Table.Row class="border-0 hover:bg-transparent">
-								<Table.Head class="h-7 pl-0 text-[10px] tracking-wider uppercase">Month</Table.Head>
-								<Table.Head class="h-7 w-[72px] text-center text-[10px] tracking-wider uppercase"
-									>Issue</Table.Head
-								>
-								<Table.Head class="h-7 w-[72px] text-center text-[10px] tracking-wider uppercase"
-									>Due</Table.Head
-								>
-								<Table.Head class="h-7 w-8"></Table.Head>
+							<Table.Row class="border-border hover:bg-transparent">
+								<Table.Head class="h-8 pl-0 text-[10px] tracking-wider uppercase">Month</Table.Head>
+								<Table.Head class="h-8 w-[72px] text-center text-[10px] tracking-wider uppercase">
+									Issue
+								</Table.Head>
+								<Table.Head class="h-8 w-[72px] text-center text-[10px] tracking-wider uppercase">
+									Due
+								</Table.Head>
+								<Table.Head class="h-8 w-8"></Table.Head>
 							</Table.Row>
 						</Table.Header>
 						<Table.Body>
@@ -295,23 +348,31 @@
 					</Table.Root>
 				{/if}
 
-				<Button
-					variant="ghost"
-					size="sm"
-					class="text-muted-foreground/50 hover:text-foreground h-7 px-2 text-xs"
-					onclick={() => session.addInvoiceEntry(client.id)}
-				>
-					<Plus size={11} />
-					add entry
-				</Button>
+				<div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+					<Button
+						variant="outline"
+						size="sm"
+						class="w-full border-dashed sm:w-auto"
+						onclick={() => session.addInvoiceEntry(client.id)}
+					>
+						<Plus size={12} />
+						Add entry
+					</Button>
+					{#if client.invoices.length > 0}
+						<div class="text-muted-foreground flex items-center justify-between gap-3 text-xs">
+							<span>{client.invoices.length} invoice{client.invoices.length !== 1 ? "s" : ""}</span>
+							<span class="font-mono tabular-nums">{totalAmount} × {client.invoices.length}</span>
+						</div>
+					{/if}
+				</div>
 			</div>
 
-			{#if client.invoices.length > 0}
-				<div class="text-muted-foreground/50 flex items-center justify-between pt-1 text-xs">
-					<span>{client.invoices.length} invoice{client.invoices.length !== 1 ? "s" : ""}</span>
-					<span class="font-mono tabular-nums">{totalAmount} × {client.invoices.length}</span>
+			{#if client.payment.method === "bank"}
+				<div class="bg-brand-muted text-muted-foreground flex items-center gap-2 rounded-lg px-3 py-2 text-xs">
+					<Landmark size={13} />
+					Bank details come from the sender panel.
 				</div>
 			{/if}
-		</div>
+		</CardContent>
 	{/if}
 </Card>
