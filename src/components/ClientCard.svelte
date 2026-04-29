@@ -313,7 +313,7 @@
 				<div class="flex items-center justify-between gap-3">
 					<div class="flex items-center gap-2">
 						<ReceiptText size={14} class="text-muted-foreground" />
-						<p class="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+						<p class="text-muted-foreground text-xs font-medium tracking-wider uppercase">
 							Invoice schedule
 						</p>
 					</div>

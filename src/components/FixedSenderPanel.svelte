@@ -78,7 +78,7 @@
 
 		<div class="flex items-center gap-2">
 			<Building2 size={14} class="text-muted-foreground" />
-			<p class="text-muted-foreground text-xs font-semibold tracking-wider uppercase">Bank details</p>
+			<p class="text-muted-foreground text-xs font-medium tracking-wider uppercase">Bank details</p>
 		</div>
 
 		<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">

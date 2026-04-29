@@ -14,12 +14,11 @@
 
 <input
 	class={cn(
-		"border-border bg-input h-9 w-full rounded-xl border px-3 text-sm",
-		"text-foreground placeholder:text-muted-foreground",
-		"transition-colors duration-150",
-		"focus-visible:outline-ring focus-visible:outline-2 focus-visible:outline-offset-0",
-		"focus-visible:border-ring/50",
-		"disabled:cursor-not-allowed disabled:opacity-40",
+		"w-full rounded-lg border bg-zinc-800/50 px-3 py-2.5 text-sm text-white placeholder:text-zinc-500",
+		"transition-all duration-200",
+		"focus:ring-2 focus:ring-brand/50 focus:outline-none",
+		"border-zinc-700 focus:border-brand/50",
+		"disabled:cursor-not-allowed disabled:opacity-50",
 		className
 	)}
 	bind:value

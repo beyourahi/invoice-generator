@@ -9,6 +9,7 @@
 	import FixedSenderPanel from "$src/components/FixedSenderPanel.svelte";
 	import GenerationPanel from "$src/components/GenerationPanel.svelte";
 	import InvoicePreview from "$src/components/InvoicePreview.svelte";
+	import Heading from "$lib/components/ui/heading/heading.svelte";
 	import { onMount, type Component } from "svelte";
 
 	let selectedClientId = $state<string | null>(null);
@@ -39,18 +40,9 @@
 	{/if}
 
 	<main class="mx-auto max-w-6xl px-4 py-8">
-		<header class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-			<div class="space-y-1">
-				<h1 class="text-xl font-semibold tracking-tight">Invoice Generator</h1>
-				<p class="text-muted-foreground max-w-2xl text-sm">
-					Build recurring client invoices, preview the first document, and export PDFs in one pass.
-				</p>
-			</div>
-			<div class="text-muted-foreground flex gap-3 text-xs tabular-nums">
-				<span>{session.clients.length} clients</span>
-				<span>{session.totalInvoiceCount} invoices</span>
-			</div>
-		</header>
+		<div class="mb-8">
+			<Heading />
+		</div>
 
 		<div class="grid grid-cols-1 items-start gap-6 lg:grid-cols-2">
 			<section class="space-y-4">
