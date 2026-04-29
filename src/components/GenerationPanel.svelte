@@ -103,14 +103,14 @@
 			</div>
 			<div class="flex flex-wrap items-center gap-2">
 				{#if session.generationState === "done"}
-					<Button variant="outline" size="sm" onclick={session.resetGeneration}>
+					<Button variant="outline" size="sm" class="h-11 sm:h-7" onclick={session.resetGeneration}>
 						<RotateCcw size={12} />
 						Reset
 					</Button>
 					{#if session.generatedInvoices.length === 1}
 						<Button
 							size="sm"
-							class="bg-brand text-brand-foreground hover:bg-brand/90"
+							class="bg-brand text-brand-foreground hover:bg-brand/90 h-11 sm:h-7"
 							onclick={() => downloadOne(0)}
 						>
 							<Download size={13} />
@@ -119,7 +119,7 @@
 					{:else}
 						<Button
 							size="sm"
-							class="bg-brand text-brand-foreground hover:bg-brand/90"
+							class="bg-brand text-brand-foreground hover:bg-brand/90 h-11 sm:h-7"
 							onclick={downloadAll}
 							disabled={zipping}
 						>
@@ -133,14 +133,18 @@
 						</Button>
 					{/if}
 				{:else if session.generationState === "error"}
-					<Button size="sm" class="bg-brand text-brand-foreground hover:bg-brand/90" onclick={generateAll}>
+					<Button
+						size="sm"
+						class="bg-brand text-brand-foreground hover:bg-brand/90 h-11 sm:h-7"
+						onclick={generateAll}
+					>
 						<RotateCcw size={13} />
 						Retry
 					</Button>
 				{:else}
 					<Button
 						size="sm"
-						class="bg-brand text-brand-foreground hover:bg-brand/90 disabled:opacity-30"
+						class="bg-brand text-brand-foreground hover:bg-brand/90 h-11 disabled:opacity-30 sm:h-7"
 						onclick={generateAll}
 						disabled={!canGenerate || session.generationState === "generating"}
 					>
@@ -184,7 +188,7 @@
 		{/if}
 
 		{#if session.generationState === "done" && session.generatedInvoices.length > 0}
-			<div class="border-border overflow-hidden rounded-lg border">
+			<div class="border-border overflow-x-auto rounded-lg border">
 				<Table.Root>
 					<Table.Header>
 						<Table.Row class="border-border hover:bg-transparent">
@@ -212,7 +216,7 @@
 									<Button
 										variant="ghost"
 										size="sm"
-										class="text-muted-foreground hover:text-foreground h-7 px-2 text-xs"
+										class="text-muted-foreground hover:text-foreground h-11 px-2 text-xs sm:h-7"
 										onclick={() => downloadOne(i)}
 										aria-label={`Download ${invoice.fileName}`}
 									>

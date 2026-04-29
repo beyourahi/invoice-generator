@@ -88,7 +88,7 @@
 			<Button
 				variant="ghost"
 				size="icon-sm"
-				class="text-muted-foreground hover:bg-destructive/10 hover:text-destructive shrink-0"
+				class="text-muted-foreground hover:bg-destructive/10 hover:text-destructive h-11 w-11 shrink-0 sm:h-7 sm:w-7"
 				onclick={e => {
 					e.stopPropagation();
 					session.removeClient(client.id);
@@ -100,7 +100,7 @@
 			<Button
 				variant="ghost"
 				size="icon-sm"
-				class="text-muted-foreground hover:text-foreground shrink-0"
+				class="text-muted-foreground hover:text-foreground h-11 w-11 shrink-0 sm:h-7 sm:w-7"
 				onclick={e => {
 					e.stopPropagation();
 					expanded = !expanded;
@@ -352,7 +352,7 @@
 					<Button
 						variant="outline"
 						size="sm"
-						class="w-full border-dashed sm:w-auto"
+						class="h-11 w-full border-dashed sm:h-7 sm:w-auto"
 						onclick={() => session.addInvoiceEntry(client.id)}
 					>
 						<Plus size={12} />

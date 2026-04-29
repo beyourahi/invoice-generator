@@ -18,7 +18,7 @@
 			value={entry.month}
 			onValueChange={v => session.updateInvoiceEntry(clientId, entry.id, "month", v as MonthName)}
 		>
-			<Select.Trigger class="h-8 w-full text-xs">
+			<Select.Trigger class="h-11 w-full text-xs sm:h-8">
 				<span data-slot="select-value">{entry.month}</span>
 			</Select.Trigger>
 			<Select.Content>
@@ -37,7 +37,7 @@
 			value={entry.issueDay}
 			oninput={e =>
 				session.updateInvoiceEntry(clientId, entry.id, "issueDay", (e.currentTarget as HTMLInputElement).value)}
-			class="h-8 text-center text-xs tabular-nums"
+			class="h-11 text-center text-xs tabular-nums sm:h-8"
 		/>
 	</Table.Cell>
 	<Table.Cell class="w-[72px] px-1 py-1">
@@ -49,14 +49,14 @@
 			value={entry.dueDay}
 			oninput={e =>
 				session.updateInvoiceEntry(clientId, entry.id, "dueDay", (e.currentTarget as HTMLInputElement).value)}
-			class="h-8 text-center text-xs tabular-nums"
+			class="h-11 text-center text-xs tabular-nums sm:h-8"
 		/>
 	</Table.Cell>
-	<Table.Cell class="w-8 px-0 py-1">
+	<Table.Cell class="w-11 px-0 py-1 sm:w-8">
 		<Button
 			variant="ghost"
 			size="icon"
-			class="text-muted-foreground/30 hover:bg-destructive/10 hover:text-destructive h-8 w-8"
+			class="text-muted-foreground/30 hover:bg-destructive/10 hover:text-destructive h-11 w-11 sm:h-9 sm:w-9"
 			onclick={() => session.removeInvoiceEntry(clientId, entry.id)}
 			aria-label="Remove entry"
 		>

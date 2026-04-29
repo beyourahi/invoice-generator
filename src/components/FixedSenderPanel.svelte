@@ -29,8 +29,8 @@
 		<CardDescription class="text-xs">Saved locally in this browser.</CardDescription>
 	</CardHeader>
 	<CardContent class="space-y-5">
-		<div class="grid grid-cols-2 gap-3">
-			<Field.Field class="col-span-2 gap-1.5">
+		<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+			<Field.Field class="gap-1.5 sm:col-span-2">
 				<Field.FieldLabel for="from-name">Name</Field.FieldLabel>
 				<Input
 					id="from-name"
@@ -63,7 +63,7 @@
 				/>
 				<Field.FieldError>{senderEmailError}</Field.FieldError>
 			</Field.Field>
-			<Field.Field class="col-span-2 gap-1.5">
+			<Field.Field class="gap-1.5 sm:col-span-2">
 				<Field.FieldLabel for="from-address">Address</Field.FieldLabel>
 				<Textarea
 					id="from-address"
@@ -81,7 +81,7 @@
 			<p class="text-muted-foreground text-xs font-semibold tracking-wider uppercase">Bank details</p>
 		</div>
 
-		<div class="grid grid-cols-2 gap-3">
+		<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
 			<Field.Field class="gap-1.5">
 				<Field.FieldLabel for="bank-holder">Account holder</Field.FieldLabel>
 				<Input
@@ -119,7 +119,7 @@
 					oninput={e => fixed.updateBank("branch", valueFromInput(e))}
 				/>
 			</Field.Field>
-			<Field.Field class="col-span-2 gap-1.5">
+			<Field.Field class="gap-1.5 sm:col-span-2">
 				<Field.FieldLabel for="bank-routing">Routing</Field.FieldLabel>
 				<Input
 					id="bank-routing"
