@@ -11,7 +11,15 @@
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"lint": "eslint .",
 		"format": "prettier --write .",
-		"cf-typegen": "wrangler types"
+		"cf-typegen": "wrangler types",
+		"db:generate": "drizzle-kit generate",
+		"db:push": "drizzle-kit push",
+		"db:pull": "drizzle-kit pull",
+		"db:studio": "drizzle-kit studio",
+		"db:check": "drizzle-kit check",
+		"db:migrate": "wrangler d1 migrations apply invoice_generator --remote",
+		"db:migrate:local": "wrangler d1 migrations apply invoice_generator --local",
+		"db:migrate:list": "wrangler d1 migrations list invoice_generator --local"
 	},
 	"devDependencies": {
 		"@cloudflare/workers-types": "^4.20260426.1",
@@ -42,7 +50,8 @@
 		"typescript": "^6.0.3",
 		"typescript-eslint": "^8.59.1",
 		"vite": "^8.0.10",
-		"wrangler": "^4.86.0"
+		"wrangler": "^4.86.0",
+		"drizzle-kit": "0.31.10"
 	},
 	"dependencies": {
 		"better-auth": "^1.6.9",

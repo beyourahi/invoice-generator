@@ -78,3 +78,13 @@ export interface GeneratedInvoice {
 export interface CurrentUser {
 	name: string;
 }
+
+export interface AppConfig {
+	name: string;
+	description: string;
+	url: string;
+	author: {
+		name: string;
+		url: string;
+	};
+}

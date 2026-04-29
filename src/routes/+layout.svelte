@@ -1,6 +1,7 @@
 <script lang="ts">
 	import "../app.css";
 	import { fixed } from "$lib/stores/fixed.svelte";
+	import { Footer } from "$lib/components/ui/footer";
 	import { onMount } from "svelte";
 
 	let { children } = $props();
@@ -15,4 +16,9 @@
 	<meta name="description" content="Client-side batch invoice PDF generator for recurring billing." />
 </svelte:head>
 
-{@render children()}
+<div class="flex min-h-dvh flex-col">
+	<main class="flex grow flex-col">
+		{@render children()}
+	</main>
+	<Footer />
+</div>

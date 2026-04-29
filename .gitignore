@@ -1,28 +1,34 @@
-node_modules
+# Cloudflare
+.wrangler/
+.dev.vars
+worker-configuration.d.ts
 
-# Output
-.output
-.vercel
-.netlify
-.wrangler
-/.svelte-kit
-/build
+# SvelteKit
+.svelte-kit/
+build/
 
-# OS
-.DS_Store
-Thumbs.db
+# Dependencies
+node_modules/
 
-# Env
+# Environment
 .env
 .env.*
 !.env.example
-!.env.test
 
-# Vite
-vite.config.js.timestamp-*
-vite.config.ts.timestamp-*
+# IDE
+.idea/
+.vscode/
 
-.vscode
+# OS
+.DS_Store
 
-# Cloudflare generated types
-worker-configuration.d.ts
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# TypeScript
+*.tsbuildinfo
+
+# Testing
+/coverage
