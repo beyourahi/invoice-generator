@@ -74,3 +74,7 @@ export interface GeneratedInvoice {
 	year: number;
 	pdfBlob: Blob;
 }
+
+export interface CurrentUser {
+	name: string;
+}

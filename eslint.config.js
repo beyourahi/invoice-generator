@@ -24,6 +24,9 @@ export default ts.config(
 			parserOptions: {
 				parser: ts.parser
 			}
+		},
+		rules: {
+			"svelte/no-navigation-without-resolve": "off"
 		}
 	},
 	{
@@ -33,6 +36,6 @@ export default ts.config(
 		}
 	},
 	{
-		ignores: ["build/", ".svelte-kit/", "dist/", ".wrangler/"]
+		ignores: ["build/", ".svelte-kit/", "dist/", ".wrangler/", "worker-configuration.d.ts"]
 	}
 );
