@@ -10,6 +10,8 @@
 	import GenerationPanel from "$src/components/GenerationPanel.svelte";
 	import InvoicePreview from "$src/components/InvoicePreview.svelte";
 	import Heading from "$lib/components/ui/heading/heading.svelte";
+	import { page } from "$app/state";
+	import User from "$src/components/User.svelte";
 	import { onMount, type Component } from "svelte";
 
 	let selectedClientId = $state<string | null>(null);
@@ -37,6 +39,10 @@
 <div class="min-h-dvh">
 	{#if ToasterComponent}
 		<ToasterComponent theme="dark" position="bottom-right" richColors closeButton />
+	{/if}
+
+	{#if page.data.user && page.data.currentUser}
+		<User user={page.data.user} currentUser={page.data.currentUser} />
 	{/if}
 
 	<main class="mx-auto max-w-6xl px-4 py-8">
