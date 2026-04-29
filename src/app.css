@@ -7,7 +7,7 @@
 	--font-sans: "Google Sans Flex", ui-sans-serif, system-ui, -apple-system, sans-serif;
 	--font-mono: "Google Sans Code", ui-monospace, "SF Mono", Consolas, monospace;
 
-	--radius: 1rem;
+	--radius: 0.5rem;
 	--radius-sm: calc(var(--radius) - 4px);
 	--radius-md: calc(var(--radius) - 2px);
 	--radius-lg: var(--radius);
@@ -47,7 +47,6 @@
 * {
 	margin: 0;
 	padding: 0;
-	outline: none;
 }
 
 html {
@@ -76,19 +75,16 @@ body {
 }
 
 *::-webkit-scrollbar-thumb {
-	background: oklch(0.3 0 0);
+	background: var(--color-border);
 	border-radius: 10px;
 }
 
 *::-webkit-scrollbar-thumb:hover {
-	background: oklch(0.4 0 0);
+	background: var(--color-input);
 }
 
 button,
 a,
-input,
-select,
-textarea,
 [role="button"],
 [tabindex]:not([tabindex="-1"]) {
 	cursor: pointer;

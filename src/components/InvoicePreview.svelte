@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { cn } from "$lib/utils";
 	import { Card, CardContent, CardHeader, CardTitle } from "$lib/components/ui/card";
+	import { Skeleton } from "$lib/components/ui/skeleton";
 
 	let { html, loading }: { html: string | null; loading: boolean } = $props();
 
@@ -17,7 +18,13 @@
 	</CardHeader>
 	<CardContent class={cn("p-0", !html && !loading && "px-4 py-8")}>
 		{#if loading}
-			<div class="bg-muted/40 h-48 w-full animate-pulse"></div>
+			<div class="space-y-3 p-4">
+				<Skeleton class="h-4 w-3/4" />
+				<Skeleton class="h-4 w-1/2" />
+				<Skeleton class="h-48 w-full" />
+				<Skeleton class="h-4 w-2/3" />
+				<Skeleton class="h-4 w-1/3" />
+			</div>
 		{:else if !html}
 			<p class="text-muted-foreground/50 text-xs">Select a client to preview</p>
 		{:else}

@@ -5,7 +5,7 @@
 	import ClientCard from "$src/components/ClientCard.svelte";
 	import AddClientButton from "$src/components/AddClientButton.svelte";
 	import InvoicePreview from "$src/components/InvoicePreview.svelte";
-	import StickyActionBar from "$src/components/StickyActionBar.svelte";
+	import GenerationPanel from "$src/components/GenerationPanel.svelte";
 	import { buildInvoiceHtml } from "$lib/invoice/builder";
 	import { getTheme, ACTIVE_THEME_ID } from "$lib/themes/registry";
 
@@ -38,11 +38,10 @@
 
 <div class="bg-background text-foreground min-h-screen">
 	<header class="border-border/40 border-b">
-		<div class="mx-auto flex h-14 max-w-6xl items-center px-6">
-			<div>
-				<h1 class="text-sm font-semibold">Invoice Generator</h1>
-				<p class="text-muted-foreground/60 text-[11px]">batch PDF invoices</p>
-			</div>
+		<div class="mx-auto flex h-12 max-w-6xl items-center gap-3 px-6">
+			<h1 class="text-sm font-medium tracking-tight">Invoice Generator</h1>
+			<span class="text-border/60">·</span>
+			<p class="text-muted-foreground/50 text-xs">batch PDF exports</p>
 		</div>
 	</header>
 
@@ -54,10 +53,10 @@
 
 				{#if session.clients.length === 0}
 					<div
-						class="border-border/40 text-muted-foreground/40 flex flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed py-12 text-center"
+						class="border-border/30 text-muted-foreground/40 flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed py-12 text-center"
 					>
-						<p class="text-sm">no clients yet</p>
-						<p class="text-xs">add a client to get started</p>
+						<p class="text-sm">No clients yet</p>
+						<p class="text-muted-foreground/25 text-xs">Add a client to get started</p>
 					</div>
 				{:else}
 					<div class="space-y-3">
@@ -81,6 +80,6 @@
 			</div>
 		</div>
 
-		<StickyActionBar />
+		<GenerationPanel />
 	</main>
 </div>

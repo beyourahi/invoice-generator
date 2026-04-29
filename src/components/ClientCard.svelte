@@ -1,11 +1,15 @@
 <script lang="ts">
 	import { session } from "$lib/stores/session.svelte";
 	import type { Client } from "$lib/types";
+	import type { Currency, PaymentMethod } from "$lib/types";
 	import { cn } from "$lib/utils";
 	import Input from "$lib/components/ui/input.svelte";
 	import Label from "$lib/components/ui/label.svelte";
 	import Separator from "$lib/components/ui/separator.svelte";
+	import Button from "$lib/components/ui/button.svelte";
 	import { Card } from "$lib/components/ui/card";
+	import * as Select from "$lib/components/ui/select";
+	import * as Table from "$lib/components/ui/table";
 	import InvoiceEntryRow from "./InvoiceEntryRow.svelte";
 	import { Plus, Trash2, ChevronDown } from "@lucide/svelte";
 
@@ -52,26 +56,30 @@
 				{client.payment.method}
 			</span>
 		</div>
-		<button
+		<Button
+			variant="ghost"
+			size="icon"
+			class="text-muted-foreground/40 hover:bg-destructive/10 hover:text-destructive h-6 w-6 shrink-0"
 			onclick={e => {
 				e.stopPropagation();
 				session.removeClient(client.id);
 			}}
-			class="text-muted-foreground/40 hover:bg-destructive/10 hover:text-destructive flex h-6 w-6 shrink-0 items-center justify-center rounded-lg transition-colors"
 			aria-label="Remove client"
 		>
 			<Trash2 size={11} />
-		</button>
-		<button
+		</Button>
+		<Button
+			variant="ghost"
+			size="icon"
+			class="text-muted-foreground/40 hover:text-foreground h-6 w-6 shrink-0"
 			onclick={e => {
 				e.stopPropagation();
 				expanded = !expanded;
 			}}
-			class="text-muted-foreground/40 hover:text-foreground flex h-6 w-6 shrink-0 items-center justify-center transition-colors"
 			aria-label={expanded ? "Collapse" : "Expand"}
 		>
 			<ChevronDown size={13} class="transition-transform duration-200 {expanded ? 'rotate-180' : ''}" />
-		</button>
+		</Button>
 	</div>
 
 	{#if expanded}
@@ -174,44 +182,43 @@
 				</div>
 				<div>
 					<Label for="currency-{client.id}">currency</Label>
-					<select
-						id="currency-{client.id}"
+					<Select.Root
+						type="single"
 						value={client.service.currency}
-						onchange={e =>
-							update(c => ({
-								...c,
-								service: {
-									...c.service,
-									currency: (e.currentTarget as HTMLSelectElement).value as "BDT" | "USD"
-								}
-							}))}
-						class="border-border bg-input text-foreground focus-visible:outline-ring h-9 w-full rounded-xl border px-3 text-sm transition-colors focus-visible:outline-2"
+						onValueChange={v => update(c => ({ ...c, service: { ...c.service, currency: v as Currency } }))}
 					>
-						<option value="BDT">BDT (৳)</option>
-						<option value="USD">USD ($)</option>
-					</select>
+						<Select.Trigger id="currency-{client.id}" class="h-9 w-full">
+							<span data-slot="select-value">
+								{client.service.currency === "BDT" ? "BDT (৳)" : "USD ($)"}
+							</span>
+						</Select.Trigger>
+						<Select.Content>
+							<Select.Item value="BDT" label="BDT (৳)">BDT (৳)</Select.Item>
+							<Select.Item value="USD" label="USD ($)">USD ($)</Select.Item>
+						</Select.Content>
+					</Select.Root>
 				</div>
 			</div>
 
 			<div class="grid grid-cols-2 gap-3">
 				<div>
 					<Label for="payment-{client.id}">payment method</Label>
-					<select
-						id="payment-{client.id}"
+					<Select.Root
+						type="single"
 						value={client.payment.method}
-						onchange={e =>
-							update(c => ({
-								...c,
-								payment: {
-									...c.payment,
-									method: (e.currentTarget as HTMLSelectElement).value as "bank" | "wise"
-								}
-							}))}
-						class="border-border bg-input text-foreground focus-visible:outline-ring h-9 w-full rounded-xl border px-3 text-sm transition-colors focus-visible:outline-2"
+						onValueChange={v =>
+							update(c => ({ ...c, payment: { ...c.payment, method: v as PaymentMethod } }))}
 					>
-						<option value="bank">Bank Transfer</option>
-						<option value="wise">Wise</option>
-					</select>
+						<Select.Trigger id="payment-{client.id}" class="h-9 w-full">
+							<span data-slot="select-value">
+								{client.payment.method === "bank" ? "Bank Transfer" : "Wise"}
+							</span>
+						</Select.Trigger>
+						<Select.Content>
+							<Select.Item value="bank" label="Bank Transfer">Bank Transfer</Select.Item>
+							<Select.Item value="wise" label="Wise">Wise</Select.Item>
+						</Select.Content>
+					</Select.Root>
 				</div>
 				<div>
 					<Label for="year-{client.id}">year</Label>
@@ -252,7 +259,7 @@
 
 			<Separator />
 
-			<div class="space-y-3">
+			<div class="space-y-1.5">
 				<div class="flex items-center justify-between">
 					<span class="text-muted-foreground text-[11px] font-medium tracking-widest uppercase">
 						Invoice Schedule
@@ -262,29 +269,41 @@
 							</span>
 						{/if}
 					</span>
-					<div class="text-muted-foreground/40 flex items-center gap-2 pr-8 text-[11px]">
-						<span class="w-[72px] text-center">issue</span>
-						<span class="w-[72px] text-center">due</span>
-					</div>
 				</div>
 
 				{#if client.invoices.length === 0}
 					<p class="text-muted-foreground/40 py-1 text-xs">no entries yet</p>
 				{:else}
-					<div class="space-y-1.5">
-						{#each client.invoices as entry (entry.id)}
-							<InvoiceEntryRow clientId={client.id} {entry} />
-						{/each}
-					</div>
+					<Table.Root>
+						<Table.Header>
+							<Table.Row class="border-0 hover:bg-transparent">
+								<Table.Head class="h-7 pl-0 text-[10px] tracking-wider uppercase">Month</Table.Head>
+								<Table.Head class="h-7 w-[72px] text-center text-[10px] tracking-wider uppercase"
+									>Issue</Table.Head
+								>
+								<Table.Head class="h-7 w-[72px] text-center text-[10px] tracking-wider uppercase"
+									>Due</Table.Head
+								>
+								<Table.Head class="h-7 w-8"></Table.Head>
+							</Table.Row>
+						</Table.Header>
+						<Table.Body>
+							{#each client.invoices as entry (entry.id)}
+								<InvoiceEntryRow clientId={client.id} {entry} />
+							{/each}
+						</Table.Body>
+					</Table.Root>
 				{/if}
 
-				<button
+				<Button
+					variant="ghost"
+					size="sm"
+					class="text-muted-foreground/50 hover:text-foreground h-7 px-2 text-xs"
 					onclick={() => session.addInvoiceEntry(client.id)}
-					class="text-muted-foreground/50 hover:text-foreground flex items-center gap-1.5 py-0.5 text-xs transition-colors"
 				>
 					<Plus size={11} />
 					add entry
-				</button>
+				</Button>
 			</div>
 
 			{#if client.invoices.length > 0}
