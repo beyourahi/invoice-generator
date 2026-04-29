@@ -77,6 +77,7 @@ export interface GeneratedInvoice {
 
 export interface CurrentUser {
 	name: string;
+	email: string;
 }
 
 export interface AppConfig {

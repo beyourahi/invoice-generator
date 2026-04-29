@@ -35,7 +35,7 @@
 	<CardHeader class="border-border border-b px-4 py-3">
 		<div class="flex items-center justify-between gap-3">
 			<div>
-				<CardTitle class="flex items-center gap-2 text-sm">
+				<CardTitle class="flex items-center gap-2 text-base font-semibold">
 					<ScanLine size={15} />
 					Preview
 				</CardTitle>

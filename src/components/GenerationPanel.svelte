@@ -95,7 +95,7 @@
 	<CardHeader class="border-border border-b">
 		<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 			<div>
-				<CardTitle class="text-sm">Generation</CardTitle>
+				<CardTitle class="text-base font-semibold">Generation</CardTitle>
 				<p class="text-muted-foreground mt-1 text-xs tabular-nums">
 					{session.clients.length} client{session.clients.length !== 1 ? "s" : ""} ·
 					{totalCount} invoice{totalCount !== 1 ? "s" : ""}

@@ -3,9 +3,9 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
-		"dev": "rm -rf node_modules/ .wrangler/ .svelte-kit/ bundled/ && bun install && bun cf-typegen && bun format && vite dev --open --host",
+		"dev": "vite dev --open",
 		"build": "vite build",
-		"preview": "wrangler dev .svelte-kit/cloudflare/_worker.js --assets .svelte-kit/cloudflare",
+		"preview": "bun run build && wrangler dev",
 		"prepare": "svelte-kit sync || echo ''",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",

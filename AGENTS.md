@@ -69,7 +69,6 @@ Each worktree shares the same repository. Agents commit directly to their worktr
 - `$lib/invoice/builder.ts` — token substitution logic
 - `$lib/pdf/generator.ts` — PDF rendering pipeline
 - `$lib/stores/session.svelte.ts` — session state shape
-- `$lib/config/brands.ts` — authorization allowlist
 - `$lib/server/auth.ts` — Better Auth configuration
 - `src/components/ClientCard.svelte` — single UI component
 - `src/hooks.server.ts` — auth handle hook

@@ -22,7 +22,7 @@
 
 <Card size="sm">
 	<CardHeader>
-		<CardTitle class="flex items-center gap-2 text-sm">
+		<CardTitle class="flex items-center gap-2 !text-base font-semibold">
 			<UserRound size={15} />
 			Sender
 		</CardTitle>

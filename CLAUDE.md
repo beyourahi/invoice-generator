@@ -33,7 +33,7 @@ A SvelteKit app that generates batches of PDF invoices. Users configure a fixed 
 
 **Stack**: SvelteKit 2 + Svelte 5 runes, Tailwind CSS v4, shadcn-svelte, Cloudflare Workers, Better Auth (Google OAuth), Cloudflare D1, Drizzle ORM, Bun.
 
-**Auth-gated**: Google OAuth via Better Auth. Authenticated users whose email is not in `BRANDS` (see `$lib/config/brands.ts`) see a `NotAuthorized` component. Unauthenticated users are redirected to `/login`. The PDF generation pipeline itself is still entirely client-side (no server actions). The server layer handles only auth session management and routing guards.
+**Auth-gated**: Google OAuth via Better Auth. Any authenticated user can access the app. Unauthenticated users are redirected to `/login`. The PDF generation pipeline itself is still entirely client-side (no server actions). The server layer handles only auth session management and routing guards.
 
 ---
 
@@ -92,17 +92,17 @@ The server layer handles only authentication — the PDF pipeline itself remains
 
 - **`$lib/auth-client.ts`** — Better Auth Svelte client (`createAuthClient`). Exports `authClient`, `signIn`, `signOut`, `useSession`.
 
-- **`$lib/config/brands.ts`** — `BRANDS` array of authorized identities (`{ name, emails[] }`). `allowedEmails` flattens all emails. `findBrandByEmail(email)` returns the matching `Brand` or `undefined`. **This is the authorization allowlist** — only emails listed here can use the app after signing in with Google.
+- **`$lib/config/app.ts`** — `APP_CONFIG` object (`name`, `description`, `url`, `author`). App metadata used for `<title>` and `<meta>` tags. Exported via `$lib/config/index.ts`.
 
-- **`$lib/hooks/use-current-user.ts`** — `getCurrentUser(email)` → `CurrentUser | null` (looks up `BRANDS`). `isEmailAuthorized(email)` → `boolean`.
+- **`$lib/hooks/use-current-user.ts`** — `getCurrentUser(user)` → `CurrentUser | null`. Accepts a `{ name, email }` object and returns a `CurrentUser` or `null` for unauthenticated users.
 
-- **`src/hooks.server.ts`** — SvelteKit `handle` hook. Instantiates `createAuth` per request (D1 binding from `event.platform.env`), calls `auth.api.getSession`, populates `event.locals.user`, `event.locals.session`, `event.locals.currentUser`. Also applies CSP and security headers on every response. Gracefully degrades if D1 is unavailable (auth disabled, locals set to `null`).
+- **`src/hooks.server.ts`** — SvelteKit `handle` hook. Instantiates `createAuth` per request (D1 binding from `event.platform.env`), delegates Better Auth routes to `svelteKitHandler` (from `better-auth/svelte-kit`), calls `auth.api.getSession`, populates `event.locals.user`, `event.locals.session`, `event.locals.currentUser`. Also applies CSP and security headers on every response. Gracefully degrades if D1 is unavailable (auth disabled, locals set to `null`). Also exports `handleError` for server-side error logging with UUID correlation.
 
 - **`src/hooks.client.ts`** — Client-side `handleError` that logs errors with a UUID for correlation.
 
 - **`src/routes/+layout.server.ts`** — Passes `user`, `session`, `currentUser` from `locals` into `PageData`.
 
-- **`src/routes/+page.server.ts`** — Redirects to `/login` if `locals.user` is null. Returns `isAuthorized: locals.currentUser !== null`.
+- **`src/routes/+page.server.ts`** — Redirects to `/login` if `locals.user` is null. Returns `user` and `currentUser` from `locals`.
 
 - **`src/routes/login/+page.svelte`** — Google sign-in button. Redirects to `/` (or `?redirect=`) after successful OAuth. Shows error message on failure.
 
@@ -112,7 +112,7 @@ The server layer handles only authentication — the PDF pipeline itself remains
 
 - **`migrations/0001_better_auth_tables.sql`** — Raw SQL migration for D1. Apply via Wrangler: `wrangler d1 execute <DB_NAME> --file=migrations/0001_better_auth_tables.sql --remote`.
 
-**Authorization flow**: Google OAuth → if email ∈ `BRANDS.emails` → authorized (see invoice app); else → `NotAuthorized` component shown on main page.
+**Authorization flow**: Google OAuth → any authenticated user gains full access to the invoice app. Unauthenticated users are redirected to `/login`.
 
 ### Store Design
 
@@ -144,13 +144,9 @@ To add a theme: implement the `Theme` interface in a new file, register it in `t
 
 ### UI Layout
 
-The main page (`+page.svelte`) is auth-gated by `data.isAuthorized`:
+The main page (`+page.svelte`) renders the invoice app for any authenticated user. Unauthenticated users are redirected to `/login` server-side before the page renders.
 
-- **Authorized** — renders the invoice app (two-column grid + generation panel)
-- **Authenticated but not authorized** — renders `NotAuthorized` component centered on the page
-- **Unauthenticated** — server redirects to `/login` before the page renders
-
-**Authorized app layout** — two-column grid at `lg` breakpoint:
+**App layout** — two-column grid at `lg` breakpoint:
 
 - **`Heading`** — shared heading component (`$lib/components/ui/heading/heading.svelte`) rendered above the grid
 - **Left column** — `FixedSenderPanel` + `ClientCard` list + `AddClientButton` (ephemeral session state)
@@ -421,9 +417,7 @@ For extended documentation, create an `agent_docs/` directory at the project roo
 
 10. **Auth requires D1 at runtime** — `hooks.server.ts` checks for `platform.env.DB`. If D1 is unavailable (e.g. plain Vite dev without Wrangler), auth is silently disabled and all routes treat the user as unauthenticated. Use `bun run preview` (Wrangler-backed) to test auth locally. The PDF pipeline still works without auth.
 
-11. **Authorization vs. authentication are separate** — a user can be authenticated (Google OAuth succeeded) but unauthorized (email not in `BRANDS`). Authenticated-but-unauthorized users see `NotAuthorized` on the main page rather than being redirected. Only unauthenticated users get redirected to `/login`.
-
-12. **Do not add email/password auth** — `emailAndPassword` is explicitly disabled in `createAuth`. Google OAuth is the only sign-in method. Adding email/password would require schema changes and is out of scope.
+11. **Do not add email/password auth** — `emailAndPassword` is explicitly disabled in `createAuth`. Google OAuth is the only sign-in method. Adding email/password would require schema changes and is out of scope.
 
 ---
 

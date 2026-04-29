@@ -83,6 +83,6 @@
 	</button>
 
 	<p class="max-w-xs text-center text-xs text-zinc-500 sm:max-w-none sm:text-sm">
-		Only authorized accounts can access this application
+		Sign in with your Google account to get started
 	</p>
 </div>

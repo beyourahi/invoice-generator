@@ -65,15 +65,21 @@ export const handle: Handle = async ({ event, resolve }) => {
 
 	const auth = createAuth(db, env);
 
-	const session = await auth.api.getSession({
-		headers: event.request.headers
-	});
+	try {
+		const session = await auth.api.getSession({
+			headers: event.request.headers
+		});
 
-	if (session) {
-		event.locals.session = session.session;
-		event.locals.user = session.user;
-		event.locals.currentUser = getCurrentUser(session.user.email);
-	} else {
+		if (session) {
+			event.locals.session = session.session;
+			event.locals.user = session.user;
+			event.locals.currentUser = getCurrentUser(session.user);
+		} else {
+			event.locals.session = null;
+			event.locals.user = null;
+			event.locals.currentUser = null;
+		}
+	} catch {
 		event.locals.session = null;
 		event.locals.user = null;
 		event.locals.currentUser = null;
