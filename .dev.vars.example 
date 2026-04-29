@@ -1,0 +1,7 @@
+BETTER_AUTH_SECRET=<openssl rand -base64 32>
+BETTER_AUTH_URL=http://localhost:5173
+GOOGLE_CLIENT_ID=<from Google Cloud Console>
+GOOGLE_CLIENT_SECRET=<from Google Cloud Console>
+CLOUDFLARE_ACCOUNT_ID=<from Cloudflare dashboard>
+CLOUDFLARE_DATABASE_ID=<from Cloudflare D1 dashboard>
+CLOUDFLARE_D1_TOKEN=<Cloudflare API token with D1 edit permission>

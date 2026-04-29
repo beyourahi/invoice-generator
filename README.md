@@ -2,116 +2,100 @@
 
 A SvelteKit app for generating batches of PDF invoices. Configure a sender identity, add clients with service details and invoice months, then bulk-generate and download PDFs individually or as a ZIP.
 
----
-
-## Features
-
-- Bulk PDF generation (html2canvas + jsPDF, fully client-side)
-- Multiple clients, each with their own invoice schedule
-- Bank or Wise payment section per client
-- ZIP download via fflate (no compression overhead)
-- Google OAuth gate via Better Auth
-- Live invoice preview before generating
+**Live**: https://invoice-generator.beyourahi.workers.dev
 
 ---
 
 ## Tech Stack
 
-| Layer         | Technology                            |
-| ------------- | ------------------------------------- |
-| Framework     | SvelteKit 2 + Svelte 5 (runes)        |
-| Styling       | Tailwind CSS v4                       |
-| UI Components | shadcn-svelte                         |
-| Auth          | Better Auth (Google OAuth)            |
-| Database      | Cloudflare D1 + Drizzle ORM           |
-| PDF           | html2canvas + jsPDF                   |
-| ZIP           | fflate                                |
-| Deployment    | Cloudflare Workers                    |
-| Package mgr   | Bun                                   |
+| Layer         | Technology                         |
+| ------------- | ---------------------------------- |
+| Framework     | SvelteKit 2 + Svelte 5 (runes)     |
+| Styling       | Tailwind CSS v4                    |
+| UI Components | shadcn-svelte                      |
+| Auth          | Better Auth (Google OAuth)         |
+| Database      | Cloudflare D1 + Drizzle ORM        |
+| PDF           | html2canvas + jsPDF                |
+| ZIP           | fflate                             |
+| Deployment    | Cloudflare Workers                 |
+| Package mgr   | Bun                                |
 
 ---
 
 ## Setup
 
-**Prerequisites**: Bun, a Cloudflare account, a Google Cloud OAuth 2.0 app.
+**Prerequisites**: Bun, a Cloudflare account, a Google Cloud OAuth 2.0 client.
 
 ```bash
 bun install
 ```
 
-Copy `.dev.vars.example` (or create `.dev.vars`) with:
+Copy `.dev.vars.example` to `.dev.vars`:
 
-```
-BETTER_AUTH_SECRET=<openssl rand -base64 32>
+```dotenv
+BETTER_AUTH_SECRET=    # openssl rand -base64 32
 BETTER_AUTH_URL=http://localhost:5173
-GOOGLE_CLIENT_ID=<from Google Cloud Console>
-GOOGLE_CLIENT_SECRET=<from Google Cloud Console>
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+CLOUDFLARE_ACCOUNT_ID=       # from Cloudflare dashboard
+CLOUDFLARE_DATABASE_ID=      # from Cloudflare D1 dashboard
+CLOUDFLARE_D1_TOKEN=         # Cloudflare API token with D1 edit permission
 ```
 
-Apply the D1 migration locally:
+Apply migrations and start:
 
 ```bash
 bun run db:migrate:local
+bun run dev              # http://localhost:5173
 ```
 
-Start the dev server:
-
-```bash
-bun run dev
-```
-
-> Auth requires the Wrangler-backed server. For full auth testing use `bun run preview` instead.
+> Auth requires the Wrangler-backed server. Use `bun run preview` for full auth testing.
 
 ---
 
 ## Environment Variables
 
-| Variable               | Required | Description                                  |
-| ---------------------- | -------- | -------------------------------------------- |
-| `BETTER_AUTH_SECRET`   | Yes      | Random secret for session signing            |
-| `BETTER_AUTH_URL`      | Yes      | Deployed URL (set as a Wrangler `var`)       |
-| `GOOGLE_CLIENT_ID`     | Yes      | Google OAuth client ID                       |
-| `GOOGLE_CLIENT_SECRET` | Yes      | Google OAuth client secret                   |
+| Variable                 | Required | Description                                   |
+| ------------------------ | -------- | --------------------------------------------- |
+| `BETTER_AUTH_SECRET`     | Yes      | Random secret for session signing             |
+| `BETTER_AUTH_URL`        | Yes      | Deployed URL (also set in `wrangler.jsonc`)   |
+| `GOOGLE_CLIENT_ID`       | Yes      | Google OAuth client ID                        |
+| `GOOGLE_CLIENT_SECRET`   | Yes      | Google OAuth client secret                    |
+| `CLOUDFLARE_ACCOUNT_ID`  | Yes      | Cloudflare account ID                         |
+| `CLOUDFLARE_DATABASE_ID` | Yes      | D1 database ID                                |
+| `CLOUDFLARE_D1_TOKEN`    | Yes      | Cloudflare API token with D1 edit permission  |
 
-The `BETTER_AUTH_URL` var is already set in `wrangler.jsonc` for production. The other three are secrets — never commit them.
+`BETTER_AUTH_URL` is also a non-secret binding in `wrangler.jsonc` for production. All others are secrets — never commit them.
 
 ---
 
 ## Scripts
 
-```bash
-bun run dev          # Start dev server
-bun run build        # Production build
-bun run preview      # Build + Wrangler dev (required for auth testing)
-bun run check        # TypeScript validation
-bun run lint         # ESLint
-bun run format       # Prettier
-bun run cf-typegen   # Regenerate Cloudflare types from wrangler.jsonc
-bun run db:migrate   # Apply D1 migrations (remote)
-bun run db:migrate:local  # Apply D1 migrations (local)
-```
+| Script                       | Description                              |
+| ---------------------------- | ---------------------------------------- |
+| `bun run dev`                | Dev server on `:5173`                    |
+| `bun run preview`            | Wrangler local preview (auth testing)    |
+| `bun run build`              | Production build                         |
+| `bun run check`              | TypeScript validation                    |
+| `bun run lint`               | ESLint                                   |
+| `bun run format`             | Prettier auto-format                     |
+| `bun run cf-typegen`         | Regenerate Cloudflare types              |
+| `bun run db:generate`        | Generate migration from schema changes   |
+| `bun run db:migrate`         | Apply migrations to production D1        |
+| `bun run db:migrate:local`   | Apply migrations to local D1             |
 
 ---
 
 ## Deployment
 
-```bash
-bun run build
-wrangler deploy
-```
-
-Set production secrets via Wrangler before the first deploy:
+Set production secrets, then deploy:
 
 ```bash
 wrangler secret put BETTER_AUTH_SECRET
 wrangler secret put GOOGLE_CLIENT_ID
 wrangler secret put GOOGLE_CLIENT_SECRET
-```
-
-Add the following redirect URI to your Google OAuth app:
-
-```
-https://<your-worker>.workers.dev/api/auth/callback/google
+bun run build
+wrangler deploy
 ```
 
 ---
@@ -122,10 +106,14 @@ https://<your-worker>.workers.dev/api/auth/callback/google
 2. Create an OAuth 2.0 Client ID (Web application)
 3. Add authorized redirect URIs:
    - `http://localhost:5173/api/auth/callback/google` (local)
-   - `https://<your-worker>.workers.dev/api/auth/callback/google` (production)
+   - `https://invoice-generator.beyourahi.workers.dev/api/auth/callback/google` (production)
 
 ---
 
 ## License
 
-[MIT](LICENSE) — Rahi Khan, 2026
+MIT — see [LICENSE](./LICENSE).
+
+## Author
+
+**Rahi Khan** · [beyourahi.com](https://beyourahi.com) · [beyourahi@gmail.com](mailto:beyourahi@gmail.com)

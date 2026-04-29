@@ -60,13 +60,21 @@ A SvelteKit app that generates batches of PDF invoices. Users configure a fixed 
 ## Commands
 
 ```bash
-bun run dev        # Wipes node_modules/.wrangler/.svelte-kit/bundled, reinstalls, runs cf-typegen + format, then starts Vite dev server
-bun run build      # Production build
-bun run preview    # Preview via Wrangler (requires build first)
-bun run check      # svelte-check TypeScript validation
-bun run lint       # ESLint
-bun run format     # Prettier
-bun run cf-typegen # Regenerate worker-configuration.d.ts from wrangler.jsonc
+bun run dev              # Start Vite dev server (opens browser automatically)
+bun run build            # Production build
+bun run preview          # Preview via Wrangler (requires build first)
+bun run check            # svelte-check TypeScript validation
+bun run lint             # ESLint
+bun run format           # Prettier
+bun run cf-typegen       # Regenerate worker-configuration.d.ts from wrangler.jsonc
+bun run db:generate      # Generate Drizzle migration files
+bun run db:push          # Push schema directly to D1 (skips migration files)
+bun run db:pull          # Pull schema from D1
+bun run db:migrate       # Apply pending migrations to remote D1
+bun run db:migrate:local # Apply pending migrations to local D1
+bun run db:migrate:list  # List applied migrations
+bun run db:check         # Check migration consistency
+bun run db:studio        # Launch Drizzle Studio GUI
 ```
 
 ---
@@ -110,7 +118,7 @@ The server layer handles only authentication — the PDF pipeline itself remains
 
 - **`src/routes/api/logout/+server.ts`** — `POST`/`GET` both delete the session cookie and redirect to `/login`.
 
-- **`migrations/0001_better_auth_tables.sql`** — Raw SQL migration for D1. Apply via Wrangler: `wrangler d1 execute <DB_NAME> --file=migrations/0001_better_auth_tables.sql --remote`.
+- **`migrations/0001_better_auth_tables.sql`** — Raw SQL migration for D1. Apply via `bun run db:migrate` (remote) or `bun run db:migrate:local` (local Wrangler preview).
 
 **Authorization flow**: Google OAuth → any authenticated user gains full access to the invoice app. Unauthenticated users are redirected to `/login`.
 
@@ -148,6 +156,7 @@ The main page (`+page.svelte`) renders the invoice app for any authenticated use
 
 **App layout** — two-column grid at `lg` breakpoint:
 
+- **`User`** — fixed-position avatar + sign-out button (`src/components/User.svelte`), rendered top-right when the user is authenticated. Shows the user's avatar image (or a fallback icon), expands on hover to reveal name and email, and has a separate sign-out button with a loading spinner. Calls `authClient.signOut()` then redirects to `/login`.
 - **`Heading`** — shared heading component (`$lib/components/ui/heading/heading.svelte`) rendered above the grid
 - **Left column** — `FixedSenderPanel` + `ClientCard` list + `AddClientButton` (ephemeral session state)
 - **Right column** (sticky) — `InvoicePreview` (live scaled iframe of first invoice for the selected client)
@@ -363,14 +372,11 @@ Auth is disabled gracefully during local dev if `platform.env.DB` is unavailable
 
 ### Database Migration
 
-Apply the D1 migration once per environment:
+Apply migrations per environment:
 
 ```bash
-# Remote (production)
-wrangler d1 execute <DB_NAME> --file=migrations/0001_better_auth_tables.sql --remote
-
-# Local (Wrangler preview)
-wrangler d1 execute <DB_NAME> --file=migrations/0001_better_auth_tables.sql --local
+bun run db:migrate        # Remote (production)
+bun run db:migrate:local  # Local (Wrangler preview)
 ```
 
 ### Clean Rebuild
@@ -413,7 +419,7 @@ For extended documentation, create an `agent_docs/` directory at the project roo
 
 8. **shadcn-svelte components in `$lib/components/ui/` are auto-generated** — never modify them by hand. Use the CLI to update.
 
-9. **GSAP is a stale dependency** — `package.json` still lists `gsap` but no source file imports it (removed in the shadcn reset). Safe to remove with `bun remove gsap`. Do not add new GSAP imports.
+9. **GSAP and formsnap are stale dependencies** — `package.json` lists both `gsap` and `formsnap` but no source file imports either. Safe to remove with `bun remove gsap formsnap`. Do not add new imports for either.
 
 10. **Auth requires D1 at runtime** — `hooks.server.ts` checks for `platform.env.DB`. If D1 is unavailable (e.g. plain Vite dev without Wrangler), auth is silently disabled and all routes treat the user as unauthenticated. Use `bun run preview` (Wrangler-backed) to test auth locally. The PDF pipeline still works without auth.
 
