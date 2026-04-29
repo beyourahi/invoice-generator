@@ -24,7 +24,7 @@
 		<h2 class="text-xl font-bold text-red-500 sm:text-2xl">Access Denied</h2>
 		<p class="max-w-xs text-sm text-zinc-400 sm:max-w-md sm:text-base">
 			The email address
-			<span class="break-all font-medium text-zinc-300">{user?.email}</span>
+			<span class="font-medium break-all text-zinc-300">{user?.email}</span>
 			is not authorized to access this application.
 		</p>
 		<p class="text-xs text-zinc-500 sm:text-sm">

@@ -69,7 +69,10 @@ Each worktree shares the same repository. Agents commit directly to their worktr
 - `$lib/invoice/builder.ts` — token substitution logic
 - `$lib/pdf/generator.ts` — PDF rendering pipeline
 - `$lib/stores/session.svelte.ts` — session state shape
+- `$lib/config/brands.ts` — authorization allowlist
+- `$lib/server/auth.ts` — Better Auth configuration
 - `src/components/ClientCard.svelte` — single UI component
+- `src/hooks.server.ts` — auth handle hook
 
 **Rules**:
 
@@ -327,6 +330,7 @@ Every agent response must be:
 
 ## Security & Environment
 
-- **No secrets in code** — this project has no API keys or tokens. If any are added in future, store in `.dev.vars` (gitignored) and access via `event.platform.env`
+- **Secrets in `.dev.vars` only** — `BETTER_AUTH_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` must live in `.dev.vars` (gitignored) or Cloudflare dashboard secrets. Never commit them. `BETTER_AUTH_URL` is a non-secret binding in `wrangler.jsonc`.
 - **No `.env` or `.dev.vars` committed** — hard requirement
-- **No server-side code** — this is a static site. No server actions, no API routes, no Cloudflare Worker logic beyond static asset serving
+- **Server-side scope is auth-only** — `hooks.server.ts`, `+page.server.ts`, `+layout.server.ts`, and `/api/logout` are the only server files. They exist solely for auth session management and routing guards. Do not add business logic to the server layer. The PDF pipeline (`builder.ts`, `generator.ts`, `zip.ts`) stays client-side.
+- **CSP headers are applied by `hooks.server.ts`** — do not bypass or relax the Content-Security-Policy. If a new resource origin is needed (fonts, scripts), add it to the `CSP` array in `hooks.server.ts` with minimal scope.

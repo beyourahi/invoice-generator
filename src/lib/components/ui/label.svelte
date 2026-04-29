@@ -13,9 +13,6 @@
 	} & HTMLLabelAttributes = $props();
 </script>
 
-<label
-	class={cn("mb-1.5 block text-xs font-medium text-zinc-400", className)}
-	{...props}
->
+<label class={cn("mb-1.5 block text-xs font-medium text-zinc-400", className)} {...props}>
 	{@render children?.()}
 </label>

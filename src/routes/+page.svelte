@@ -19,9 +19,7 @@
 	let selectedClientId = $state<string | null>(null);
 	let ToasterComponent = $state<Component | null>(null);
 
-	const previewClient = $derived(
-		session.clients.find(c => c.id === selectedClientId) ?? session.clients[0] ?? null
-	);
+	const previewClient = $derived(session.clients.find(c => c.id === selectedClientId) ?? session.clients[0] ?? null);
 	const previewHtml = $derived.by(() => {
 		const client = previewClient;
 		if (!client || client.invoices.length === 0) {

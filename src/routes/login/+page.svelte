@@ -39,9 +39,7 @@
 	<title>Sign In - Invoice Generator</title>
 </svelte:head>
 
-<div
-	class="flex grow flex-col items-center justify-center gap-8 overflow-hidden px-4 sm:gap-10 sm:px-6 lg:gap-12"
->
+<div class="flex grow flex-col items-center justify-center gap-8 overflow-hidden px-4 sm:gap-10 sm:px-6 lg:gap-12">
 	<Heading />
 
 	{#if error}

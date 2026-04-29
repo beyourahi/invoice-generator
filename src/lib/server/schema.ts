@@ -24,7 +24,7 @@ export const sessions = sqliteTable(
 		createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
 		updatedAt: integer("updated_at", { mode: "timestamp" }).notNull()
 	},
-	table => [index("idx_sessions_user_id").on(table.userId)]
+	(table) => [index("idx_sessions_user_id").on(table.userId)]
 );
 
 export const accounts = sqliteTable(
@@ -46,7 +46,7 @@ export const accounts = sqliteTable(
 		createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
 		updatedAt: integer("updated_at", { mode: "timestamp" }).notNull()
 	},
-	table => [
+	(table) => [
 		index("idx_accounts_user_id").on(table.userId),
 		uniqueIndex("idx_accounts_provider").on(table.providerId, table.accountId)
 	]
@@ -62,7 +62,7 @@ export const verifications = sqliteTable(
 		createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
 		updatedAt: integer("updated_at", { mode: "timestamp" }).notNull()
 	},
-	table => [index("idx_verifications_identifier").on(table.identifier)]
+	(table) => [index("idx_verifications_identifier").on(table.identifier)]
 );
 
 export const rateLimits = sqliteTable(
@@ -73,5 +73,5 @@ export const rateLimits = sqliteTable(
 		count: integer("count").notNull(),
 		lastRequest: integer("last_request").notNull()
 	},
-	table => [index("idx_rate_limits_key").on(table.key)]
+	(table) => [index("idx_rate_limits_key").on(table.key)]
 );

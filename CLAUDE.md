@@ -29,11 +29,11 @@ All commits go directly to `main`. No feature branches. Worktrees allow parallel
 
 ## Project Overview
 
-A client-side-only SvelteKit app that generates batches of PDF invoices. Users configure a fixed sender identity, add multiple clients (each with service details and a list of invoice months), then trigger bulk generation. Each invoice is rendered as HTML, captured via `html2canvas`, and exported to a jsPDF Blob. Multiple PDFs can be downloaded individually or zipped together via `fflate`.
+A SvelteKit app that generates batches of PDF invoices. Users configure a fixed sender identity, add multiple clients (each with service details and a list of invoice months), then trigger bulk generation. Each invoice is rendered as HTML, captured via `html2canvas`, and exported to a jsPDF Blob. Multiple PDFs can be downloaded individually or zipped together via `fflate`.
 
-**Stack**: SvelteKit 2 + Svelte 5 runes, Tailwind CSS v4, shadcn-svelte, Cloudflare Workers (static hosting), Bun.
+**Stack**: SvelteKit 2 + Svelte 5 runes, Tailwind CSS v4, shadcn-svelte, Cloudflare Workers, Better Auth (Google OAuth), Cloudflare D1, Drizzle ORM, Bun.
 
-**No server-side rendering. No database. No auth.** Everything runs in the browser.
+**Auth-gated**: Google OAuth via Better Auth. Authenticated users whose email is not in `BRANDS` (see `$lib/config/brands.ts`) see a `NotAuthorized` component. Unauthenticated users are redirected to `/login`. The PDF generation pipeline itself is still entirely client-side (no server actions). The server layer handles only auth session management and routing guards.
 
 ---
 
@@ -45,10 +45,13 @@ A client-side-only SvelteKit app that generates batches of PDF invoices. Users c
 | Language        | TypeScript (strict mode)                         |
 | Styling         | Tailwind CSS v4 (CSS-first config, OKLCH colors) |
 | UI Components   | shadcn-svelte                                    |
+| Authentication  | Better Auth (Google OAuth only)                  |
+| Database        | Cloudflare D1 (SQLite via Drizzle ORM)           |
+| Validation      | Zod                                              |
 | PDF Rendering   | html2canvas + jsPDF                              |
 | ZIP Packaging   | fflate (`zipSync`, `level: 0`)                   |
 | Animations      | None (shadcn Progress + Lucide Loader2 spinner)  |
-| Deployment      | Cloudflare Workers (static assets)               |
+| Deployment      | Cloudflare Workers                               |
 | Package Manager | Bun                                              |
 | Linting         | ESLint 9 flat config + Prettier                  |
 
@@ -57,7 +60,7 @@ A client-side-only SvelteKit app that generates batches of PDF invoices. Users c
 ## Commands
 
 ```bash
-bun run dev        # Dev server
+bun run dev        # Wipes node_modules/.wrangler/.svelte-kit/bundled, reinstalls, runs cf-typegen + format, then starts Vite dev server
 bun run build      # Production build
 bun run preview    # Preview via Wrangler (requires build first)
 bun run check      # svelte-check TypeScript validation
@@ -79,13 +82,45 @@ Two aliases are configured in `svelte.config.js`:
 
 Route files use `$src/components/...`; library files use `$lib/...`. Never use relative paths.
 
+### Auth Layer
+
+The server layer handles only authentication — the PDF pipeline itself remains entirely client-side.
+
+- **`$lib/server/auth.ts`** — `createAuth(d1, env)` factory. Returns a Better Auth instance configured with Google OAuth, Drizzle adapter (D1/SQLite), 7-day session expiry, 5-minute cookie cache, and database rate limiting. `env` must include `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`.
+
+- **`$lib/server/schema.ts`** — Drizzle schema for Better Auth tables: `users`, `sessions`, `accounts`, `verifications`, `rateLimits`. Snake_case column names required by the Drizzle adapter.
+
+- **`$lib/auth-client.ts`** — Better Auth Svelte client (`createAuthClient`). Exports `authClient`, `signIn`, `signOut`, `useSession`.
+
+- **`$lib/config/brands.ts`** — `BRANDS` array of authorized identities (`{ name, emails[] }`). `allowedEmails` flattens all emails. `findBrandByEmail(email)` returns the matching `Brand` or `undefined`. **This is the authorization allowlist** — only emails listed here can use the app after signing in with Google.
+
+- **`$lib/hooks/use-current-user.ts`** — `getCurrentUser(email)` → `CurrentUser | null` (looks up `BRANDS`). `isEmailAuthorized(email)` → `boolean`.
+
+- **`src/hooks.server.ts`** — SvelteKit `handle` hook. Instantiates `createAuth` per request (D1 binding from `event.platform.env`), calls `auth.api.getSession`, populates `event.locals.user`, `event.locals.session`, `event.locals.currentUser`. Also applies CSP and security headers on every response. Gracefully degrades if D1 is unavailable (auth disabled, locals set to `null`).
+
+- **`src/hooks.client.ts`** — Client-side `handleError` that logs errors with a UUID for correlation.
+
+- **`src/routes/+layout.server.ts`** — Passes `user`, `session`, `currentUser` from `locals` into `PageData`.
+
+- **`src/routes/+page.server.ts`** — Redirects to `/login` if `locals.user` is null. Returns `isAuthorized: locals.currentUser !== null`.
+
+- **`src/routes/login/+page.svelte`** — Google sign-in button. Redirects to `/` (or `?redirect=`) after successful OAuth. Shows error message on failure.
+
+- **`src/routes/login/+page.server.ts`** — Redirects to `/` if already authenticated.
+
+- **`src/routes/api/logout/+server.ts`** — `POST`/`GET` both delete the session cookie and redirect to `/login`.
+
+- **`migrations/0001_better_auth_tables.sql`** — Raw SQL migration for D1. Apply via Wrangler: `wrangler d1 execute <DB_NAME> --file=migrations/0001_better_auth_tables.sql --remote`.
+
+**Authorization flow**: Google OAuth → if email ∈ `BRANDS.emails` → authorized (see invoice app); else → `NotAuthorized` component shown on main page.
+
 ### Store Design
 
 Both stores use the **factory function + `$state` closure** pattern, exported as singletons:
 
 - **`$lib/stores/session.svelte.ts`** — Ephemeral per-session state: the `clients` array, `generatedInvoices`, `generationState` (`"idle" | "generating" | "done" | "error"`), and `generationError`. Client mutations are exposed as discrete methods: `addClient`, `removeClient`, `updateClient(id, updater)`, `addInvoiceEntry`, `removeInvoiceEntry`, `updateInvoiceEntry`. Generation lifecycle methods: `setGenerating`, `setGenerated`, `setError`, `resetGeneration`. Two `$derived` computed values: `totalInvoiceCount` and `allClientsValid` — the latter checks that every client has a non-empty `name` and `invoicePrefix` (those two fields only).
 
-- **`$lib/stores/fixed.svelte.ts`** — Persistent sender/bank data, stored in `localStorage` under key `invoice-generator:fixed`. Has a lazy `init()` method that must be called in an `onMount` (SSR guard) before reads are meaningful.
+- **`$lib/stores/fixed.svelte.ts`** — Persistent sender/bank data, stored in `localStorage` under key `invoice-generator:fixed`. Has a lazy `init()` method called in `+layout.svelte`'s `onMount` (SSR guard) before reads are meaningful.
 
 The factory pattern is required because Svelte 5 `$state` reactivity is scoped to its declaration; returning objects with explicit `get` accessors exposes the reactive values outside the module.
 
@@ -95,9 +130,11 @@ The factory pattern is required because Svelte 5 `$state` reactivity is scoped t
 
 2. **`$lib/invoice/resolver.ts`** — Single pure function: string template + token map → resolved string via `replaceAll`.
 
-3. **`$lib/pdf/generator.ts`** — Entirely client-side. Injects the HTML into a hidden off-screen `<iframe>`, waits for fonts, runs `html2canvas` at 2× scale on the iframe body (A4: 794×1123px), then writes the canvas to a jsPDF at 210×297mm. Returns a `Blob`.
+3. **`$lib/invoice/months.ts`** — `MONTHS` array of all `MonthName` values and `MONTH_TO_NUMBER` map (`"January" → "01"`, etc.) used by invoice entry UI.
 
-4. **`$lib/pdf/zip.ts`** — Collects all `GeneratedInvoice` Blobs into a `fflate` `zipSync` with paths `{ClientName}-{Year}-Invoices/{fileName}.pdf`. `level: 0` (store-only, no compression) since PDFs are already compressed.
+4. **`$lib/pdf/generator.ts`** — Entirely client-side. Injects the HTML into a hidden off-screen `<iframe>`, waits for fonts, runs `html2canvas` at 2× scale on the iframe body (A4: 794×1123px), then writes the canvas to a jsPDF at 210×297mm. Returns a `Blob`.
+
+5. **`$lib/pdf/zip.ts`** — Collects all `GeneratedInvoice` Blobs into a `fflate` `zipSync` with paths `{ClientName}-{Year}-Invoices/{fileName}.pdf`. `level: 0` (store-only, no compression) since PDFs are already compressed.
 
 ### Theme System
 
@@ -107,8 +144,15 @@ To add a theme: implement the `Theme` interface in a new file, register it in `t
 
 ### UI Layout
 
-Single-page, two-column grid at `lg` breakpoint:
+The main page (`+page.svelte`) is auth-gated by `data.isAuthorized`:
 
+- **Authorized** — renders the invoice app (two-column grid + generation panel)
+- **Authenticated but not authorized** — renders `NotAuthorized` component centered on the page
+- **Unauthenticated** — server redirects to `/login` before the page renders
+
+**Authorized app layout** — two-column grid at `lg` breakpoint:
+
+- **`Heading`** — shared heading component (`$lib/components/ui/heading/heading.svelte`) rendered above the grid
 - **Left column** — `FixedSenderPanel` + `ClientCard` list + `AddClientButton` (ephemeral session state)
 - **Right column** (sticky) — `InvoicePreview` (live scaled iframe of first invoice for the selected client)
 - **Below grid** (full-width, after `<Separator>`) — `GenerationPanel`
@@ -127,7 +171,7 @@ Single-page, two-column grid at `lg` breakpoint:
 
 ## Development Principles
 
-- **Client-side only** — no server actions, no API routes, no backend. Everything runs in the browser.
+- **PDF pipeline is client-side only** — `builder.ts`, `generator.ts`, `zip.ts`, and all stores run in the browser. The server layer (`hooks.server.ts`, `+page.server.ts`, `+layout.server.ts`, `/api/logout`) handles only auth session management.
 - **Prefer existing abstractions** — check `$lib/` before creating new utilities.
 - **No duplication** — if logic exists in `resolver.ts`, use it; don't inline token-substitution calls elsewhere.
 - **Minimal scope** — No animation library. Use shadcn `Progress`, `Skeleton`, and Lucide `Loader2` for UI feedback. Don't add GSAP or other animation libraries.
@@ -295,15 +339,43 @@ bun install
 bun run dev
 ```
 
-No environment variables required. All state is browser-local (localStorage for fixed store).
+Sender/bank data is still browser-local (`localStorage`). Auth state requires D1 + secrets (see below).
 
 ### Cloudflare Bindings
 
 Configured in `wrangler.jsonc`:
 
 - **Assets**: static SvelteKit output
+- **DB**: D1 database binding (required for auth at runtime)
 - **Compatibility**: `nodejs_compat` flag
 - Run `bun run cf-typegen` after any `wrangler.jsonc` changes
+
+### Cloudflare Secrets (required for auth)
+
+Set via `wrangler secret put` or in the Cloudflare dashboard:
+
+| Secret                 | Description                                                           |
+| ---------------------- | --------------------------------------------------------------------- |
+| `BETTER_AUTH_SECRET`   | Random secret (e.g. `openssl rand -base64 32`)                        |
+| `BETTER_AUTH_URL`      | Deployed URL (e.g. `https://invoice-generator.beyourahi.workers.dev`) |
+| `GOOGLE_CLIENT_ID`     | Google OAuth client ID                                                |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth client secret                                            |
+
+`BETTER_AUTH_URL` is also a non-secret binding in `wrangler.jsonc` (exposed to `process.env` for client-side usage). The other three are secrets and must not appear in config files.
+
+Auth is disabled gracefully during local dev if `platform.env.DB` is unavailable (Vite dev server without Wrangler). Use `bun run preview` (Wrangler-backed) to test auth locally.
+
+### Database Migration
+
+Apply the D1 migration once per environment:
+
+```bash
+# Remote (production)
+wrangler d1 execute <DB_NAME> --file=migrations/0001_better_auth_tables.sql --remote
+
+# Local (Wrangler preview)
+wrangler d1 execute <DB_NAME> --file=migrations/0001_better_auth_tables.sql --local
+```
 
 ### Clean Rebuild
 
@@ -329,7 +401,7 @@ For extended documentation, create an `agent_docs/` directory at the project roo
 
 ## Project-Specific Warnings
 
-1. **`fixed.init()` must be called in `onMount`** — `fixed.svelte.ts` reads from `localStorage`. During SSR, `localStorage` is unavailable. The `init()` call is guarded by `onMount`. Never call it at module scope or in `$effect` on the server.
+1. **`fixed.init()` is called in `+layout.svelte`'s `onMount`** — `fixed.svelte.ts` reads from `localStorage`. During SSR, `localStorage` is unavailable. The `init()` call lives in the layout's `onMount` so it applies across all pages. Never call it at module scope or in `$effect` on the server, and don't add a second call elsewhere.
 
 2. **PDF generation is sequential and blocking** — `generatePdf()` uses `html2canvas` which paints to canvas synchronously. Running multiple invocations concurrently causes canvas corruption. `GenerationPanel` iterates clients sequentially (`for...of`, awaiting each).
 
@@ -346,6 +418,12 @@ For extended documentation, create an `agent_docs/` directory at the project roo
 8. **shadcn-svelte components in `$lib/components/ui/` are auto-generated** — never modify them by hand. Use the CLI to update.
 
 9. **GSAP is a stale dependency** — `package.json` still lists `gsap` but no source file imports it (removed in the shadcn reset). Safe to remove with `bun remove gsap`. Do not add new GSAP imports.
+
+10. **Auth requires D1 at runtime** — `hooks.server.ts` checks for `platform.env.DB`. If D1 is unavailable (e.g. plain Vite dev without Wrangler), auth is silently disabled and all routes treat the user as unauthenticated. Use `bun run preview` (Wrangler-backed) to test auth locally. The PDF pipeline still works without auth.
+
+11. **Authorization vs. authentication are separate** — a user can be authenticated (Google OAuth succeeded) but unauthorized (email not in `BRANDS`). Authenticated-but-unauthorized users see `NotAuthorized` on the main page rather than being redirected. Only unauthenticated users get redirected to `/login`.
+
+12. **Do not add email/password auth** — `emailAndPassword` is explicitly disabled in `createAuth`. Google OAuth is the only sign-in method. Adding email/password would require schema changes and is out of scope.
 
 ---
 
@@ -401,7 +479,7 @@ Detection order (use the first that works):
 
 ### What to Check in Screenshots
 
-- Three-column grid renders correctly at `lg` breakpoint
+- Two-column grid renders correctly at `lg` breakpoint
 - Dark theme renders consistently (no light-mode bleed)
 - Spacing, typography, and color tokens are correct
 - `FixedSenderPanel`, `ClientCard`, `GenerationPanel` are in expected positions
