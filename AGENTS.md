@@ -84,7 +84,7 @@ Each worktree shares the same repository. Agents commit directly to their worktr
 
 **Responsibility**: Implements visual changes, layout, design tokens, and animation.
 
-**Triggers**: Any task that modifies `.svelte` files, `src/app.css`, Tailwind classes, or GSAP animation logic.
+**Triggers**: Any task that modifies `.svelte` files, `src/app.css`, or Tailwind classes.
 
 **Inputs**: Design spec or description, affected component paths, current screenshot (if available).
 

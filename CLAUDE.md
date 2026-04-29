@@ -47,7 +47,7 @@ A client-side-only SvelteKit app that generates batches of PDF invoices. Users c
 | UI Components   | shadcn-svelte                                    |
 | PDF Rendering   | html2canvas + jsPDF                              |
 | ZIP Packaging   | fflate (`zipSync`, `level: 0`)                   |
-| Animations      | GSAP (entrance only)                             |
+| Animations      | None (shadcn Progress + Lucide Loader2 spinner)  |
 | Deployment      | Cloudflare Workers (static assets)               |
 | Package Manager | Bun                                              |
 | Linting         | ESLint 9 flat config + Prettier                  |
@@ -107,17 +107,21 @@ To add a theme: implement the `Theme` interface in a new file, register it in `t
 
 ### UI Layout
 
-Single-page, three-column grid at `lg` breakpoint:
+Single-page, two-column grid at `lg` breakpoint:
 
-- **Left aside** — `FixedSenderPanel` (sender identity + bank details, persists to localStorage)
-- **Center** — `ClientCard` list + `AddClientButton` (ephemeral session state)
-- **Right aside** (sticky) — `DownloadPanel` (visible only after generation) + `GenerationPanel`
+- **Left column** — `FixedSenderPanel` + `ClientCard` list + `AddClientButton` (ephemeral session state)
+- **Right column** (sticky) — `InvoicePreview` (live scaled iframe of first invoice for the selected client)
+- **Below grid** (full-width, after `<Separator>`) — `GenerationPanel`
 
-`GenerationPanel` owns the generate loop: iterates `session.clients → client.invoices`, calls `buildInvoiceHtml` + `generatePdf` sequentially (each PDF render is async/blocking), updates progress via GSAP counter animation.
+`GenerationPanel` owns the generate loop: iterates `session.clients → client.invoices`, calls `buildInvoiceHtml` + `generatePdf` sequentially (each PDF render is async/blocking), tracks progress with a local `$state<number>` (0–100) bound to a shadcn `Progress` component. On completion, renders a `Table` of generated invoices with per-row download buttons and a ZIP button. Uses `svelte-sonner` toast (lazy-imported via dynamic `import()`) for success/error feedback.
 
-### Animations
+### InvoicePreview
 
-GSAP is used for entrance animations only (header stagger, card mount, download panel reveal, generation counter). No scroll triggers or complex timelines.
+`src/components/InvoicePreview.svelte` renders a live scaled preview of the first `invoices[0]` entry for the selected client. Uses an iframe with `srcdoc={html}`, measures container width via a Svelte action (`use:measurePreview`) using `requestAnimationFrame` + `window.addEventListener("resize")`, and derives a CSS scale factor (`containerWidth / 794`) to fit A4 (794×1123px) into the panel. When no client is selected or no invoice entry exists, shows an empty state. The selected client is tracked as `selectedClientId` state in `+page.svelte`, defaulting to `session.clients[0]`.
+
+### Toast Notifications
+
+`svelte-sonner` (via shadcn `sonner` component) provides success/error toasts. The `Toaster` component is lazy-imported in `onMount` in `+page.svelte` (SSR guard — `localStorage` and `document` are unavailable during SSR). Individual toasts are fired from `GenerationPanel` via `import("svelte-sonner")` dynamic imports inside async handlers.
 
 ---
 
@@ -126,7 +130,7 @@ GSAP is used for entrance animations only (header stagger, card mount, download 
 - **Client-side only** — no server actions, no API routes, no backend. Everything runs in the browser.
 - **Prefer existing abstractions** — check `$lib/` before creating new utilities.
 - **No duplication** — if logic exists in `resolver.ts`, use it; don't inline token-substitution calls elsewhere.
-- **Minimal scope** — GSAP for entrance animations only. Don't introduce scroll-triggered animations or complex timelines.
+- **Minimal scope** — No animation library. Use shadcn `Progress`, `Skeleton`, and Lucide `Loader2` for UI feedback. Don't add GSAP or other animation libraries.
 - **Performance** — PDF generation is blocking by design. Each `generatePdf()` call is sequential. Do not parallelize (browser canvas limits).
 - **Type safety** — TypeScript strict mode. No `any` except for external library compatibility.
 
@@ -230,7 +234,7 @@ Consult MCP tools in this priority order:
    - `list-sections` → discover doc sections
    - `get-documentation` → fetch relevant sections
    - `svelte-autofixer` → **mandatory** before delivering Svelte code
-2. **`context7` MCP** — for Tailwind CSS v4, shadcn-svelte, jsPDF, html2canvas, fflate, GSAP
+2. **`context7` MCP** — for Tailwind CSS v4, shadcn-svelte, jsPDF, html2canvas, fflate, svelte-sonner
 3. **Web search** — last resort
 
 Never use `shopify-dev` MCP (this is not a Shopify project).
@@ -340,6 +344,8 @@ For extended documentation, create an `agent_docs/` directory at the project roo
 7. **Never commit `tmp_screenshots/` or `.playwright-mcp/`** — these are visual verification artifacts. Clean up before committing.
 
 8. **shadcn-svelte components in `$lib/components/ui/` are auto-generated** — never modify them by hand. Use the CLI to update.
+
+9. **GSAP is a stale dependency** — `package.json` still lists `gsap` but no source file imports it (removed in the shadcn reset). Safe to remove with `bun remove gsap`. Do not add new GSAP imports.
 
 ---
 
