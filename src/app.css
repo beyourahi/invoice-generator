@@ -3,36 +3,65 @@
 
 @custom-variant dark (&:is(.dark *));
 
-:root,
-.dark {
-	--background: oklch(0.12 0.006 252);
-	--foreground: oklch(0.985 0 0);
-	--card: oklch(0.17 0.006 252);
-	--card-foreground: oklch(0.985 0 0);
-	--popover: oklch(0.17 0.006 252);
-	--popover-foreground: oklch(0.985 0 0);
-	--primary: oklch(0.84 0.16 85);
-	--primary-foreground: oklch(0.12 0.006 252);
-	--secondary: oklch(0.23 0.006 252);
-	--secondary-foreground: oklch(0.985 0 0);
-	--muted: oklch(0.23 0.006 252);
-	--muted-foreground: oklch(0.68 0.007 252);
-	--accent: oklch(0.27 0.038 198);
-	--accent-foreground: oklch(0.985 0 0);
-	--destructive: oklch(0.65 0.2 22);
-	--destructive-foreground: oklch(0.985 0 0);
-	--success: oklch(0.72 0.17 155);
-	--success-foreground: oklch(0.12 0.006 252);
-	--border: oklch(0.27 0.006 252);
-	--input: oklch(0.21 0.006 252);
-	--ring: oklch(0.8 0.15 85);
-	--brand: oklch(0.84 0.16 85);
-	--brand-foreground: oklch(0.12 0.006 252);
-	--brand-muted: oklch(0.84 0.16 85 / 0.14);
-	--preview-paper: oklch(1 0 0);
-	--font-sans: "Google Sans Flex", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-	--font-mono: "Google Sans Code", ui-monospace, "SF Mono", Consolas, monospace;
+/* Light mode defaults — shadcn new-york zinc (from order-processor) */
+:root {
+	--background: hsl(0 0% 100%);
+	--foreground: hsl(240 10% 3.9%);
+	--card: hsl(0 0% 100%);
+	--card-foreground: hsl(240 10% 3.9%);
+	--popover: hsl(0 0% 100%);
+	--popover-foreground: hsl(240 10% 3.9%);
+	--primary: hsl(240 5.9% 10%);
+	--primary-foreground: hsl(0 0% 98%);
+	--secondary: hsl(240 4.8% 95.9%);
+	--secondary-foreground: hsl(240 5.9% 10%);
+	--muted: hsl(240 4.8% 95.9%);
+	--muted-foreground: hsl(240 3.8% 46.1%);
+	--accent: hsl(240 4.8% 95.9%);
+	--accent-foreground: hsl(240 5.9% 10%);
+	--destructive: hsl(0 84.2% 60.2%);
+	--destructive-foreground: hsl(0 0% 98%);
+	--success: hsl(142.1 76.2% 36.3%);
+	--success-foreground: hsl(0 0% 98%);
+	--border: hsl(240 5.9% 90%);
+	--input: hsl(240 5.9% 90%);
+	--ring: hsl(240 5.9% 10%);
+	--brand: hsl(240 5.9% 10%);
+	--brand-foreground: hsl(0 0% 98%);
+	--brand-muted: hsl(240 5.9% 10% / 0.14);
+	--preview-paper: hsl(0 0% 100%);
+	--font-sans: Inter, sans-serif;
+	--font-mono: ui-monospace, "SF Mono", Consolas, monospace;
 	--radius: 0.5rem;
+}
+
+/* Dark mode — always active via <html class="dark"> */
+.dark {
+	--background: hsl(0 0% 5.9%);
+	--foreground: hsl(0 0% 98%);
+	--card: hsl(240 5.9% 10%);
+	--card-foreground: hsl(0 0% 98%);
+	--popover: hsl(240 5.9% 10%);
+	--popover-foreground: hsl(0 0% 98%);
+	--primary: hsl(0 0% 98%);
+	--primary-foreground: hsl(240 5.9% 10%);
+	--secondary: hsl(240 3.7% 15.9%);
+	--secondary-foreground: hsl(0 0% 98%);
+	--muted: hsl(240 3.7% 15.9%);
+	--muted-foreground: hsl(240 5% 64.9%);
+	--accent: hsl(240 3.7% 15.9%);
+	--accent-foreground: hsl(0 0% 98%);
+	--destructive: hsl(0 62.8% 30.6%);
+	--destructive-foreground: hsl(0 0% 98%);
+	--success: hsl(160.1 84.1% 39.4%);
+	--success-foreground: hsl(0 0% 98%);
+	--border: hsl(240 3.7% 15.9%);
+	--input: hsl(240 3.7% 15.9%);
+	--ring: hsl(240 4.9% 83.9%);
+	--brand: hsl(160.1 84.1% 39.4%);
+	--brand-foreground: hsl(0 0% 98%);
+	--brand-muted: hsl(160.1 84.1% 39.4% / 0.14);
+	--preview-paper: hsl(0 0% 100%);
 }
 
 @theme inline {
@@ -69,45 +98,27 @@
 	--radius-xl: calc(var(--radius) + 4px);
 }
 
-*,
-*::before,
-*::after {
-	box-sizing: border-box;
+/* Global transition utility (from order-processor) */
+.sleek {
+	@apply transform-gpu transition-all duration-200 ease-in-out;
 }
 
-html {
-	font-family: var(--font-sans);
-	background-color: var(--color-background);
-	color: var(--color-foreground);
-	-webkit-font-smoothing: antialiased;
-	-moz-osx-font-smoothing: grayscale;
-	text-rendering: optimizeLegibility;
-	scroll-behavior: auto;
-	overscroll-behavior: none;
-}
-
-body {
-	min-height: 100dvh;
-	background-color: var(--color-background);
-}
-
-*:focus-visible {
-	outline: 2px solid var(--color-ring);
-	outline-offset: 2px;
-}
-
+/* Scrollbar (from order-processor) */
 *::-webkit-scrollbar {
-	width: 6px;
-	background: transparent;
+	@apply w-2 bg-transparent;
 }
 
 *::-webkit-scrollbar-thumb {
-	background: var(--color-border);
-	border-radius: 10px;
+	@apply rounded-xl bg-white/60;
 }
 
-*::-webkit-scrollbar-thumb:hover {
-	background: var(--color-input);
+*::-webkit-scrollbar-track {
+	@apply rounded-xl bg-transparent;
+}
+
+html {
+	overscroll-behavior: none;
+	scroll-behavior: auto;
 }
 
 button,
@@ -121,6 +132,16 @@ input,
 select,
 textarea {
 	cursor: text;
+}
+
+@layer base {
+	* {
+		@apply border-border;
+	}
+
+	body {
+		@apply bg-[#0F0F0F] text-white;
+	}
 }
 
 .invoice-preview-stage {

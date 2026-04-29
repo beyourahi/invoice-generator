@@ -33,7 +33,7 @@
 	<title>Invoice Generator</title>
 </svelte:head>
 
-<div class="bg-background text-foreground dark min-h-screen">
+<div class="min-h-dvh">
 	{#if ToasterComponent}
 		<ToasterComponent theme="dark" position="bottom-right" richColors closeButton />
 	{/if}
