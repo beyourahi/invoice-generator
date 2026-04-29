@@ -38,7 +38,7 @@
 		bind:this={ref}
 		role="alert"
 		data-slot="field-error"
-		class={cn("text-destructive text-xs font-normal", className)}
+		class={cn("mt-1 text-xs text-red-400", className)}
 		{...restProps}
 	>
 		{#if children}
