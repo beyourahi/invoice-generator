@@ -66,7 +66,7 @@
 			role="button"
 			tabindex="0"
 			aria-pressed={selected}
-			onclick={onSelect}
+			onclick={() => { onSelect(); expanded = !expanded; }}
 			onkeydown={selectCard}
 			class="hover:bg-accent/40 flex cursor-pointer items-center gap-3 px-4 py-3 transition-colors"
 		>

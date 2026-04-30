@@ -144,7 +144,7 @@
 				{:else}
 					<Button
 						size="sm"
-						class="bg-brand text-brand-foreground hover:bg-brand/90 h-11 disabled:opacity-30 sm:h-7"
+						class="bg-brand text-brand-foreground hover:bg-brand/90 h-11 w-full disabled:opacity-30 sm:h-7 sm:w-auto"
 						onclick={generateAll}
 						disabled={!canGenerate || session.generationState === "generating"}
 					>

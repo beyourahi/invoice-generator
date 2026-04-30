@@ -13,6 +13,7 @@
 	import { page } from "$app/state";
 	import User from "$src/components/User.svelte";
 	import { onMount, type Component } from "svelte";
+	import { UserPlus } from "@lucide/svelte";
 
 	let selectedClientId = $state<string | null>(null);
 	let ToasterComponent = $state<Component | null>(null);
@@ -63,14 +64,15 @@
 					</div>
 
 					{#if session.clients.length === 0}
-						<div
-							class="border-border text-muted-foreground grid min-h-36 place-items-center rounded-lg border border-dashed text-center"
+						<button
+							class="border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground grid w-full min-h-36 cursor-pointer place-items-center rounded-lg border border-dashed text-center transition-colors"
+							onclick={session.addClient}
 						>
-							<div class="space-y-1">
-								<p class="text-sm font-medium">No clients yet</p>
-								<p class="text-xs">Add a client and schedule invoice months.</p>
+							<div class="flex flex-col items-center gap-2">
+								<UserPlus size={18} />
+								<p class="text-sm font-medium">Add client</p>
 							</div>
-						</div>
+						</button>
 					{:else}
 						<div class="space-y-3">
 							{#each session.clients as client, i (client.id)}
@@ -84,7 +86,9 @@
 						</div>
 					{/if}
 
-					<AddClientButton />
+					{#if session.clients.length > 0}
+						<AddClientButton />
+					{/if}
 				</div>
 			</section>
 
