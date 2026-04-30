@@ -3,6 +3,6 @@
 
 	<div class="space-y-1.5 sm:space-y-2">
 		<h1 class="text-2xl font-black tracking-tight sm:text-3xl lg:text-4xl">Invoice Generator</h1>
-		<p class="text-xs text-zinc-400 sm:text-sm lg:text-base">Batch PDFs, beautifully done.</p>
+		<p class="text-xs text-muted-foreground sm:text-sm lg:text-base">Batch PDFs, beautifully done.</p>
 	</div>
 </div>

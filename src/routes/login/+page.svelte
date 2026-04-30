@@ -44,7 +44,7 @@
 
 	{#if error}
 		<div
-			class="max-w-xs rounded-lg bg-red-500/10 px-4 py-2.5 text-center text-xs text-red-400 sm:max-w-sm sm:text-sm"
+			class="max-w-xs rounded-lg bg-destructive/10 px-4 py-2.5 text-center text-xs text-destructive sm:max-w-sm sm:text-sm"
 		>
 			{error}
 		</div>
@@ -53,11 +53,11 @@
 	<button
 		onclick={handleGoogleLogin}
 		disabled={isLoading}
-		class="sleek group flex cursor-pointer items-center justify-center gap-2.5 rounded-full border border-white/30 bg-white/10 px-6 py-3 text-sm font-medium text-zinc-200 backdrop-blur-sm transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 sm:gap-3 sm:px-8 sm:py-3.5 xl:hover:border-white/20 xl:hover:bg-white/5"
+		class="sleek group flex cursor-pointer items-center justify-center gap-2.5 rounded-full border border-white/30 bg-white/10 px-6 py-3 text-sm font-medium text-foreground backdrop-blur-sm transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 sm:gap-3 sm:px-8 sm:py-3.5 xl:hover:border-white/20 xl:hover:bg-white/5"
 	>
 		{#if isLoading}
 			<div
-				class="h-4 w-4 animate-spin rounded-full border-2 border-zinc-500 border-t-transparent sm:h-5 sm:w-5"
+				class="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent sm:h-5 sm:w-5"
 			></div>
 		{:else}
 			<svg class="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 24 24">
@@ -82,7 +82,7 @@
 		<span>Continue with Google</span>
 	</button>
 
-	<p class="max-w-xs text-center text-xs text-zinc-500 sm:max-w-none sm:text-sm">
+	<p class="max-w-xs text-center text-xs text-muted-foreground sm:max-w-none sm:text-sm">
 		Sign in with your Google account to get started
 	</p>
 </div>

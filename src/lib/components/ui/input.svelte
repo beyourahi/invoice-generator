@@ -14,10 +14,10 @@
 
 <input
 	class={cn(
-		"w-full rounded-lg border bg-zinc-800/50 px-3 py-2.5 text-sm text-white placeholder:text-zinc-500",
+		"w-full rounded-lg border border-border bg-input/30 px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground",
 		"transition-all duration-200",
 		"focus:ring-brand/50 focus:ring-2 focus:outline-none",
-		"focus:border-brand/50 border-zinc-700",
+		"focus:border-brand/50",
 		"disabled:cursor-not-allowed disabled:opacity-50",
 		className
 	)}

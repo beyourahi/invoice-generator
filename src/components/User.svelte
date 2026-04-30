@@ -41,7 +41,7 @@
 		<div
 			class={cn(
 				"sleek relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-semibold sm:h-10 sm:w-10",
-				"border border-zinc-700/50 bg-zinc-800/90 text-zinc-300 backdrop-blur-sm",
+				"border border-border bg-card text-foreground backdrop-blur-sm",
 				user.image && "overflow-hidden p-0"
 			)}
 			aria-label={currentUser.name}
@@ -71,16 +71,15 @@
 
 		<div
 			class={cn(
-				"absolute right-0 flex items-center overflow-hidden rounded-full border border-zinc-700/50 bg-zinc-800/90 whitespace-nowrap backdrop-blur-sm transition-all duration-300",
+				"absolute right-0 flex h-9 items-center overflow-hidden rounded-full border border-border bg-card whitespace-nowrap backdrop-blur-sm transition-all duration-300 sm:h-10",
 				expanded ? "w-auto pr-11 pl-3 opacity-100 sm:pr-12" : "w-0 pr-0 pl-0 opacity-0"
 			)}
-			style="height: 2.5rem;"
 		>
 			<div class="flex flex-col justify-center">
-				<span class="text-xs leading-tight font-medium text-zinc-200 sm:text-sm">
+				<span class="text-xs leading-tight font-medium text-foreground sm:text-sm">
 					{currentUser.name}
 				</span>
-				<span class="text-[10px] leading-tight text-zinc-500 sm:text-xs">
+				<span class="text-[10px] leading-tight text-muted-foreground sm:text-xs">
 					{user.email}
 				</span>
 			</div>
@@ -98,19 +97,19 @@
 			aria-label="Sign out"
 			class={cn(
 				"sleek group flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border backdrop-blur-sm sm:h-10 sm:w-10",
-				"focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500/50",
+				"focus:outline-none focus-visible:ring-2 focus-visible:ring-destructive/50",
 				isLoggingOut
-					? "cursor-wait border-zinc-700 bg-zinc-800/90"
-					: "border-red-500/40 bg-red-500/10 hover:border-red-500 hover:bg-red-500 active:scale-95"
+					? "cursor-wait border-border bg-card"
+					: "border-destructive/40 bg-destructive/10 hover:border-destructive hover:bg-destructive active:scale-95"
 			)}
 		>
 			{#if isLoggingOut}
 				<div
-					class="h-4 w-4 animate-spin rounded-full border-2 border-zinc-500 border-t-transparent"
+					class="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent"
 				></div>
 			{:else}
 				<svg
-					class="h-4 w-4 text-red-400 transition-colors group-hover:text-white sm:h-[1.125rem] sm:w-[1.125rem]"
+					class="h-4 w-4 text-destructive transition-colors group-hover:text-destructive-foreground sm:h-[1.125rem] sm:w-[1.125rem]"
 					viewBox="0 0 24 24"
 					fill="none"
 					stroke="currentColor"
@@ -126,12 +125,12 @@
 
 		{#if showTooltip && !isLoggingOut}
 			<div
-				class="absolute top-full left-1/2 z-10 mt-2 -translate-x-1/2 rounded-md bg-zinc-800 px-2.5 py-1.5 text-xs font-medium whitespace-nowrap text-zinc-200 shadow-lg"
+				class="absolute top-full left-1/2 z-10 mt-2 -translate-x-1/2 rounded-md bg-card px-2.5 py-1.5 text-xs font-medium whitespace-nowrap text-card-foreground shadow-lg"
 				role="tooltip"
 			>
 				Sign out
 				<div
-					class="absolute bottom-full left-1/2 -translate-x-1/2 border-4 border-transparent border-b-zinc-800"
+					class="absolute bottom-full left-1/2 -translate-x-1/2 border-4 border-transparent border-b-card"
 				></div>
 			</div>
 		{/if}

@@ -109,7 +109,7 @@
 }
 
 *::-webkit-scrollbar-thumb {
-	@apply rounded-xl bg-white/60;
+	@apply rounded-xl bg-muted-foreground/40;
 }
 
 *::-webkit-scrollbar-track {
@@ -140,7 +140,7 @@ textarea {
 	}
 
 	body {
-		@apply bg-[#0F0F0F] text-white;
+		@apply bg-background text-foreground;
 	}
 }
 

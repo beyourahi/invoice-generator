@@ -4,4 +4,4 @@
 	let { class: className = "" }: { class?: string } = $props();
 </script>
 
-<div class={cn("bg-border/60 h-px w-full", className)}></div>
+<div class={cn("bg-border h-px w-full", className)}></div>

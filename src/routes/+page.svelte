@@ -37,16 +37,15 @@
 	<title>Invoice Generator</title>
 </svelte:head>
 
-<div class="min-h-dvh">
-	{#if ToasterComponent}
-		<ToasterComponent theme="dark" position="bottom-right" richColors closeButton />
-	{/if}
+{#if ToasterComponent}
+	<ToasterComponent theme="dark" position="bottom-right" richColors closeButton />
+{/if}
 
-	{#if page.data.user && page.data.currentUser}
-		<User user={page.data.user} currentUser={page.data.currentUser} />
-	{/if}
+{#if page.data.user && page.data.currentUser}
+	<User user={page.data.user} currentUser={page.data.currentUser} />
+{/if}
 
-	<main class="mx-auto max-w-6xl px-4 py-8">
+<main class="mx-auto max-w-6xl px-4 py-8">
 		<div class="mb-8">
 			<Heading />
 		</div>
@@ -100,4 +99,3 @@
 		<Separator class="my-6" />
 		<GenerationPanel />
 	</main>
-</div>
