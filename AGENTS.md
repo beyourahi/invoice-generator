@@ -333,3 +333,7 @@ Every agent response must be:
 - **No `.env` or `.dev.vars` committed** — hard requirement
 - **Server-side scope is auth-only** — `hooks.server.ts`, `+page.server.ts`, `+layout.server.ts`, and `/api/logout` are the only server files. They exist solely for auth session management and routing guards. Do not add business logic to the server layer. The PDF pipeline (`builder.ts`, `generator.ts`, `zip.ts`) stays client-side.
 - **CSP headers are applied by `hooks.server.ts`** — do not bypass or relax the Content-Security-Policy. If a new resource origin is needed (fonts, scripts), add it to the `CSP` array in `hooks.server.ts` with minimal scope.
+
+### Commit Message Rules
+
+- **Never include AI agent co-authors** — commit messages must not reference any AI agent (Claude, ChatGPT, Gemini, GitHub Copilot, or similar) in `Co-Authored-By` trailers or any other form.

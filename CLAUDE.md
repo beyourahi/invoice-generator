@@ -485,3 +485,7 @@ Detection order (use the first that works):
 - `FixedSenderPanel`, `ClientCard`, `GenerationPanel` are in expected positions
 - Interactive states (hover, focus, expanded cards) render properly
 - No layout breaks at mobile viewport
+
+### Commit Message Rules
+
+- **Never include AI agent co-authors** — commit messages must not reference any AI agent (Claude, ChatGPT, Gemini, GitHub Copilot, or similar) in `Co-Authored-By` trailers or any other form.
