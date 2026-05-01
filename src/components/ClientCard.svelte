@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { fixed } from "$lib/stores/fixed.svelte";
-	import { session } from "$lib/stores/session.svelte";
+	import { session, type ClientPatch } from "$lib/stores/session.svelte";
 	import { getMethodDef } from "$lib/payments/registry";
 	import type { Client, Currency, SavedPaymentMethod } from "$lib/types";
 	import { cn } from "$lib/utils";
@@ -32,8 +32,7 @@
 	const nameSchema = z.string().trim().min(1, "Client name is required.");
 	const prefixSchema = z.string().trim().min(1, "Invoice prefix is required.");
 	const optionalEmailSchema = z.union([z.literal(""), z.string().trim().email("Enter a valid client email.")]);
-	const update = (updater: (c: Client) => Client) => session.updateClient(client.id, updater);
-	const set = <K extends keyof Client>(key: K, value: Client[K]) => update(c => ({ ...c, [key]: value }));
+	const patch = (p: ClientPatch) => session.updateClient(client.id, p);
 	const valueFromInput = (e: Event) => (e.currentTarget as HTMLInputElement).value;
 	const valueFromTextArea = (e: Event) => (e.currentTarget as HTMLTextAreaElement).value;
 	const selectCard = (e: KeyboardEvent) => {
@@ -135,7 +134,7 @@
 						placeholder="e.g., Ollivanders Wand Shop"
 						value={client.name}
 						aria-invalid={nameError !== ""}
-						oninput={e => set("name", valueFromInput(e))}
+						oninput={e => patch({ name: valueFromInput(e) })}
 						onblur={() => (nameTouched = true)}
 						class={nameError ? "border-destructive focus-visible:border-destructive" : ""}
 					/>
@@ -150,7 +149,7 @@
 						placeholder="e.g., OLLIVAND"
 						value={client.invoicePrefix}
 						aria-invalid={prefixError !== ""}
-						oninput={e => set("invoicePrefix", valueFromInput(e))}
+						oninput={e => patch({ invoicePrefix: valueFromInput(e) })}
 						onblur={() => (prefixTouched = true)}
 						class={prefixError ? "border-destructive focus-visible:border-destructive" : ""}
 					/>
@@ -165,7 +164,7 @@
 						type="tel"
 						placeholder="e.g., +880 1XXXXXXXXX"
 						value={client.phone}
-						oninput={e => set("phone", valueFromInput(e))}
+						oninput={e => patch({ phone: valueFromInput(e) })}
 					/>
 				</Field.Field>
 				<Field.Field class="gap-1.5" data-invalid={emailError !== ""}>
@@ -176,7 +175,7 @@
 						placeholder="e.g., orders@ollivanders.co"
 						value={client.email}
 						aria-invalid={emailError !== ""}
-						oninput={e => set("email", valueFromInput(e))}
+						oninput={e => patch({ email: valueFromInput(e) })}
 						onblur={() => (emailTouched = true)}
 						class={emailError ? "border-destructive focus-visible:border-destructive" : ""}
 					/>
@@ -190,11 +189,7 @@
 						id="address-{client.id}"
 						placeholder="e.g., 93A Diagon Alley, London"
 						value={client.address[0] ?? ""}
-						oninput={e =>
-							update(c => ({
-								...c,
-								address: [valueFromTextArea(e)]
-							}))}
+						oninput={e => patch({ address: [valueFromTextArea(e)] })}
 					/>
 				</Field.Field>
 			</div>
@@ -208,14 +203,7 @@
 						id="desc-{client.id}"
 						placeholder="e.g., Spellwork retainer for {'{MONTH}'}"
 						value={client.service.description}
-						oninput={e =>
-							update(c => ({
-								...c,
-								service: {
-									...c.service,
-									description: valueFromTextArea(e)
-								}
-							}))}
+						oninput={e => patch({ serviceDescription: valueFromTextArea(e) })}
 					/>
 					<Field.FieldDescription>
 						Insert
@@ -233,14 +221,7 @@
 						min="0"
 						placeholder="0"
 						value={String(client.service.amount)}
-						oninput={e =>
-							update(c => ({
-								...c,
-								service: {
-									...c.service,
-									amount: parseFloat(valueFromInput(e)) || 0
-								}
-							}))}
+						oninput={e => patch({ serviceAmount: parseFloat(valueFromInput(e)) || 0 })}
 						class="tabular-nums"
 					/>
 				</Field.Field>
@@ -249,7 +230,7 @@
 					<Select.Root
 						type="single"
 						value={client.service.currency}
-						onValueChange={v => update(c => ({ ...c, service: { ...c.service, currency: v as Currency } }))}
+						onValueChange={v => patch({ serviceCurrency: v as Currency })}
 					>
 						<Select.Trigger id="currency-{client.id}" class="h-9 w-full">
 							<span data-slot="select-value">
@@ -270,11 +251,7 @@
 						min="2020"
 						max="2099"
 						value={String(client.year)}
-						oninput={e =>
-							update(c => ({
-								...c,
-								year: parseInt(valueFromInput(e)) || new Date().getFullYear()
-							}))}
+						oninput={e => patch({ year: parseInt(valueFromInput(e)) || new Date().getFullYear() })}
 						class="tabular-nums"
 					/>
 				</Field.Field>

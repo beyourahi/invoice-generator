@@ -1,7 +1,5 @@
 import type { Fixed, PaymentMethodKind, SavedPaymentMethod } from "$lib/types";
-import { createSavedMethod, getMethodDef } from "$lib/payments/registry";
-
-const STORAGE_KEY = "invoice-generator:fixed";
+import { api, debounceSync, sync } from "$lib/api/client";
 
 const DEFAULT_FIXED: Fixed = {
 	from: {
@@ -13,92 +11,34 @@ const DEFAULT_FIXED: Fixed = {
 	paymentMethods: []
 };
 
-interface LegacyFixed {
-	from?: Fixed["from"];
-	bank?: {
-		holder?: string;
-		name?: string;
-		account?: string;
-		branch?: string;
-		routing?: string;
-	};
-	paymentMethods?: SavedPaymentMethod[];
-}
-
-const migrateLegacy = (raw: LegacyFixed): Fixed => {
-	const from: Fixed["from"] = {
-		name: raw.from?.name ?? "",
-		phone: raw.from?.phone ?? "",
-		email: raw.from?.email ?? "",
-		address: raw.from?.address ?? ""
-	};
-
-	if (Array.isArray(raw.paymentMethods)) {
-		return { from, paymentMethods: raw.paymentMethods };
-	}
-
-	const legacyBank = raw.bank;
-	if (legacyBank && Object.values(legacyBank).some((v) => (v ?? "").trim() !== "")) {
-		const migrated = createSavedMethod("bank");
-		migrated.values = {
-			holder: legacyBank.holder ?? "",
-			bankName: legacyBank.name ?? "",
-			account: legacyBank.account ?? "",
-			branch: legacyBank.branch ?? "",
-			routing: legacyBank.routing ?? "",
-			swift: ""
-		};
-		return { from, paymentMethods: [migrated] };
-	}
-
-	return { from, paymentMethods: [] };
-};
-
-const loadFromStorage = (): Fixed => {
-	if (typeof localStorage === "undefined") return DEFAULT_FIXED;
-	try {
-		const raw = localStorage.getItem(STORAGE_KEY);
-		if (!raw) return DEFAULT_FIXED;
-		return migrateLegacy(JSON.parse(raw) as LegacyFixed);
-	} catch {
-		return DEFAULT_FIXED;
-	}
-};
+const TEXT_DEBOUNCE_MS = 400;
 
 const createFixedStore = () => {
 	let state = $state<Fixed>(DEFAULT_FIXED);
-	let initialized = false;
 
-	const init = () => {
-		if (initialized) return;
-		state = loadFromStorage();
-		initialized = true;
-	};
-
-	const persist = () => {
-		if (typeof localStorage !== "undefined") {
-			localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-		}
+	const hydrate = (initial: Fixed) => {
+		state = initial;
 	};
 
 	const updateFrom = (field: keyof Fixed["from"], value: string) => {
 		state = { ...state, from: { ...state.from, [field]: value } };
-		persist();
+		debounceSync(`fixed:from:${field}`, TEXT_DEBOUNCE_MS, () =>
+			api.patch<void>("/api/fixed", { [field]: value })
+		);
 	};
 
-	const addPaymentMethod = (kind: PaymentMethodKind): string => {
-		const method = createSavedMethod(kind);
-		const def = getMethodDef(kind);
-		const existingCount = state.paymentMethods.filter((m) => m.kind === kind).length;
-		method.label = existingCount > 0 ? `${def.name} ${existingCount + 1}` : def.name;
-		state = { ...state, paymentMethods: [...state.paymentMethods, method] };
-		persist();
-		return method.id;
+	const addPaymentMethod = async (kind: PaymentMethodKind): Promise<string | null> => {
+		const created = await sync(() =>
+			api.post<SavedPaymentMethod>("/api/payment-methods", { kind })
+		);
+		if (!created) return null;
+		state = { ...state, paymentMethods: [...state.paymentMethods, created] };
+		return created.id;
 	};
 
 	const removePaymentMethod = (id: string) => {
 		state = { ...state, paymentMethods: state.paymentMethods.filter((m) => m.id !== id) };
-		persist();
+		void sync(() => api.delete<void>(`/api/payment-methods/${id}`));
 	};
 
 	const updatePaymentMethodLabel = (id: string, label: string) => {
@@ -106,7 +46,9 @@ const createFixedStore = () => {
 			...state,
 			paymentMethods: state.paymentMethods.map((m) => (m.id === id ? { ...m, label } : m))
 		};
-		persist();
+		debounceSync(`pm:${id}:label`, TEXT_DEBOUNCE_MS, () =>
+			api.patch<void>(`/api/payment-methods/${id}`, { label })
+		);
 	};
 
 	const updatePaymentMethodValue = (id: string, key: string, value: string) => {
@@ -116,7 +58,9 @@ const createFixedStore = () => {
 				m.id === id ? { ...m, values: { ...m.values, [key]: value } } : m
 			)
 		};
-		persist();
+		debounceSync(`pm:${id}:value:${key}`, TEXT_DEBOUNCE_MS, () =>
+			api.patch<void>(`/api/payment-methods/${id}`, { valueKey: key, valueValue: value })
+		);
 	};
 
 	const movePaymentMethod = (id: string, direction: -1 | 1) => {
@@ -128,20 +72,30 @@ const createFixedStore = () => {
 		const next = [...list];
 		[next[index], next[target]] = [next[target], next[index]];
 		state = { ...state, paymentMethods: next };
-		persist();
+		void sync(() =>
+			api.put<void>("/api/payment-methods", { orderedIds: next.map((m) => m.id) })
+		);
+	};
+
+	const purgePaymentMethodFromState = (methodId: string) => {
+		state = {
+			...state,
+			paymentMethods: state.paymentMethods.filter((m) => m.id !== methodId)
+		};
 	};
 
 	return {
 		get value() {
 			return state;
 		},
-		init,
+		hydrate,
 		updateFrom,
 		addPaymentMethod,
 		removePaymentMethod,
 		updatePaymentMethodLabel,
 		updatePaymentMethodValue,
-		movePaymentMethod
+		movePaymentMethod,
+		purgePaymentMethodFromState
 	};
 };
 

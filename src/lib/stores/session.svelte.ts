@@ -1,81 +1,64 @@
-import type { Client, GeneratedInvoice, GenerationState, MonthName } from "$lib/types";
-import { MONTHS } from "$lib/invoice/months";
+import type {
+	Client,
+	Currency,
+	GeneratedInvoice,
+	GenerationState,
+	InvoiceEntry,
+	MonthName
+} from "$lib/types";
+import { api, debounceSync, sync } from "$lib/api/client";
 
-const STORAGE_KEY = "invoice-generator:session";
-const SCHEMA_VERSION = 2;
+const TEXT_DEBOUNCE_MS = 400;
 
-interface PersistedSession {
-	version: number;
-	clients: Client[];
-	selectedClientId: string | null;
-	expandedClients: Record<string, boolean>;
+export interface ClientPatch {
+	name?: string;
+	invoicePrefix?: string;
+	phone?: string;
+	email?: string;
+	address?: string[];
+	serviceDescription?: string;
+	serviceAmount?: number;
+	serviceCurrency?: Currency;
+	year?: number;
+	expanded?: boolean;
 }
 
-interface LegacyClientV1 extends Omit<Client, "payment"> {
-	payment?: {
-		method?: string;
-		wiseLink?: string | null;
-		methodIds?: string[];
-	};
-}
+const TEXT_PATCH_KEYS = new Set<keyof ClientPatch>([
+	"name",
+	"invoicePrefix",
+	"phone",
+	"email",
+	"address",
+	"serviceDescription"
+]);
 
-interface LegacyPersistedV1 {
-	version?: number;
-	clients?: LegacyClientV1[];
-	selectedClientId?: string | null;
-	expandedClients?: Record<string, boolean>;
-}
-
-const createClient = (template?: Client): Client => ({
-	id: crypto.randomUUID(),
-	name: "",
-	invoicePrefix: "",
-	phone: "",
-	email: "",
-	address: [""],
-	service: template
-		? { ...template.service }
-		: {
-				description: "",
-				amount: 0,
-				currency: "BDT"
-			},
-	payment: template ? { methodIds: [...template.payment.methodIds] } : { methodIds: [] },
-	year: template?.year ?? new Date().getFullYear(),
-	invoices: template ? template.invoices.map((e) => ({ ...e, id: crypto.randomUUID() })) : []
-});
-
-const migrateClient = (raw: LegacyClientV1): Client => ({
-	id: raw.id,
-	name: raw.name,
-	invoicePrefix: raw.invoicePrefix,
-	phone: raw.phone,
-	email: raw.email,
-	address: raw.address,
-	service: raw.service,
-	year: raw.year,
-	invoices: raw.invoices,
-	payment: { methodIds: raw.payment?.methodIds ?? [] }
-});
-
-const loadFromStorage = (): PersistedSession | null => {
-	if (typeof localStorage === "undefined") return null;
-	try {
-		const raw = localStorage.getItem(STORAGE_KEY);
-		if (!raw) return null;
-		const parsed = JSON.parse(raw) as LegacyPersistedV1;
-		if (!parsed) return null;
-		const clients = (parsed.clients ?? []).map(migrateClient);
-		return {
-			version: SCHEMA_VERSION,
-			clients,
-			selectedClientId: parsed.selectedClientId ?? null,
-			expandedClients: parsed.expandedClients ?? {}
+const applyPatch = (client: Client, patch: ClientPatch): Client => {
+	const next: Client = { ...client };
+	if (patch.name !== undefined) next.name = patch.name;
+	if (patch.invoicePrefix !== undefined) next.invoicePrefix = patch.invoicePrefix;
+	if (patch.phone !== undefined) next.phone = patch.phone;
+	if (patch.email !== undefined) next.email = patch.email;
+	if (patch.address !== undefined) next.address = patch.address;
+	if (
+		patch.serviceDescription !== undefined ||
+		patch.serviceAmount !== undefined ||
+		patch.serviceCurrency !== undefined
+	) {
+		next.service = {
+			...client.service,
+			...(patch.serviceDescription !== undefined
+				? { description: patch.serviceDescription }
+				: {}),
+			...(patch.serviceAmount !== undefined ? { amount: patch.serviceAmount } : {}),
+			...(patch.serviceCurrency !== undefined ? { currency: patch.serviceCurrency } : {})
 		};
-	} catch {
-		return null;
 	}
+	if (patch.year !== undefined) next.year = patch.year;
+	return next;
 };
+
+const isTextPatch = (patch: ClientPatch): boolean =>
+	Object.keys(patch).some((k) => TEXT_PATCH_KEYS.has(k as keyof ClientPatch));
 
 const createSessionStore = () => {
 	let clients = $state<Client[]>([]);
@@ -84,40 +67,25 @@ const createSessionStore = () => {
 	let generatedInvoices = $state<GeneratedInvoice[]>([]);
 	let generationState = $state<GenerationState>("idle");
 	let generationError = $state<string | null>(null);
-	let initialized = false;
 
-	const persist = () => {
-		if (typeof localStorage === "undefined") return;
-		try {
-			const payload: PersistedSession = {
-				version: SCHEMA_VERSION,
-				clients: $state.snapshot(clients) as Client[],
-				selectedClientId,
-				expandedClients: $state.snapshot(expandedClients) as Record<string, boolean>
-			};
-			localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
-		} catch {
-			// ignore quota/serialization failures — UI keeps working
-		}
+	const hydrate = (initial: {
+		clients: Client[];
+		selectedClientId: string | null;
+		expandedClients: Record<string, boolean>;
+	}) => {
+		clients = initial.clients;
+		selectedClientId = initial.selectedClientId;
+		expandedClients = initial.expandedClients;
 	};
 
-	const init = () => {
-		if (initialized) return;
-		const data = loadFromStorage();
-		if (data) {
-			clients = data.clients ?? [];
-			selectedClientId = data.selectedClientId ?? null;
-			expandedClients = data.expandedClients ?? {};
-		}
-		initialized = true;
-	};
-
-	const addClient = () => {
+	const addClient = async () => {
 		const template = clients[clients.length - 1];
-		const next = createClient(template);
-		clients = [...clients, next];
-		expandedClients = { ...expandedClients, [next.id]: true };
-		persist();
+		const created = await sync(() =>
+			api.post<Client>("/api/clients", { templateId: template?.id ?? null })
+		);
+		if (!created) return;
+		clients = [...clients, created];
+		expandedClients = { ...expandedClients, [created.id]: true };
 	};
 
 	const removeClient = (id: string) => {
@@ -125,23 +93,37 @@ const createSessionStore = () => {
 		const nextExpanded = { ...expandedClients };
 		delete nextExpanded[id];
 		expandedClients = nextExpanded;
-		if (selectedClientId === id) selectedClientId = null;
-		persist();
+		if (selectedClientId === id) {
+			selectedClientId = null;
+			void sync(() => api.put<void>("/api/fixed", { selectedClientId: null }));
+		}
+		void sync(() => api.delete<void>(`/api/clients/${id}`));
 	};
 
-	const updateClient = (id: string, updater: (c: Client) => Client) => {
-		clients = clients.map((c) => (c.id === id ? updater(c) : c));
-		persist();
+	const updateClient = (id: string, patch: ClientPatch) => {
+		clients = clients.map((c) => (c.id === id ? applyPatch(c, patch) : c));
+		const path = `/api/clients/${id}`;
+		const send = () => api.patch<void>(path, patch);
+		if (isTextPatch(patch)) {
+			debounceSync(`client:${id}`, TEXT_DEBOUNCE_MS, send);
+		} else {
+			void sync(send);
+		}
 	};
 
 	const togglePaymentMethod = (clientId: string, methodId: string) => {
-		updateClient(clientId, (c) => {
-			const ids = c.payment.methodIds;
-			const next = ids.includes(methodId)
-				? ids.filter((id) => id !== methodId)
-				: [...ids, methodId];
-			return { ...c, payment: { methodIds: next } };
-		});
+		const target = clients.find((c) => c.id === clientId);
+		if (!target) return;
+		const ids = target.payment.methodIds;
+		const next = ids.includes(methodId)
+			? ids.filter((id) => id !== methodId)
+			: [...ids, methodId];
+		clients = clients.map((c) =>
+			c.id === clientId ? { ...c, payment: { methodIds: next } } : c
+		);
+		void sync(() =>
+			api.put<void>(`/api/clients/${clientId}/payment-methods`, { methodIds: next })
+		);
 	};
 
 	const purgePaymentMethodFromClients = (methodId: string) => {
@@ -149,35 +131,23 @@ const createSessionStore = () => {
 			...c,
 			payment: { methodIds: c.payment.methodIds.filter((id) => id !== methodId) }
 		}));
-		persist();
 	};
 
-	const addInvoiceEntry = (clientId: string) => {
-		updateClient(clientId, (c) => {
-			const last = c.invoices[c.invoices.length - 1];
-			const nextMonth: MonthName = last
-				? MONTHS[(MONTHS.indexOf(last.month) + 1) % MONTHS.length]
-				: "January";
-			return {
-				...c,
-				invoices: [
-					...c.invoices,
-					{
-						id: crypto.randomUUID(),
-						month: nextMonth,
-						issueDay: last?.issueDay ?? "01",
-						dueDay: last?.dueDay ?? "07"
-					}
-				]
-			};
-		});
+	const addInvoiceEntry = async (clientId: string) => {
+		const created = await sync(() =>
+			api.post<InvoiceEntry>(`/api/clients/${clientId}/entries`)
+		);
+		if (!created) return;
+		clients = clients.map((c) =>
+			c.id === clientId ? { ...c, invoices: [...c.invoices, created] } : c
+		);
 	};
 
 	const removeInvoiceEntry = (clientId: string, entryId: string) => {
-		updateClient(clientId, (c) => ({
-			...c,
-			invoices: c.invoices.filter((e) => e.id !== entryId)
-		}));
+		clients = clients.map((c) =>
+			c.id === clientId ? { ...c, invoices: c.invoices.filter((e) => e.id !== entryId) } : c
+		);
+		void sync(() => api.delete<void>(`/api/clients/${clientId}/entries/${entryId}`));
 	};
 
 	const updateInvoiceEntry = (
@@ -186,20 +156,40 @@ const createSessionStore = () => {
 		field: "month" | "issueDay" | "dueDay",
 		value: string
 	) => {
-		updateClient(clientId, (c) => ({
-			...c,
-			invoices: c.invoices.map((e) => (e.id === entryId ? { ...e, [field]: value } : e))
-		}));
+		clients = clients.map((c) =>
+			c.id === clientId
+				? {
+						...c,
+						invoices: c.invoices.map((e) =>
+							e.id === entryId ? { ...e, [field]: value } : e
+						)
+					}
+				: c
+		);
+		const body =
+			field === "month"
+				? { month: value as MonthName }
+				: field === "issueDay"
+					? { issueDay: value }
+					: { dueDay: value };
+		const path = `/api/clients/${clientId}/entries/${entryId}`;
+		if (field === "month") {
+			void sync(() => api.patch<void>(path, body));
+		} else {
+			debounceSync(`entry:${entryId}:${field}`, TEXT_DEBOUNCE_MS, () =>
+				api.patch<void>(path, body)
+			);
+		}
 	};
 
 	const setSelectedClientId = (id: string | null) => {
 		selectedClientId = id;
-		persist();
+		void sync(() => api.put<void>("/api/fixed", { selectedClientId: id }));
 	};
 
 	const setClientExpanded = (id: string, expanded: boolean) => {
 		expandedClients = { ...expandedClients, [id]: expanded };
-		persist();
+		void sync(() => api.patch<void>(`/api/clients/${id}`, { expanded }));
 	};
 
 	const toggleClientExpanded = (id: string) => {
@@ -258,7 +248,7 @@ const createSessionStore = () => {
 		get allClientsValid() {
 			return allClientsValid;
 		},
-		init,
+		hydrate,
 		addClient,
 		removeClient,
 		updateClient,
