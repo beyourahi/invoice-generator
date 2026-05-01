@@ -12,17 +12,19 @@
 	import Heading from "$lib/components/ui/heading/heading.svelte";
 	import { page } from "$app/state";
 	import User from "$src/components/User.svelte";
-	import { onMount, type Component } from "svelte";
+	import { onMount, untrack, type Component } from "svelte";
 	import { UserPlus } from "@lucide/svelte";
 	import type { PageData } from "./$types";
 
 	let { data }: { data: PageData } = $props();
 
-	fixed.hydrate(data.appState.fixed);
-	session.hydrate({
-		clients: data.appState.clients,
-		selectedClientId: data.appState.selectedClientId,
-		expandedClients: data.appState.expandedClients
+	untrack(() => {
+		fixed.hydrate(data.appState.fixed);
+		session.hydrate({
+			clients: data.appState.clients,
+			selectedClientId: data.appState.selectedClientId,
+			expandedClients: data.appState.expandedClients
+		});
 	});
 
 	let ToasterComponent = $state<Component | null>(null);

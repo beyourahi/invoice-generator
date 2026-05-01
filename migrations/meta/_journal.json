@@ -1,20 +1,20 @@
 {
-  "version": "7",
-  "dialect": "sqlite",
-  "entries": [
-    {
-      "idx": 1,
-      "version": "6",
-      "when": 1735686000000,
-      "tag": "0001_better_auth_tables",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "6",
-      "when": 1777637101528,
-      "tag": "0002_daffy_synch",
-      "breakpoints": true
-    }
-  ]
+	"version": "7",
+	"dialect": "sqlite",
+	"entries": [
+		{
+			"idx": 1,
+			"version": "6",
+			"when": 1735686000000,
+			"tag": "0001_better_auth_tables",
+			"breakpoints": true
+		},
+		{
+			"idx": 2,
+			"version": "6",
+			"when": 1777637101528,
+			"tag": "0002_daffy_synch",
+			"breakpoints": true
+		}
+	]
 }
