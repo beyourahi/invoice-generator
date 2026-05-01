@@ -46,57 +46,57 @@
 	<User user={page.data.user} currentUser={page.data.currentUser} />
 {/if}
 
-<main class="mx-auto max-w-6xl px-4 py-8 lg:max-w-7xl">
-	<div class="mb-8">
-		<Heading />
-	</div>
+<div class="flex w-full grow flex-col items-center gap-12 px-4 py-6 sm:gap-16 sm:py-8 lg:gap-20">
+	<Heading />
 
-	<div class="grid grid-cols-1 items-start gap-6 lg:grid-cols-2">
-		<section class="space-y-4">
-			<FixedSenderPanel />
+	<div class="container flex flex-col gap-8 sm:gap-10 lg:gap-12">
+		<div class="grid grid-cols-1 items-start gap-2 lg:grid-cols-2 lg:gap-4">
+			<section class="space-y-4">
+				<FixedSenderPanel />
 
-			<div class="space-y-3">
-				<div class="flex items-center justify-between">
-					<h2 class="text-base font-semibold">Clients</h2>
-					<p class="text-muted-foreground text-xs tabular-nums">
-						{session.clients.length} total
-					</p>
-				</div>
-
-				{#if session.clients.length === 0}
-					<button
-						class="border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground grid min-h-36 w-full cursor-pointer place-items-center rounded-lg border border-dashed text-center transition-colors"
-						onclick={session.addClient}
-					>
-						<div class="flex flex-col items-center gap-2">
-							<UserPlus size={18} />
-							<p class="text-sm font-medium">Add client</p>
-						</div>
-					</button>
-				{:else}
-					<div class="space-y-3">
-						{#each session.clients as client, i (client.id)}
-							<ClientCard
-								{client}
-								index={i}
-								selected={previewClient?.id === client.id}
-								onSelect={() => session.setSelectedClientId(client.id)}
-							/>
-						{/each}
+				<div class="space-y-3">
+					<div class="flex items-center justify-between">
+						<h2 class="text-base font-semibold">Clients</h2>
+						<p class="text-muted-foreground text-xs tabular-nums">
+							{session.clients.length} total
+						</p>
 					</div>
-				{/if}
 
-				{#if session.clients.length > 0}
-					<AddClientButton />
-				{/if}
-			</div>
-		</section>
+					{#if session.clients.length === 0}
+						<button
+							class="border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground grid min-h-36 w-full cursor-pointer place-items-center rounded-lg border border-dashed text-center transition-colors"
+							onclick={session.addClient}
+						>
+							<div class="flex flex-col items-center gap-2">
+								<UserPlus size={18} />
+								<p class="text-sm font-medium">Add client</p>
+							</div>
+						</button>
+					{:else}
+						<div class="space-y-3">
+							{#each session.clients as client, i (client.id)}
+								<ClientCard
+									{client}
+									index={i}
+									selected={previewClient?.id === client.id}
+									onSelect={() => session.setSelectedClientId(client.id)}
+								/>
+							{/each}
+						</div>
+					{/if}
 
-		<section class="lg:sticky lg:top-8 lg:self-start">
-			<InvoicePreview html={previewHtml} loading={false} />
-		</section>
+					{#if session.clients.length > 0}
+						<AddClientButton />
+					{/if}
+				</div>
+			</section>
+
+			<section class="lg:sticky lg:top-8 lg:self-start">
+				<InvoicePreview html={previewHtml} loading={false} />
+			</section>
+		</div>
+
+		<Separator />
+		<GenerationPanel />
 	</div>
-
-	<Separator class="my-6" />
-	<GenerationPanel />
-</main>
+</div>

@@ -19,8 +19,8 @@
 </svelte:head>
 
 <div class="flex min-h-dvh flex-col">
-	<div class="flex grow flex-col">
+	<main class="flex grow flex-col">
 		{@render children()}
-	</div>
+	</main>
 	<Footer />
 </div>
