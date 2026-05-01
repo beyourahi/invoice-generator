@@ -14,6 +14,7 @@ const html = `<!DOCTYPE html>
 <body>
 <div class="invoice">
 <header class="header-section">
+<h1 class="invoice-title" aria-label="Invoice"><span>I</span><span>N</span><span>V</span><span>O</span><span>I</span><span>C</span><span>E</span></h1>
 <div class="header-meta">
 <div class="meta-block">
 <div class="meta-label">Invoice No.</div>
@@ -28,7 +29,6 @@ const html = `<!DOCTYPE html>
 <div class="meta-value">{MONTH} {DUE_DAY}, {YEAR}</div>
 </div>
 </div>
-<h1 class="invoice-title" aria-label="Invoice"><span>I</span><span>N</span><span>V</span><span>O</span><span>I</span><span>C</span><span>E</span></h1>
 </header>
 <section class="parties">
 <div class="party">
