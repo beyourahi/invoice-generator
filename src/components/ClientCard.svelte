@@ -396,10 +396,11 @@
 
 					<Button
 						variant="outline"
+						size="sm"
 						class="text-muted-foreground hover:text-foreground w-full border-dashed"
 						onclick={() => session.addInvoiceEntry(client.id)}
 					>
-						<Plus size={14} />
+						<Plus size={12} />
 						Add entry
 					</Button>
 				{/if}
