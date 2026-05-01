@@ -48,10 +48,7 @@ export interface ClientListing {
 	expanded: Record<string, boolean>;
 }
 
-export const listClientsByUser = async (
-	db: Database,
-	userId: string
-): Promise<ClientListing> => {
+export const listClientsByUser = async (db: Database, userId: string): Promise<ClientListing> => {
 	const clientRows = await db
 		.select()
 		.from(clients)
@@ -93,11 +90,7 @@ export const listClientsByUser = async (
 	const expanded: Record<string, boolean> = {};
 	const projected = clientRows.map((row) => {
 		expanded[row.id] = row.expanded;
-		return toClient(
-			row,
-			entriesByClient.get(row.id) ?? [],
-			methodIdsByClient.get(row.id) ?? []
-		);
+		return toClient(row, entriesByClient.get(row.id) ?? [], methodIdsByClient.get(row.id) ?? []);
 	});
 
 	return { clients: projected, expanded };
@@ -264,12 +257,7 @@ export const setClientPaymentMethods = async (
 			: await db
 					.select({ id: paymentMethods.id })
 					.from(paymentMethods)
-					.where(
-						and(
-							eq(paymentMethods.userId, userId),
-							sqlInArray(paymentMethods.id, methodIds)
-						)
-					)
+					.where(and(eq(paymentMethods.userId, userId), sqlInArray(paymentMethods.id, methodIds)))
 					.all();
 	const validIds = new Set(validRows.map((r) => r.id));
 	const filtered = methodIds.filter((id) => validIds.has(id));

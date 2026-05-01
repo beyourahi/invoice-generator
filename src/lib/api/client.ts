@@ -25,11 +25,7 @@ export const api = {
 
 const pending = new Map<string, ReturnType<typeof setTimeout>>();
 
-export const debounceSync = <T>(
-	key: string,
-	delayMs: number,
-	fn: () => Promise<T>
-): void => {
+export const debounceSync = <T>(key: string, delayMs: number, fn: () => Promise<T>): void => {
 	const existing = pending.get(key);
 	if (existing) clearTimeout(existing);
 	const timer = setTimeout(async () => {

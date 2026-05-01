@@ -46,9 +46,7 @@ const applyPatch = (client: Client, patch: ClientPatch): Client => {
 	) {
 		next.service = {
 			...client.service,
-			...(patch.serviceDescription !== undefined
-				? { description: patch.serviceDescription }
-				: {}),
+			...(patch.serviceDescription !== undefined ? { description: patch.serviceDescription } : {}),
 			...(patch.serviceAmount !== undefined ? { amount: patch.serviceAmount } : {}),
 			...(patch.serviceCurrency !== undefined ? { currency: patch.serviceCurrency } : {})
 		};
@@ -115,15 +113,9 @@ const createSessionStore = () => {
 		const target = clients.find((c) => c.id === clientId);
 		if (!target) return;
 		const ids = target.payment.methodIds;
-		const next = ids.includes(methodId)
-			? ids.filter((id) => id !== methodId)
-			: [...ids, methodId];
-		clients = clients.map((c) =>
-			c.id === clientId ? { ...c, payment: { methodIds: next } } : c
-		);
-		void sync(() =>
-			api.put<void>(`/api/clients/${clientId}/payment-methods`, { methodIds: next })
-		);
+		const next = ids.includes(methodId) ? ids.filter((id) => id !== methodId) : [...ids, methodId];
+		clients = clients.map((c) => (c.id === clientId ? { ...c, payment: { methodIds: next } } : c));
+		void sync(() => api.put<void>(`/api/clients/${clientId}/payment-methods`, { methodIds: next }));
 	};
 
 	const purgePaymentMethodFromClients = (methodId: string) => {
@@ -134,9 +126,7 @@ const createSessionStore = () => {
 	};
 
 	const addInvoiceEntry = async (clientId: string) => {
-		const created = await sync(() =>
-			api.post<InvoiceEntry>(`/api/clients/${clientId}/entries`)
-		);
+		const created = await sync(() => api.post<InvoiceEntry>(`/api/clients/${clientId}/entries`));
 		if (!created) return;
 		clients = clients.map((c) =>
 			c.id === clientId ? { ...c, invoices: [...c.invoices, created] } : c
@@ -160,9 +150,7 @@ const createSessionStore = () => {
 			c.id === clientId
 				? {
 						...c,
-						invoices: c.invoices.map((e) =>
-							e.id === entryId ? { ...e, [field]: value } : e
-						)
+						invoices: c.invoices.map((e) => (e.id === entryId ? { ...e, [field]: value } : e))
 					}
 				: c
 		);

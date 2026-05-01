@@ -1,5 +1,12 @@
 import { relations } from "drizzle-orm";
-import { sqliteTable, text, integer, index, uniqueIndex, primaryKey } from "drizzle-orm/sqlite-core";
+import {
+	sqliteTable,
+	text,
+	integer,
+	index,
+	uniqueIndex,
+	primaryKey
+} from "drizzle-orm/sqlite-core";
 import type { Currency, MonthName, PaymentMethodKind } from "$lib/types";
 
 export const users = sqliteTable("users", {

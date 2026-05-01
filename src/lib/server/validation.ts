@@ -7,9 +7,7 @@ export const paymentKindSchema: z.ZodType<PaymentMethodKind> = z.enum(
 	PAYMENT_METHOD_KINDS as [PaymentMethodKind, ...PaymentMethodKind[]]
 );
 
-export const monthSchema: z.ZodType<MonthName> = z.enum(
-	MONTHS as [MonthName, ...MonthName[]]
-);
+export const monthSchema: z.ZodType<MonthName> = z.enum(MONTHS as [MonthName, ...MonthName[]]);
 
 export const dayStringSchema = z
 	.string()
@@ -40,9 +38,7 @@ export const updateMethodSchema = z
 		valueValue: z.string().max(2000).optional()
 	})
 	.refine(
-		(v) =>
-			v.label !== undefined ||
-			(v.valueKey !== undefined && v.valueValue !== undefined),
+		(v) => v.label !== undefined || (v.valueKey !== undefined && v.valueValue !== undefined),
 		{ message: "Provide label or valueKey+valueValue" }
 	);
 

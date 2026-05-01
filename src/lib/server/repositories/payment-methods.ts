@@ -96,11 +96,7 @@ export const deletePaymentMethod = async (db: Database, userId: string, id: stri
 		.run();
 };
 
-export const reorderPaymentMethods = async (
-	db: Database,
-	userId: string,
-	orderedIds: string[]
-) => {
+export const reorderPaymentMethods = async (db: Database, userId: string, orderedIds: string[]) => {
 	const stmts = orderedIds.map((id, position) =>
 		db
 			.update(paymentMethods)
@@ -111,11 +107,7 @@ export const reorderPaymentMethods = async (
 	await db.batch(stmts as [(typeof stmts)[number], ...(typeof stmts)[number][]]);
 };
 
-export const purgeMethodFromAllClients = async (
-	db: Database,
-	userId: string,
-	methodId: string
-) => {
+export const purgeMethodFromAllClients = async (db: Database, userId: string, methodId: string) => {
 	const userClientIds = await db
 		.select({ id: clients.id })
 		.from(clients)

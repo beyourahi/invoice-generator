@@ -35,11 +35,7 @@ export const toInvoiceEntry = (row: EntryRow): InvoiceEntry => ({
 	dueDay: row.dueDay
 });
 
-export const toClient = (
-	row: ClientRow,
-	entries: EntryRow[],
-	methodIds: string[]
-): Client => ({
+export const toClient = (row: ClientRow, entries: EntryRow[], methodIds: string[]): Client => ({
 	id: row.id,
 	name: row.name,
 	invoicePrefix: row.invoicePrefix,
