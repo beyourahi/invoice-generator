@@ -33,6 +33,7 @@ interface DirectoryPickerWindow {
 
 const DOWNLOAD_DELAY_MS = 150;
 const DIRECTORY_PICKER_ID = "invoice-generator-downloads";
+const INVOICES_ROOT_FOLDER = "invoices";
 
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
@@ -67,16 +68,18 @@ const writeGroupsToDirectory = async (
 	root: FileSystemDirectoryHandle,
 	groups: DownloadGroup[]
 ): Promise<void> => {
+	const invoicesRoot = await root.getDirectoryHandle(INVOICES_ROOT_FOLDER, { create: true });
+
 	for (const group of groups) {
 		if (group.invoices.length === 0) continue;
 
 		if (group.invoices.length === 1) {
 			const [invoice] = group.invoices;
-			await writeFile(root, invoice.fileName, invoice.pdfBlob);
+			await writeFile(invoicesRoot, invoice.fileName, invoice.pdfBlob);
 			continue;
 		}
 
-		const folder = await root.getDirectoryHandle(group.folderName, { create: true });
+		const folder = await invoicesRoot.getDirectoryHandle(group.folderName, { create: true });
 		for (const invoice of group.invoices) {
 			await writeFile(folder, invoice.fileName, invoice.pdfBlob);
 		}
