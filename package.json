@@ -22,21 +22,21 @@
 		"db:migrate:list": "wrangler d1 migrations list invoice_generator --local"
 	},
 	"devDependencies": {
-		"@cloudflare/workers-types": "^4.20260501.1",
+		"@cloudflare/workers-types": "^4.20260502.1",
 		"@eslint/js": "^10.0.1",
 		"@internationalized/date": "^3.12.1",
 		"@lucide/svelte": "^1.14.0",
 		"@sveltejs/adapter-cloudflare": "^7.2.8",
-		"@sveltejs/kit": "^2.58.0",
+		"@sveltejs/kit": "^2.59.0",
 		"@sveltejs/vite-plugin-svelte": "^7.0.0",
 		"@tailwindcss/vite": "^4.2.4",
 		"@types/node": "^25.6.0",
 		"bits-ui": "^2.18.0",
 		"clsx": "^2.1.1",
-		"eslint": "^10.2.1",
+		"eslint": "^10.3.0",
 		"eslint-config-prettier": "^10.1.8",
 		"eslint-plugin-svelte": "^3.17.1",
-		"globals": "^17.5.0",
+		"globals": "^17.6.0",
 		"mode-watcher": "^1.1.0",
 		"prettier": "^3.8.3",
 		"prettier-plugin-svelte": "^3.5.1",
@@ -60,6 +60,6 @@
 		"html2canvas": "^1.4.1",
 		"jspdf": "^4.2.1",
 		"svelte-sonner": "^1.1.1",
-		"zod": "^4.4.1"
+		"zod": "^4.4.2"
 	}
 }
