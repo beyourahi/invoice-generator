@@ -5,7 +5,7 @@
 	import { ArrowLeft, TriangleAlert } from "@lucide/svelte";
 </script>
 
-<div class="bg-background text-foreground flex min-h-screen items-center justify-center px-4">
+<div class="bg-background text-foreground flex min-h-dvh items-center justify-center px-4">
 	<Card class="w-full max-w-md">
 		<CardHeader class="items-center text-center">
 			<div class="bg-destructive/10 text-destructive flex size-10 items-center justify-center rounded-lg">

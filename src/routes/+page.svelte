@@ -45,7 +45,7 @@
 	<User user={page.data.user} currentUser={page.data.currentUser} />
 {/if}
 
-<main class="mx-auto max-w-6xl px-4 py-8">
+<main class="mx-auto max-w-6xl px-4 py-8 lg:max-w-7xl">
 		<div class="mb-8">
 			<Heading />
 		</div>
