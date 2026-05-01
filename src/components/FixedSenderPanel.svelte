@@ -24,9 +24,9 @@
 	<CardHeader>
 		<CardTitle class="flex items-center gap-2 !text-base font-semibold">
 			<UserRound size={15} />
-			Sender
+			Your details
 		</CardTitle>
-		<CardDescription class="text-xs">Saved locally in this browser.</CardDescription>
+		<CardDescription class="text-xs">Stays on this device — autofills every invoice.</CardDescription>
 	</CardHeader>
 	<CardContent class="space-y-5">
 		<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
