@@ -1,4 +1,5 @@
 import type { Client, GeneratedInvoice, GenerationState, MonthName } from "$lib/types";
+import { MONTHS } from "$lib/invoice/months";
 
 const createClient = (): Client => ({
 	id: crypto.randomUUID(),
@@ -39,18 +40,24 @@ const createSessionStore = () => {
 	};
 
 	const addInvoiceEntry = (clientId: string) => {
-		updateClient(clientId, (c) => ({
-			...c,
-			invoices: [
-				...c.invoices,
-				{
-					id: crypto.randomUUID(),
-					month: "January" as MonthName,
-					issueDay: "01",
-					dueDay: "07"
-				}
-			]
-		}));
+		updateClient(clientId, (c) => {
+			const last = c.invoices[c.invoices.length - 1];
+			const nextMonth: MonthName = last
+				? MONTHS[(MONTHS.indexOf(last.month) + 1) % MONTHS.length]
+				: "January";
+			return {
+				...c,
+				invoices: [
+					...c.invoices,
+					{
+						id: crypto.randomUUID(),
+						month: nextMonth,
+						issueDay: last?.issueDay ?? "01",
+						dueDay: last?.dueDay ?? "07"
+					}
+				]
+			};
+		});
 	};
 
 	const removeInvoiceEntry = (clientId: string, entryId: string) => {
