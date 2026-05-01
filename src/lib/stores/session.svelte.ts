@@ -118,6 +118,15 @@ const createSessionStore = () => {
 		void sync(() => api.put<void>(`/api/clients/${clientId}/payment-methods`, { methodIds: next }));
 	};
 
+	const ensurePaymentMethodSelected = (clientId: string, methodId: string) => {
+		const target = clients.find((c) => c.id === clientId);
+		if (!target) return;
+		if (target.payment.methodIds.includes(methodId)) return;
+		const next = [...target.payment.methodIds, methodId];
+		clients = clients.map((c) => (c.id === clientId ? { ...c, payment: { methodIds: next } } : c));
+		void sync(() => api.put<void>(`/api/clients/${clientId}/payment-methods`, { methodIds: next }));
+	};
+
 	const purgePaymentMethodFromClients = (methodId: string) => {
 		clients = clients.map((c) => ({
 			...c,
@@ -241,6 +250,7 @@ const createSessionStore = () => {
 		removeClient,
 		updateClient,
 		togglePaymentMethod,
+		ensurePaymentMethodSelected,
 		purgePaymentMethodFromClients,
 		addInvoiceEntry,
 		removeInvoiceEntry,

@@ -65,6 +65,12 @@
 			.join(" · ")
 			.toLowerCase();
 	});
+
+	$effect(() => {
+		if (savedMethods.length === 1 && client.payment.methodIds.length === 0) {
+			session.ensurePaymentMethodSelected(client.id, savedMethods[0].id);
+		}
+	});
 </script>
 
 <Card class={cn("py-0", selected && "ring-brand ring-2")}>
