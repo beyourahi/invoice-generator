@@ -99,6 +99,7 @@ export interface Fixed {
 }
 
 export interface GeneratedInvoice {
+	clientId: string;
 	clientName: string;
 	fileName: string;
 	invoiceId: string;

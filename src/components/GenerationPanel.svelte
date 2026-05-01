@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { buildInvoiceHtml, getFileName, getInvoiceId } from "$lib/invoice/builder";
 	import { generatePdf } from "$lib/pdf/generator";
-	import { buildZip } from "$lib/pdf/zip";
+	import { buildClientZip } from "$lib/pdf/zip";
 	import { fixed } from "$lib/stores/fixed.svelte";
 	import { session } from "$lib/stores/session.svelte";
 	import { ACTIVE_THEME_ID, getTheme } from "$lib/themes/registry";
@@ -11,10 +11,18 @@
 	import { Card, CardContent, CardHeader, CardTitle } from "$lib/components/ui/card";
 	import { Progress } from "$lib/components/ui/progress";
 	import * as Table from "$lib/components/ui/table";
-	import { AlertCircle, Archive, Download, FileDown, Loader2, RotateCcw, TriangleAlert } from "@lucide/svelte";
+	import { AlertCircle, Download, FileDown, Loader2, RotateCcw, TriangleAlert } from "@lucide/svelte";
+
+	interface ClientGroup {
+		clientId: string;
+		clientName: string;
+		year: number;
+		folderName: string;
+		invoices: GeneratedInvoice[];
+	}
 
 	let progress = $state(0);
-	let zipping = $state(false);
+	let busyClientId = $state<string | null>(null);
 
 	const totalCount = $derived(session.totalInvoiceCount);
 	const canGenerate = $derived(
@@ -23,6 +31,28 @@
 			session.allClientsValid &&
 			session.generationState !== "generating"
 	);
+
+	const clientGroups = $derived.by((): ClientGroup[] => {
+		const groups: ClientGroup[] = [];
+		const indexById: Record<string, number> = {};
+		for (const invoice of session.generatedInvoices) {
+			const existingIndex = indexById[invoice.clientId];
+			if (existingIndex !== undefined) {
+				groups[existingIndex].invoices.push(invoice);
+				continue;
+			}
+			indexById[invoice.clientId] = groups.length;
+			groups.push({
+				clientId: invoice.clientId,
+				clientName: invoice.clientName,
+				year: invoice.year,
+				folderName: `${invoice.clientName}-${invoice.year}-Invoices`,
+				invoices: [invoice]
+			});
+		}
+		return groups;
+	});
+
 	const notifySuccess = async (message: string, description?: string) => {
 		const { toast } = await import("svelte-sonner");
 		toast.success(message, description ? { description } : undefined);
@@ -46,6 +76,7 @@
 					const html = buildInvoiceHtml(client, entry, fixed.value, theme);
 					const pdfBlob = await generatePdf(html);
 					results.push({
+						clientId: client.id,
 						clientName: client.name || "client",
 						fileName: getFileName(client, entry),
 						invoiceId: getInvoiceId(client, entry),
@@ -70,23 +101,24 @@
 		);
 	};
 
-	const downloadOne = (index: number) => {
-		const invoice = session.generatedInvoices[index];
-		if (!invoice) return;
-		downloadBlob(invoice.pdfBlob, invoice.fileName);
-		void notifySuccess("PDF download started", invoice.fileName);
-	};
-
-	const downloadAll = async () => {
-		zipping = true;
+	const downloadGroup = async (group: ClientGroup) => {
+		if (busyClientId) return;
+		busyClientId = group.clientId;
 		try {
-			const zip = await buildZip(session.generatedInvoices);
-			downloadBlob(zip, "invoices.zip");
-			await notifySuccess("ZIP download started", "invoices.zip");
+			if (group.invoices.length === 1) {
+				const invoice = group.invoices[0];
+				downloadBlob(invoice.pdfBlob, invoice.fileName);
+				await notifySuccess("PDF download started", invoice.fileName);
+			} else {
+				const zipName = `${group.folderName}.zip`;
+				const blob = await buildClientZip(group.invoices, group.folderName);
+				downloadBlob(blob, zipName);
+				await notifySuccess("ZIP download started", zipName);
+			}
 		} catch (err) {
-			await notifyError("ZIP failed", err instanceof Error ? err.message : "Could not package invoices.");
+			await notifyError("Download failed", err instanceof Error ? err.message : "Could not prepare download.");
 		} finally {
-			zipping = false;
+			busyClientId = null;
 		}
 	};
 </script>
@@ -107,31 +139,6 @@
 						<RotateCcw size={12} />
 						Reset
 					</Button>
-					{#if session.generatedInvoices.length === 1}
-						<Button
-							size="sm"
-							class="bg-brand text-brand-foreground hover:bg-brand/90 h-11 sm:h-7"
-							onclick={() => downloadOne(0)}
-						>
-							<Download size={13} />
-							Download PDF
-						</Button>
-					{:else}
-						<Button
-							size="sm"
-							class="bg-brand text-brand-foreground hover:bg-brand/90 h-11 sm:h-7"
-							onclick={downloadAll}
-							disabled={zipping}
-						>
-							{#if zipping}
-								<Loader2 size={13} class="animate-spin" />
-								Zipping
-							{:else}
-								<Archive size={13} />
-								Download ZIP
-							{/if}
-						</Button>
-					{/if}
 				{:else if session.generationState === "error"}
 					<Button
 						size="sm"
@@ -187,41 +194,49 @@
 			</p>
 		{/if}
 
-		{#if session.generationState === "done" && session.generatedInvoices.length > 0}
+		{#if session.generationState === "done" && clientGroups.length > 0}
 			<div class="border-border overflow-x-auto rounded-lg border">
 				<Table.Root>
 					<Table.Header>
 						<Table.Row class="border-border hover:bg-transparent">
 							<Table.Head class="h-9 pl-3 text-[10px] tracking-wider uppercase">Client</Table.Head>
-							<Table.Head class="h-9 text-[10px] tracking-wider uppercase">Invoice ID</Table.Head>
+							<Table.Head class="h-9 text-[10px] tracking-wider uppercase">Invoices</Table.Head>
 							<Table.Head class="hidden h-9 text-[10px] tracking-wider uppercase sm:table-cell">
 								Year
 							</Table.Head>
-							<Table.Head class="h-9 w-12 pr-3 sm:w-20"></Table.Head>
+							<Table.Head class="h-9 w-24 pr-3 sm:w-28"></Table.Head>
 						</Table.Row>
 					</Table.Header>
 					<Table.Body>
-						{#each session.generatedInvoices as invoice, i (invoice.fileName)}
+						{#each clientGroups as group (group.clientId)}
+							{@const isBusy = busyClientId === group.clientId}
+							{@const isSingle = group.invoices.length === 1}
 							<Table.Row class="border-border">
-								<Table.Cell class="py-2 pl-3 text-xs font-medium">{invoice.clientName}</Table.Cell>
-								<Table.Cell class="text-muted-foreground py-2 font-mono text-xs">
-									{invoice.invoiceId}
+								<Table.Cell class="py-2 pl-3 text-xs font-medium">{group.clientName}</Table.Cell>
+								<Table.Cell class="text-muted-foreground py-2 text-xs tabular-nums">
+									{group.invoices.length}
 								</Table.Cell>
 								<Table.Cell
 									class="text-muted-foreground hidden py-2 text-xs tabular-nums sm:table-cell"
 								>
-									{invoice.year}
+									{group.year}
 								</Table.Cell>
 								<Table.Cell class="py-2 pr-3 text-right">
 									<Button
-										variant="ghost"
 										size="sm"
-										class="text-muted-foreground hover:text-foreground h-11 px-2 text-xs sm:h-7"
-										onclick={() => downloadOne(i)}
-										aria-label={`Download ${invoice.fileName}`}
+										class="bg-brand text-brand-foreground hover:bg-brand/90 h-11 px-2 text-xs sm:h-7"
+										onclick={() => downloadGroup(group)}
+										disabled={isBusy}
+										aria-label={isSingle
+											? `Download ${group.invoices[0].fileName}`
+											: `Download ${group.folderName}.zip`}
 									>
-										<Download size={11} />
-										<span class="hidden sm:inline">PDF</span>
+										{#if isBusy}
+											<Loader2 size={11} class="animate-spin" />
+										{:else}
+											<Download size={11} />
+										{/if}
+										<span class="hidden sm:inline">{isSingle ? "PDF" : "ZIP"}</span>
 									</Button>
 								</Table.Cell>
 							</Table.Row>
