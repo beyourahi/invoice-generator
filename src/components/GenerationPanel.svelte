@@ -114,15 +114,20 @@
 		invoices: group.invoices
 	});
 
-	const describeDestination = (
-		usedDirectoryPicker: boolean,
-		fileCount: number,
-		fallbackLabel: string
+	const pluraliseFiles = (count: number) => `${count} file${count !== 1 ? "s" : ""}`;
+
+	const describeOutcome = (
+		result: { usedDirectoryPicker: boolean; fellBackToSequential: boolean; fileCount: number },
+		singleFileName: string | null
 	): string => {
-		if (usedDirectoryPicker) {
-			return `${fileCount} file${fileCount !== 1 ? "s" : ""} saved to selected folder.`;
+		if (result.usedDirectoryPicker) {
+			return `${pluraliseFiles(result.fileCount)} saved to selected folder.`;
 		}
-		return fallbackLabel;
+		if (result.fellBackToSequential) {
+			return `Folder picker unavailable. ${pluraliseFiles(result.fileCount)} sent to your downloads folder.`;
+		}
+		if (singleFileName && result.fileCount === 1) return singleFileName;
+		return `${pluraliseFiles(result.fileCount)} sent to your downloads folder.`;
 	};
 
 	const downloadGroup = async (group: ClientGroup) => {
@@ -130,19 +135,14 @@
 		busyClientId = group.clientId;
 		try {
 			const result = await downloadGroups([toDownloadGroup(group)]);
-			const fallback =
-				group.invoices.length === 1
-					? group.invoices[0].fileName
-					: `${group.invoices.length} files queued for download.`;
-			await notifySuccess(
-				"Download started",
-				describeDestination(result.usedDirectoryPicker, result.fileCount, fallback)
-			);
+			if (result.cancelled) return;
+			const singleName = group.invoices.length === 1 ? group.invoices[0].fileName : null;
+			await notifySuccess("Download started", describeOutcome(result, singleName));
 		} catch (err) {
 			if (isUserAbort(err)) return;
 			await notifyError(
 				"Download failed",
-				err instanceof Error ? err.message : "Could not prepare download."
+				err instanceof Error ? err.message : "Could not save to the selected folder."
 			);
 		} finally {
 			busyClientId = null;
@@ -155,16 +155,13 @@
 		busyAll = true;
 		try {
 			const result = await downloadGroups(clientGroups.map(toDownloadGroup));
-			const fallback = `${result.fileCount} file${result.fileCount !== 1 ? "s" : ""} queued for download.`;
-			await notifySuccess(
-				"Downloads started",
-				describeDestination(result.usedDirectoryPicker, result.fileCount, fallback)
-			);
+			if (result.cancelled) return;
+			await notifySuccess("Downloads started", describeOutcome(result, null));
 		} catch (err) {
 			if (isUserAbort(err)) return;
 			await notifyError(
 				"Download failed",
-				err instanceof Error ? err.message : "Could not prepare downloads."
+				err instanceof Error ? err.message : "Could not save to the selected folder."
 			);
 		} finally {
 			busyAll = false;
@@ -274,7 +271,7 @@
 							<Table.Head class="hidden h-9 text-[10px] tracking-wider uppercase sm:table-cell">
 								Year
 							</Table.Head>
-							<Table.Head class="h-9 w-24 pr-3 sm:w-28"></Table.Head>
+							<Table.Head class="h-9 w-28 pr-3"></Table.Head>
 						</Table.Row>
 					</Table.Header>
 					<Table.Body>
@@ -294,7 +291,7 @@
 								<Table.Cell class="py-2 pr-3 text-right">
 									<Button
 										size="sm"
-										class="bg-brand text-brand-foreground hover:bg-brand/90 h-11 min-w-11 px-2 text-xs sm:h-7 sm:min-w-0"
+										class="bg-brand text-brand-foreground hover:bg-brand/90 h-10 w-full px-2 text-xs sm:h-7 sm:w-auto sm:min-w-0"
 										onclick={() => downloadGroup(group)}
 										disabled={isBusy || busyAll}
 										aria-label={isSingle
@@ -306,7 +303,7 @@
 										{:else}
 											<Download size={11} />
 										{/if}
-										<span class="hidden sm:inline">{isSingle ? "PDF" : "Folder"}</span>
+										<span>{isSingle ? "PDF" : "Folder"}</span>
 									</Button>
 								</Table.Cell>
 							</Table.Row>

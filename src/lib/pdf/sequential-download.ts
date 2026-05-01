@@ -8,22 +8,40 @@ export interface DownloadGroup {
 
 export interface DownloadResult {
 	usedDirectoryPicker: boolean;
+	fellBackToSequential: boolean;
+	cancelled: boolean;
 	fileCount: number;
 }
 
+type DirectoryPickerStartIn =
+	| "desktop"
+	| "documents"
+	| "downloads"
+	| "music"
+	| "pictures"
+	| "videos";
+
+interface DirectoryPickerOptions {
+	mode?: "read" | "readwrite";
+	id?: string;
+	startIn?: DirectoryPickerStartIn;
+}
+
 interface DirectoryPickerWindow {
-	showDirectoryPicker: (options?: {
-		mode?: "read" | "readwrite";
-	}) => Promise<FileSystemDirectoryHandle>;
+	showDirectoryPicker: (options?: DirectoryPickerOptions) => Promise<FileSystemDirectoryHandle>;
 }
 
 const DOWNLOAD_DELAY_MS = 150;
+const DIRECTORY_PICKER_ID = "invoice-generator-downloads";
 
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 const supportsDirectoryPicker = (): boolean =>
 	typeof window !== "undefined" &&
 	typeof (window as unknown as Partial<DirectoryPickerWindow>).showDirectoryPicker === "function";
+
+const isAbortError = (err: unknown): boolean =>
+	err instanceof DOMException && err.name === "AbortError";
 
 const writeFile = async (
 	dirHandle: FileSystemDirectoryHandle,
@@ -36,10 +54,19 @@ const writeFile = async (
 	await writable.close();
 };
 
-const writeViaDirectoryPicker = async (groups: DownloadGroup[]): Promise<void> => {
+const requestDirectory = async (): Promise<FileSystemDirectoryHandle> => {
 	const picker = (window as unknown as DirectoryPickerWindow).showDirectoryPicker;
-	const root = await picker({ mode: "readwrite" });
+	return picker({
+		mode: "readwrite",
+		id: DIRECTORY_PICKER_ID,
+		startIn: "downloads"
+	});
+};
 
+const writeGroupsToDirectory = async (
+	root: FileSystemDirectoryHandle,
+	groups: DownloadGroup[]
+): Promise<void> => {
 	for (const group of groups) {
 		if (group.invoices.length === 0) continue;
 
@@ -72,18 +99,39 @@ const triggerSequentialDownloads = async (groups: DownloadGroup[]): Promise<void
 const countFiles = (groups: DownloadGroup[]): number =>
 	groups.reduce((total, group) => total + group.invoices.length, 0);
 
+const emptyResult = (fileCount: number): DownloadResult => ({
+	usedDirectoryPicker: false,
+	fellBackToSequential: false,
+	cancelled: false,
+	fileCount
+});
+
 export const downloadGroups = async (groups: DownloadGroup[]): Promise<DownloadResult> => {
 	const fileCount = countFiles(groups);
-	if (fileCount === 0) return { usedDirectoryPicker: false, fileCount: 0 };
+	if (fileCount === 0) return emptyResult(0);
 
-	if (supportsDirectoryPicker()) {
-		await writeViaDirectoryPicker(groups);
-		return { usedDirectoryPicker: true, fileCount };
+	if (!supportsDirectoryPicker()) {
+		await triggerSequentialDownloads(groups);
+		return { ...emptyResult(fileCount), fellBackToSequential: false };
 	}
 
-	await triggerSequentialDownloads(groups);
-	return { usedDirectoryPicker: false, fileCount };
+	let root: FileSystemDirectoryHandle;
+	try {
+		root = await requestDirectory();
+	} catch (err) {
+		if (isAbortError(err)) {
+			return { ...emptyResult(fileCount), cancelled: true };
+		}
+		console.warn(
+			"Directory picker unavailable, falling back to sequential download.",
+			err
+		);
+		await triggerSequentialDownloads(groups);
+		return { ...emptyResult(fileCount), fellBackToSequential: true };
+	}
+
+	await writeGroupsToDirectory(root, groups);
+	return { ...emptyResult(fileCount), usedDirectoryPicker: true };
 };
 
-export const isUserAbort = (err: unknown): boolean =>
-	err instanceof DOMException && (err.name === "AbortError" || err.name === "NotAllowedError");
+export const isUserAbort = (err: unknown): boolean => isAbortError(err);
