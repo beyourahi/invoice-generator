@@ -15,14 +15,16 @@
 	let {
 		method,
 		index,
-		total
+		total,
+		expanded = false,
+		onToggle
 	}: {
 		method: SavedPaymentMethod;
 		index: number;
 		total: number;
+		expanded?: boolean;
+		onToggle?: (next: boolean) => void;
 	} = $props();
-
-	let expanded = $state(false);
 
 	const def = $derived(getMethodDef(method.kind));
 	const complete = $derived(isMethodComplete(method));
@@ -53,9 +55,10 @@
 <div class="border-border bg-card rounded-lg border">
 	<button
 		type="button"
-		onclick={() => (expanded = !expanded)}
+		onclick={() => onToggle?.(!expanded)}
 		class="hover:bg-accent/40 flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors"
 		aria-expanded={expanded}
+		aria-controls="method-panel-{method.id}"
 	>
 		<span
 			class={cn(
@@ -107,7 +110,7 @@
 	</button>
 
 	{#if expanded}
-		<div class="border-border space-y-3 border-t px-3 pt-3 pb-4">
+		<div id="method-panel-{method.id}" class="border-border space-y-3 border-t px-3 pt-3 pb-4">
 			<Field.Field class="gap-1.5">
 				<Field.FieldLabel for="label-{method.id}">Display label</Field.FieldLabel>
 				<Input
