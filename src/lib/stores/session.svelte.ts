@@ -1,24 +1,30 @@
 import type { Client, GeneratedInvoice, GenerationState, MonthName } from "$lib/types";
 import { MONTHS } from "$lib/invoice/months";
 
-const createClient = (): Client => ({
+const createClient = (template?: Client): Client => ({
 	id: crypto.randomUUID(),
 	name: "",
 	invoicePrefix: "",
 	phone: "",
 	email: "",
 	address: [""],
-	service: {
-		description: "",
-		amount: 0,
-		currency: "BDT"
-	},
-	payment: {
-		method: "bank",
-		wiseLink: null
-	},
-	year: new Date().getFullYear(),
-	invoices: []
+	service: template
+		? { ...template.service }
+		: {
+				description: "",
+				amount: 0,
+				currency: "BDT"
+			},
+	payment: template
+		? { ...template.payment }
+		: {
+				method: "bank",
+				wiseLink: null
+			},
+	year: template?.year ?? new Date().getFullYear(),
+	invoices: template
+		? template.invoices.map((e) => ({ ...e, id: crypto.randomUUID() }))
+		: []
 });
 
 const createSessionStore = () => {
@@ -28,7 +34,8 @@ const createSessionStore = () => {
 	let generationError = $state<string | null>(null);
 
 	const addClient = () => {
-		clients = [...clients, createClient()];
+		const template = clients[clients.length - 1];
+		clients = [...clients, createClient(template)];
 	};
 
 	const removeClient = (id: string) => {
