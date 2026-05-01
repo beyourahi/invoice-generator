@@ -1,6 +1,16 @@
 import type { Client, GeneratedInvoice, GenerationState, MonthName } from "$lib/types";
 import { MONTHS } from "$lib/invoice/months";
 
+const STORAGE_KEY = "invoice-generator:session";
+const SCHEMA_VERSION = 1;
+
+interface PersistedSession {
+	version: number;
+	clients: Client[];
+	selectedClientId: string | null;
+	expandedClients: Record<string, boolean>;
+}
+
 const createClient = (template?: Client): Client => ({
 	id: crypto.randomUUID(),
 	name: "",
@@ -22,32 +32,81 @@ const createClient = (template?: Client): Client => ({
 				wiseLink: null
 			},
 	year: template?.year ?? new Date().getFullYear(),
-	invoices: template
-		? template.invoices.map((e) => ({ ...e, id: crypto.randomUUID() }))
-		: []
+	invoices: template ? template.invoices.map(e => ({ ...e, id: crypto.randomUUID() })) : []
 });
+
+const loadFromStorage = (): PersistedSession | null => {
+	if (typeof localStorage === "undefined") return null;
+	try {
+		const raw = localStorage.getItem(STORAGE_KEY);
+		if (!raw) return null;
+		const parsed = JSON.parse(raw) as PersistedSession;
+		if (!parsed || parsed.version !== SCHEMA_VERSION) return null;
+		return parsed;
+	} catch {
+		return null;
+	}
+};
 
 const createSessionStore = () => {
 	let clients = $state<Client[]>([]);
+	let selectedClientId = $state<string | null>(null);
+	let expandedClients = $state<Record<string, boolean>>({});
 	let generatedInvoices = $state<GeneratedInvoice[]>([]);
 	let generationState = $state<GenerationState>("idle");
 	let generationError = $state<string | null>(null);
+	let initialized = false;
+
+	const persist = () => {
+		if (typeof localStorage === "undefined") return;
+		try {
+			const payload: PersistedSession = {
+				version: SCHEMA_VERSION,
+				clients: $state.snapshot(clients) as Client[],
+				selectedClientId,
+				expandedClients: $state.snapshot(expandedClients) as Record<string, boolean>
+			};
+			localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+		} catch {
+			// ignore quota or serialization failures so the UI keeps working
+		}
+	};
+
+	const init = () => {
+		if (initialized) return;
+		const data = loadFromStorage();
+		if (data) {
+			clients = data.clients ?? [];
+			selectedClientId = data.selectedClientId ?? null;
+			expandedClients = data.expandedClients ?? {};
+		}
+		initialized = true;
+	};
 
 	const addClient = () => {
 		const template = clients[clients.length - 1];
-		clients = [...clients, createClient(template)];
+		const next = createClient(template);
+		clients = [...clients, next];
+		expandedClients = { ...expandedClients, [next.id]: true };
+		persist();
 	};
 
 	const removeClient = (id: string) => {
-		clients = clients.filter((c) => c.id !== id);
+		clients = clients.filter(c => c.id !== id);
+		const nextExpanded = { ...expandedClients };
+		delete nextExpanded[id];
+		expandedClients = nextExpanded;
+		if (selectedClientId === id) selectedClientId = null;
+		persist();
 	};
 
 	const updateClient = (id: string, updater: (c: Client) => Client) => {
-		clients = clients.map((c) => (c.id === id ? updater(c) : c));
+		clients = clients.map(c => (c.id === id ? updater(c) : c));
+		persist();
 	};
 
 	const addInvoiceEntry = (clientId: string) => {
-		updateClient(clientId, (c) => {
+		updateClient(clientId, c => {
 			const last = c.invoices[c.invoices.length - 1];
 			const nextMonth: MonthName = last
 				? MONTHS[(MONTHS.indexOf(last.month) + 1) % MONTHS.length]
@@ -68,9 +127,9 @@ const createSessionStore = () => {
 	};
 
 	const removeInvoiceEntry = (clientId: string, entryId: string) => {
-		updateClient(clientId, (c) => ({
+		updateClient(clientId, c => ({
 			...c,
-			invoices: c.invoices.filter((e) => e.id !== entryId)
+			invoices: c.invoices.filter(e => e.id !== entryId)
 		}));
 	};
 
@@ -80,11 +139,28 @@ const createSessionStore = () => {
 		field: "month" | "issueDay" | "dueDay",
 		value: string
 	) => {
-		updateClient(clientId, (c) => ({
+		updateClient(clientId, c => ({
 			...c,
-			invoices: c.invoices.map((e) => (e.id === entryId ? { ...e, [field]: value } : e))
+			invoices: c.invoices.map(e => (e.id === entryId ? { ...e, [field]: value } : e))
 		}));
 	};
+
+	const setSelectedClientId = (id: string | null) => {
+		selectedClientId = id;
+		persist();
+	};
+
+	const setClientExpanded = (id: string, expanded: boolean) => {
+		expandedClients = { ...expandedClients, [id]: expanded };
+		persist();
+	};
+
+	const toggleClientExpanded = (id: string) => {
+		const current = expandedClients[id] ?? true;
+		setClientExpanded(id, !current);
+	};
+
+	const isClientExpanded = (id: string): boolean => expandedClients[id] ?? true;
 
 	const setGenerating = () => {
 		generationState = "generating";
@@ -110,12 +186,15 @@ const createSessionStore = () => {
 
 	const totalInvoiceCount = $derived(clients.reduce((sum, c) => sum + c.invoices.length, 0));
 	const allClientsValid = $derived(
-		clients.every((c) => c.name.trim() !== "" && c.invoicePrefix.trim() !== "")
+		clients.every(c => c.name.trim() !== "" && c.invoicePrefix.trim() !== "")
 	);
 
 	return {
 		get clients() {
 			return clients;
+		},
+		get selectedClientId() {
+			return selectedClientId;
 		},
 		get generatedInvoices() {
 			return generatedInvoices;
@@ -132,12 +211,17 @@ const createSessionStore = () => {
 		get allClientsValid() {
 			return allClientsValid;
 		},
+		init,
 		addClient,
 		removeClient,
 		updateClient,
 		addInvoiceEntry,
 		removeInvoiceEntry,
 		updateInvoiceEntry,
+		setSelectedClientId,
+		setClientExpanded,
+		toggleClientExpanded,
+		isClientExpanded,
 		setGenerating,
 		setGenerated,
 		setError,

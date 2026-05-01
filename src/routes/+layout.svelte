@@ -1,6 +1,7 @@
 <script lang="ts">
 	import "../app.css";
 	import { fixed } from "$lib/stores/fixed.svelte";
+	import { session } from "$lib/stores/session.svelte";
 	import { Footer } from "$lib/components/ui/footer";
 	import { onMount } from "svelte";
 
@@ -8,6 +9,7 @@
 
 	onMount(() => {
 		fixed.init();
+		session.init();
 	});
 </script>
 
