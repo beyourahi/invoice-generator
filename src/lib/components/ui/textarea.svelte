@@ -14,7 +14,7 @@
 
 <textarea
 	class={cn(
-		"min-h-16 w-full rounded-lg border border-border bg-input/30 px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground",
+		"border-border bg-input/30 text-foreground placeholder:text-muted-foreground min-h-16 w-full rounded-lg border px-3 py-2.5 text-sm",
 		"resize-none",
 		"transition-all duration-200",
 		"focus:ring-brand/50 focus:ring-2 focus:outline-none",

@@ -1,14 +1,20 @@
 <script lang="ts">
 	import { fixed } from "$lib/stores/fixed.svelte";
+	import { PAYMENT_METHOD_KINDS, getMethodDef } from "$lib/payments/registry";
+	import type { PaymentMethodKind } from "$lib/types";
 	import Input from "$lib/components/ui/input.svelte";
 	import Textarea from "$lib/components/ui/textarea.svelte";
 	import Separator from "$lib/components/ui/separator.svelte";
+	import Button from "$lib/components/ui/button.svelte";
 	import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "$lib/components/ui/card";
 	import * as Field from "$lib/components/ui/field";
-	import { Building2, UserRound } from "@lucide/svelte";
+	import * as Select from "$lib/components/ui/select";
+	import PaymentMethodCard from "$src/components/PaymentMethodCard.svelte";
+	import { Plus, UserRound, Wallet } from "@lucide/svelte";
 	import { z } from "zod";
 
 	let emailTouched = $state(false);
+	let pickerKind = $state<PaymentMethodKind | "">("");
 
 	const optionalEmailSchema = z.union([z.literal(""), z.string().trim().email("Enter a valid sender email.")]);
 	const senderEmailError = $derived(
@@ -18,6 +24,15 @@
 	);
 	const valueFromInput = (e: Event) => (e.currentTarget as HTMLInputElement).value;
 	const valueFromTextArea = (e: Event) => (e.currentTarget as HTMLTextAreaElement).value;
+
+	const pickerLabel = $derived(pickerKind ? getMethodDef(pickerKind).name : "Choose a method...");
+	const methods = $derived(fixed.value.paymentMethods);
+
+	const addSelected = () => {
+		if (!pickerKind) return;
+		fixed.addPaymentMethod(pickerKind);
+		pickerKind = "";
+	};
 </script>
 
 <Card size="sm">
@@ -76,59 +91,65 @@
 
 		<Separator />
 
-		<div class="flex items-center gap-2">
-			<Building2 size={14} class="text-muted-foreground" />
-			<p class="text-muted-foreground text-xs font-medium tracking-wider uppercase">Bank details</p>
-		</div>
+		<div class="space-y-3">
+			<div class="flex items-center justify-between gap-3">
+				<div class="flex items-center gap-2">
+					<Wallet size={14} class="text-muted-foreground" />
+					<p class="text-muted-foreground text-xs font-medium tracking-wider uppercase">Payment methods</p>
+				</div>
+				{#if methods.length > 0}
+					<p class="text-muted-foreground text-xs tabular-nums">{methods.length} saved</p>
+				{/if}
+			</div>
 
-		<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-			<Field.Field class="gap-1.5">
-				<Field.FieldLabel for="bank-holder">Account holder</Field.FieldLabel>
-				<Input
-					id="bank-holder"
-					placeholder="Full name"
-					value={fixed.value.bank.holder}
-					oninput={e => fixed.updateBank("holder", valueFromInput(e))}
-				/>
-			</Field.Field>
-			<Field.Field class="gap-1.5">
-				<Field.FieldLabel for="bank-name">Bank name</Field.FieldLabel>
-				<Input
-					id="bank-name"
-					placeholder="Bank name"
-					value={fixed.value.bank.name}
-					oninput={e => fixed.updateBank("name", valueFromInput(e))}
-				/>
-			</Field.Field>
-			<Field.Field class="gap-1.5">
-				<Field.FieldLabel for="bank-account">Account number</Field.FieldLabel>
-				<Input
-					id="bank-account"
-					placeholder="0000000000000"
-					value={fixed.value.bank.account}
-					oninput={e => fixed.updateBank("account", valueFromInput(e))}
-					class="tabular-nums"
-				/>
-			</Field.Field>
-			<Field.Field class="gap-1.5">
-				<Field.FieldLabel for="bank-branch">Branch</Field.FieldLabel>
-				<Input
-					id="bank-branch"
-					placeholder="Branch name"
-					value={fixed.value.bank.branch}
-					oninput={e => fixed.updateBank("branch", valueFromInput(e))}
-				/>
-			</Field.Field>
-			<Field.Field class="gap-1.5 sm:col-span-2">
-				<Field.FieldLabel for="bank-routing">Routing</Field.FieldLabel>
-				<Input
-					id="bank-routing"
-					placeholder="000000000"
-					value={fixed.value.bank.routing}
-					oninput={e => fixed.updateBank("routing", valueFromInput(e))}
-					class="tabular-nums"
-				/>
-			</Field.Field>
+			{#if methods.length === 0}
+				<div
+					class="border-border text-muted-foreground grid min-h-28 w-full place-items-center rounded-lg border border-dashed text-center"
+				>
+					<div class="space-y-1">
+						<p class="text-sm font-medium">No payment methods yet</p>
+						<p class="text-xs">Add one below to attach it to your invoices.</p>
+					</div>
+				</div>
+			{:else}
+				<div class="space-y-2">
+					{#each methods as method, i (method.id)}
+						<PaymentMethodCard {method} index={i} total={methods.length} />
+					{/each}
+				</div>
+			{/if}
+
+			<div class="bg-muted/30 flex flex-col gap-2 rounded-lg p-2 sm:flex-row sm:items-center">
+				<Select.Root
+					type="single"
+					value={pickerKind}
+					onValueChange={v => (pickerKind = (v as PaymentMethodKind) ?? "")}
+				>
+					<Select.Trigger class="h-9 w-full sm:flex-1">
+						<span data-slot="select-value">{pickerLabel}</span>
+					</Select.Trigger>
+					<Select.Content>
+						{#each PAYMENT_METHOD_KINDS as kind (kind)}
+							{@const def = getMethodDef(kind)}
+							<Select.Item value={kind} label={def.name}>
+								<div class="flex flex-col gap-0.5">
+									<span class="text-sm font-medium">{def.name}</span>
+									<span class="text-muted-foreground text-[11px]">{def.description}</span>
+								</div>
+							</Select.Item>
+						{/each}
+					</Select.Content>
+				</Select.Root>
+				<Button
+					size="sm"
+					class="bg-brand text-brand-foreground hover:bg-brand/90 h-9 shrink-0"
+					onclick={addSelected}
+					disabled={!pickerKind}
+				>
+					<Plus size={13} />
+					Add method
+				</Button>
+			</div>
 		</div>
 	</CardContent>
 </Card>

@@ -2,13 +2,28 @@ import type { Client, GeneratedInvoice, GenerationState, MonthName } from "$lib/
 import { MONTHS } from "$lib/invoice/months";
 
 const STORAGE_KEY = "invoice-generator:session";
-const SCHEMA_VERSION = 1;
+const SCHEMA_VERSION = 2;
 
 interface PersistedSession {
 	version: number;
 	clients: Client[];
 	selectedClientId: string | null;
 	expandedClients: Record<string, boolean>;
+}
+
+interface LegacyClientV1 extends Omit<Client, "payment"> {
+	payment?: {
+		method?: string;
+		wiseLink?: string | null;
+		methodIds?: string[];
+	};
+}
+
+interface LegacyPersistedV1 {
+	version?: number;
+	clients?: LegacyClientV1[];
+	selectedClientId?: string | null;
+	expandedClients?: Record<string, boolean>;
 }
 
 const createClient = (template?: Client): Client => ({
@@ -25,14 +40,22 @@ const createClient = (template?: Client): Client => ({
 				amount: 0,
 				currency: "BDT"
 			},
-	payment: template
-		? { ...template.payment }
-		: {
-				method: "bank",
-				wiseLink: null
-			},
+	payment: template ? { methodIds: [...template.payment.methodIds] } : { methodIds: [] },
 	year: template?.year ?? new Date().getFullYear(),
-	invoices: template ? template.invoices.map(e => ({ ...e, id: crypto.randomUUID() })) : []
+	invoices: template ? template.invoices.map((e) => ({ ...e, id: crypto.randomUUID() })) : []
+});
+
+const migrateClient = (raw: LegacyClientV1): Client => ({
+	id: raw.id,
+	name: raw.name,
+	invoicePrefix: raw.invoicePrefix,
+	phone: raw.phone,
+	email: raw.email,
+	address: raw.address,
+	service: raw.service,
+	year: raw.year,
+	invoices: raw.invoices,
+	payment: { methodIds: raw.payment?.methodIds ?? [] }
 });
 
 const loadFromStorage = (): PersistedSession | null => {
@@ -40,9 +63,15 @@ const loadFromStorage = (): PersistedSession | null => {
 	try {
 		const raw = localStorage.getItem(STORAGE_KEY);
 		if (!raw) return null;
-		const parsed = JSON.parse(raw) as PersistedSession;
-		if (!parsed || parsed.version !== SCHEMA_VERSION) return null;
-		return parsed;
+		const parsed = JSON.parse(raw) as LegacyPersistedV1;
+		if (!parsed) return null;
+		const clients = (parsed.clients ?? []).map(migrateClient);
+		return {
+			version: SCHEMA_VERSION,
+			clients,
+			selectedClientId: parsed.selectedClientId ?? null,
+			expandedClients: parsed.expandedClients ?? {}
+		};
 	} catch {
 		return null;
 	}
@@ -68,7 +97,7 @@ const createSessionStore = () => {
 			};
 			localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
 		} catch {
-			// ignore quota or serialization failures so the UI keeps working
+			// ignore quota/serialization failures — UI keeps working
 		}
 	};
 
@@ -92,7 +121,7 @@ const createSessionStore = () => {
 	};
 
 	const removeClient = (id: string) => {
-		clients = clients.filter(c => c.id !== id);
+		clients = clients.filter((c) => c.id !== id);
 		const nextExpanded = { ...expandedClients };
 		delete nextExpanded[id];
 		expandedClients = nextExpanded;
@@ -101,12 +130,30 @@ const createSessionStore = () => {
 	};
 
 	const updateClient = (id: string, updater: (c: Client) => Client) => {
-		clients = clients.map(c => (c.id === id ? updater(c) : c));
+		clients = clients.map((c) => (c.id === id ? updater(c) : c));
+		persist();
+	};
+
+	const togglePaymentMethod = (clientId: string, methodId: string) => {
+		updateClient(clientId, (c) => {
+			const ids = c.payment.methodIds;
+			const next = ids.includes(methodId)
+				? ids.filter((id) => id !== methodId)
+				: [...ids, methodId];
+			return { ...c, payment: { methodIds: next } };
+		});
+	};
+
+	const purgePaymentMethodFromClients = (methodId: string) => {
+		clients = clients.map((c) => ({
+			...c,
+			payment: { methodIds: c.payment.methodIds.filter((id) => id !== methodId) }
+		}));
 		persist();
 	};
 
 	const addInvoiceEntry = (clientId: string) => {
-		updateClient(clientId, c => {
+		updateClient(clientId, (c) => {
 			const last = c.invoices[c.invoices.length - 1];
 			const nextMonth: MonthName = last
 				? MONTHS[(MONTHS.indexOf(last.month) + 1) % MONTHS.length]
@@ -127,9 +174,9 @@ const createSessionStore = () => {
 	};
 
 	const removeInvoiceEntry = (clientId: string, entryId: string) => {
-		updateClient(clientId, c => ({
+		updateClient(clientId, (c) => ({
 			...c,
-			invoices: c.invoices.filter(e => e.id !== entryId)
+			invoices: c.invoices.filter((e) => e.id !== entryId)
 		}));
 	};
 
@@ -139,9 +186,9 @@ const createSessionStore = () => {
 		field: "month" | "issueDay" | "dueDay",
 		value: string
 	) => {
-		updateClient(clientId, c => ({
+		updateClient(clientId, (c) => ({
 			...c,
-			invoices: c.invoices.map(e => (e.id === entryId ? { ...e, [field]: value } : e))
+			invoices: c.invoices.map((e) => (e.id === entryId ? { ...e, [field]: value } : e))
 		}));
 	};
 
@@ -186,7 +233,7 @@ const createSessionStore = () => {
 
 	const totalInvoiceCount = $derived(clients.reduce((sum, c) => sum + c.invoices.length, 0));
 	const allClientsValid = $derived(
-		clients.every(c => c.name.trim() !== "" && c.invoicePrefix.trim() !== "")
+		clients.every((c) => c.name.trim() !== "" && c.invoicePrefix.trim() !== "")
 	);
 
 	return {
@@ -215,6 +262,8 @@ const createSessionStore = () => {
 		addClient,
 		removeClient,
 		updateClient,
+		togglePaymentMethod,
+		purgePaymentMethodFromClients,
 		addInvoiceEntry,
 		removeInvoiceEntry,
 		updateInvoiceEntry,

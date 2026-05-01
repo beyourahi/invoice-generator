@@ -109,7 +109,7 @@
 }
 
 *::-webkit-scrollbar-thumb {
-	@apply rounded-xl bg-muted-foreground/40;
+	@apply bg-muted-foreground/40 rounded-xl;
 }
 
 *::-webkit-scrollbar-track {

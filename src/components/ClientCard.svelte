@@ -1,6 +1,8 @@
 <script lang="ts">
+	import { fixed } from "$lib/stores/fixed.svelte";
 	import { session } from "$lib/stores/session.svelte";
-	import type { Client, Currency, PaymentMethod } from "$lib/types";
+	import { getMethodDef } from "$lib/payments/registry";
+	import type { Client, Currency, SavedPaymentMethod } from "$lib/types";
 	import { cn } from "$lib/utils";
 	import Button from "$lib/components/ui/button.svelte";
 	import Input from "$lib/components/ui/input.svelte";
@@ -11,7 +13,7 @@
 	import * as Select from "$lib/components/ui/select";
 	import * as Table from "$lib/components/ui/table";
 	import InvoiceEntryRow from "$src/components/InvoiceEntryRow.svelte";
-	import { ChevronDown, Landmark, Plus, ReceiptText, Trash2 } from "@lucide/svelte";
+	import { ChevronDown, Check, Plus, ReceiptText, Trash2, Wallet } from "@lucide/svelte";
 	import { z } from "zod";
 
 	let {
@@ -24,14 +26,12 @@
 	let nameTouched = $state(false);
 	let prefixTouched = $state(false);
 	let emailTouched = $state(false);
-	let wiseTouched = $state(false);
 
 	const expanded = $derived(session.isClientExpanded(client.id));
 
 	const nameSchema = z.string().trim().min(1, "Client name is required.");
 	const prefixSchema = z.string().trim().min(1, "Invoice prefix is required.");
 	const optionalEmailSchema = z.union([z.literal(""), z.string().trim().email("Enter a valid client email.")]);
-	const optionalUrlSchema = z.union([z.literal(""), z.string().trim().url("Enter a valid Wise URL.")]);
 	const update = (updater: (c: Client) => Client) => session.updateClient(client.id, updater);
 	const set = <K extends keyof Client>(key: K, value: Client[K]) => update(c => ({ ...c, [key]: value }));
 	const valueFromInput = (e: Event) => (e.currentTarget as HTMLInputElement).value;
@@ -52,13 +52,20 @@
 	const emailError = $derived(
 		emailTouched && !optionalEmailSchema.safeParse(client.email).success ? "Enter a valid client email." : ""
 	);
-	const wiseLink = $derived(client.payment.wiseLink ?? "");
-	const wiseError = $derived(
-		wiseTouched && client.payment.method === "wise" && !optionalUrlSchema.safeParse(wiseLink).success
-			? "Enter a valid Wise URL."
-			: ""
-	);
 	const badgeNum = $derived(String(index + 1).padStart(2, "0"));
+
+	const savedMethods = $derived(fixed.value.paymentMethods);
+	const isMethod = (m: SavedPaymentMethod | undefined): m is SavedPaymentMethod => Boolean(m);
+	const selectedMethods = $derived(
+		client.payment.methodIds.map(id => savedMethods.find(m => m.id === id)).filter(isMethod)
+	);
+	const paymentSummary = $derived.by(() => {
+		if (selectedMethods.length === 0) return "no payment methods";
+		return selectedMethods
+			.map(m => getMethodDef(m.kind).shortName)
+			.join(" · ")
+			.toLowerCase();
+	});
 </script>
 
 <Card class={cn("py-0", selected && "ring-brand ring-2")}>
@@ -85,8 +92,10 @@
 				<span class="bg-muted text-muted-foreground rounded-md px-1.5 py-0.5 font-mono text-[10px]">
 					{client.service.currency}
 				</span>
-				<span class="bg-muted text-muted-foreground rounded-md px-1.5 py-0.5 text-[10px]">
-					{client.payment.method}
+				<span
+					class="bg-muted text-muted-foreground max-w-[140px] truncate rounded-md px-1.5 py-0.5 text-[10px]"
+				>
+					{paymentSummary}
 				</span>
 			</div>
 			<Button
@@ -209,9 +218,11 @@
 							}))}
 					/>
 					<Field.FieldDescription>
-						Insert <code class="bg-muted text-foreground rounded px-1 py-0.5 font-mono text-[11px]"
-							>{"{MONTH}"}</code
-						> to auto-fill each invoice's month name (e.g. January).
+						Insert
+						<code class="bg-muted text-foreground rounded px-1 py-0.5 font-mono text-[11px]">
+							{"{MONTH}"}
+						</code>
+						to auto-fill each invoice's month name (e.g. January).
 					</Field.FieldDescription>
 				</Field.Field>
 				<Field.Field class="gap-1.5">
@@ -251,28 +262,6 @@
 						</Select.Content>
 					</Select.Root>
 				</Field.Field>
-			</div>
-
-			<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-				<Field.Field class="gap-1.5">
-					<Field.FieldLabel for="payment-{client.id}">Payment method</Field.FieldLabel>
-					<Select.Root
-						type="single"
-						value={client.payment.method}
-						onValueChange={v =>
-							update(c => ({ ...c, payment: { ...c.payment, method: v as PaymentMethod } }))}
-					>
-						<Select.Trigger id="payment-{client.id}" class="h-9 w-full">
-							<span data-slot="select-value">
-								{client.payment.method === "bank" ? "Bank transfer" : "Wise"}
-							</span>
-						</Select.Trigger>
-						<Select.Content>
-							<Select.Item value="bank" label="Bank transfer">Bank transfer</Select.Item>
-							<Select.Item value="wise" label="Wise">Wise</Select.Item>
-						</Select.Content>
-					</Select.Root>
-				</Field.Field>
 				<Field.Field class="gap-1.5">
 					<Field.FieldLabel for="year-{client.id}">Year</Field.FieldLabel>
 					<Input
@@ -289,30 +278,67 @@
 						class="tabular-nums"
 					/>
 				</Field.Field>
-				{#if client.payment.method === "wise"}
-					<Field.Field class="gap-1.5 sm:col-span-2" data-invalid={wiseError !== ""}>
-						<Field.FieldLabel for="wise-{client.id}">Wise payment link</Field.FieldLabel>
-						<Input
-							id="wise-{client.id}"
-							type="url"
-							placeholder="https://wise.com/pay/..."
-							value={wiseLink}
-							aria-invalid={wiseError !== ""}
-							oninput={e =>
-								update(c => ({
-									...c,
-									payment: {
-										...c.payment,
-										wiseLink: valueFromInput(e) || null
-									}
-								}))}
-							onblur={() => (wiseTouched = true)}
-							class={wiseError ? "border-destructive focus-visible:border-destructive" : ""}
-						/>
-						{#if wiseError}
-							<Field.FieldError>{wiseError}</Field.FieldError>
-						{/if}
-					</Field.Field>
+			</div>
+
+			<Separator />
+
+			<div class="space-y-3">
+				<div class="flex items-center justify-between gap-3">
+					<div class="flex items-center gap-2">
+						<Wallet size={14} class="text-muted-foreground" />
+						<p class="text-muted-foreground text-xs font-medium tracking-wider uppercase">
+							Payment methods
+						</p>
+					</div>
+					{#if savedMethods.length > 0}
+						<p class="text-muted-foreground text-xs tabular-nums">
+							{client.payment.methodIds.length} of {savedMethods.length} selected
+						</p>
+					{/if}
+				</div>
+
+				{#if savedMethods.length === 0}
+					<div
+						class="border-border text-muted-foreground grid min-h-20 w-full place-items-center rounded-lg border border-dashed text-center text-xs"
+					>
+						<div class="space-y-1 px-3">
+							<p class="font-medium">No payment methods configured</p>
+							<p>Add one in the sender panel to attach it to invoices.</p>
+						</div>
+					</div>
+				{:else}
+					<div class="flex flex-wrap gap-1.5">
+						{#each savedMethods as method (method.id)}
+							{@const def = getMethodDef(method.kind)}
+							{@const active = client.payment.methodIds.includes(method.id)}
+							<button
+								type="button"
+								onclick={() => session.togglePaymentMethod(client.id, method.id)}
+								class={cn(
+									"group inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-colors",
+									active
+										? "border-brand bg-brand/10 text-brand"
+										: "border-border text-muted-foreground hover:border-foreground/40 hover:text-foreground"
+								)}
+								aria-pressed={active}
+							>
+								{#if active}
+									<Check size={12} />
+								{:else}
+									<Plus size={12} />
+								{/if}
+								<span class="font-medium">{method.label || def.name}</span>
+								<span
+									class={cn(
+										"font-mono text-[10px] uppercase",
+										active ? "text-brand/70" : "text-muted-foreground/70"
+									)}
+								>
+									{def.shortName}
+								</span>
+							</button>
+						{/each}
+					</div>
 				{/if}
 			</div>
 
@@ -378,13 +404,6 @@
 					</Button>
 				{/if}
 			</div>
-
-			{#if client.payment.method === "bank"}
-				<div class="bg-brand-muted text-muted-foreground flex items-center gap-2 rounded-lg px-3 py-2 text-xs">
-					<Landmark size={13} />
-					Bank details come from the sender panel.
-				</div>
-			{/if}
 		</CardContent>
 	{/if}
 </Card>

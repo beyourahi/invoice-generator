@@ -29,7 +29,7 @@ Invoice Generator is a focused, single-purpose tool. Contributions should respec
 - **Prefer existing abstractions.** Before adding a utility, check `src/lib/` — the resolver, generator, and zip modules already cover the core pipeline.
 - **No speculative features.** Implement what is asked, not what might be useful in the future. Three explicit lines beat a premature abstraction.
 - **Type safety is non-negotiable.** TypeScript strict mode is enabled. No `any`, no loose casts, no suppression comments.
-- **Zero comments in shipped code.** Code should be self-documenting through naming and structure. If the *why* is truly non-obvious, one short inline comment is acceptable — nothing more.
+- **Zero comments in shipped code.** Code should be self-documenting through naming and structure. If the _why_ is truly non-obvious, one short inline comment is acceptable — nothing more.
 
 ---
 
@@ -37,12 +37,12 @@ Invoice Generator is a focused, single-purpose tool. Contributions should respec
 
 ### Prerequisites
 
-| Tool | Minimum Version | Notes |
-|------|-----------------|-------|
-| [Bun](https://bun.sh) | 1.x | Package manager and runtime |
-| [Node.js](https://nodejs.org) | 20.x | Required by some Wrangler internals |
-| [Wrangler](https://developers.cloudflare.com/workers/wrangler/) | 4.x | Installed as a dev dependency via Bun |
-| Git | 2.5+ | Required for worktree support |
+| Tool                                                            | Minimum Version | Notes                                 |
+| --------------------------------------------------------------- | --------------- | ------------------------------------- |
+| [Bun](https://bun.sh)                                           | 1.x             | Package manager and runtime           |
+| [Node.js](https://nodejs.org)                                   | 20.x            | Required by some Wrangler internals   |
+| [Wrangler](https://developers.cloudflare.com/workers/wrangler/) | 4.x             | Installed as a dev dependency via Bun |
+| Git                                                             | 2.5+            | Required for worktree support         |
 
 ### Installation
 
@@ -171,10 +171,10 @@ invoice-generator/
 
 ### Path Aliases
 
-| Alias | Resolves to | Used in |
-|-------|-------------|---------|
-| `$lib` | `src/lib/` | Library files, stores, utilities |
-| `$src` | `src/` | Route files importing from `src/components/` |
+| Alias  | Resolves to | Used in                                      |
+| ------ | ----------- | -------------------------------------------- |
+| `$lib` | `src/lib/`  | Library files, stores, utilities             |
+| `$src` | `src/`      | Route files importing from `src/components/` |
 
 Never use relative paths from route files. Always use the appropriate alias.
 
@@ -191,6 +191,7 @@ The entire PDF generation pipeline runs in the browser. No server actions, no AP
 3. `zip.ts` collects all generated Blobs into a `fflate` `zipSync` archive
 
 **Critical constraints:**
+
 - PDF generation is sequential and blocking by design. Do not parallelize `generatePdf()` calls — concurrent canvas operations cause corruption.
 - The iframe uses `position: fixed; top: -9999px; left: -9999px; visibility: hidden`. Do not change this. `display: none` prevents `html2canvas` from rendering.
 - Token substitution uses `String.prototype.replaceAll` — not regex. Tokens are case-sensitive literals (e.g. `{MONTH}`).
@@ -230,19 +231,19 @@ Use Svelte 5 rune syntax exclusively. Legacy `export let`, `$:` reactive stateme
 
 ```svelte
 <script lang="ts">
-    // Props
-    let { client, onUpdate }: ClientCardProps = $props();
+	// Props
+	let { client, onUpdate }: ClientCardProps = $props();
 
-    // State
-    let expanded = $state(false);
+	// State
+	let expanded = $state(false);
 
-    // Derived
-    let isValid = $derived(client.name.length > 0);
+	// Derived
+	let isValid = $derived(client.name.length > 0);
 
-    // Effects — only for side effects with external systems
-    $effect(() => {
-        document.title = client.name;
-    });
+	// Effects — only for side effects with external systems
+	$effect(() => {
+		document.title = client.name;
+	});
 </script>
 ```
 
@@ -262,7 +263,7 @@ Configuration lives entirely in `src/app.css` under `@theme inline`. There is no
 ```css
 /* Correct — extend via @theme inline in app.css */
 @theme inline {
-    --color-brand: oklch(0.62 0.21 265);
+	--color-brand: oklch(0.62 0.21 265);
 }
 ```
 
@@ -283,14 +284,14 @@ function generateAll() { ... }
 
 ### Formatting
 
-| Setting | Value |
-|---------|-------|
-| Indentation | Tabs |
-| Tab width (`.svelte`) | 4 spaces |
-| Quotes | Double |
-| Trailing commas | None |
-| Print width | 100 (120 for `.svelte`) |
-| Arrow parens | Avoid (`x => x`) |
+| Setting               | Value                   |
+| --------------------- | ----------------------- |
+| Indentation           | Tabs                    |
+| Tab width (`.svelte`) | 4 spaces                |
+| Quotes                | Double                  |
+| Trailing commas       | None                    |
+| Print width           | 100 (120 for `.svelte`) |
+| Arrow parens          | Avoid (`x => x`)        |
 
 Run Prettier before committing:
 
@@ -300,7 +301,7 @@ bun run format
 
 ### Comments
 
-Write zero comments in shipped code. If the *why* behind a decision is genuinely non-obvious — a hidden constraint, a subtle invariant, a workaround for a specific upstream bug — one short line is acceptable. Never write multi-line comment blocks or JSDoc in application code.
+Write zero comments in shipped code. If the _why_ behind a decision is genuinely non-obvious — a hidden constraint, a subtle invariant, a workaround for a specific upstream bug — one short line is acceptable. Never write multi-line comment blocks or JSDoc in application code.
 
 ---
 
@@ -354,21 +355,21 @@ This project follows [Conventional Commits](https://www.conventionalcommits.org/
 
 ### Types
 
-| Type | When to use |
-|------|-------------|
-| `feat` | New feature or capability |
-| `fix` | Bug fix |
+| Type       | When to use                                |
+| ---------- | ------------------------------------------ |
+| `feat`     | New feature or capability                  |
+| `fix`      | Bug fix                                    |
 | `refactor` | Code restructuring with no behavior change |
-| `style` | Visual or UI-only changes |
-| `chore` | Tooling, config, dependencies |
-| `docs` | Documentation changes |
-| `perf` | Performance improvements |
-| `test` | Adding or updating tests |
+| `style`    | Visual or UI-only changes                  |
+| `chore`    | Tooling, config, dependencies              |
+| `docs`     | Documentation changes                      |
+| `perf`     | Performance improvements                   |
+| `test`     | Adding or updating tests                   |
 
 ### Rules
 
 - Subject line: 50–70 characters, imperative mood ("add", "fix", "remove" — not "added", "fixes")
-- Body: optional; explain *why*, not *what*
+- Body: optional; explain _why_, not _what_
 - One logical change per commit (atomic)
 - Never commit `.env`, `.dev.vars`, or any file containing secrets
 - The build must pass at every commit — no broken intermediate states
@@ -525,7 +526,7 @@ Priority test targets are the pure functions: `resolver.ts` (token substitution)
 
 ### Code Comments
 
-Ship zero comments by default. The only acceptable comment is one that explains a non-obvious *why*: a subtle invariant, a workaround for a specific upstream bug, or a hidden external constraint. Never describe *what* the code does — that belongs in the names and structure of the code itself.
+Ship zero comments by default. The only acceptable comment is one that explains a non-obvious _why_: a subtle invariant, a workaround for a specific upstream bug, or a hidden external constraint. Never describe _what_ the code does — that belongs in the names and structure of the code itself.
 
 ### agent_docs/
 

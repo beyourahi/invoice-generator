@@ -7,8 +7,9 @@ export interface Theme {
 	name: string;
 	html: string;
 	css: string;
-	bankPayment: string;
-	wisePayment: string;
+	paymentMethodFields: string;
+	paymentMethodLink: string;
+	paymentField: string;
 }
 
 export const themes: Record<ThemeId, Theme> = {
