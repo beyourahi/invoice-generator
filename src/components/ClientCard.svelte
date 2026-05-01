@@ -21,11 +21,12 @@
 		onSelect
 	}: { client: Client; index: number; selected: boolean; onSelect: () => void } = $props();
 
-	let expanded = $state(true);
 	let nameTouched = $state(false);
 	let prefixTouched = $state(false);
 	let emailTouched = $state(false);
 	let wiseTouched = $state(false);
+
+	const expanded = $derived(session.isClientExpanded(client.id));
 
 	const nameSchema = z.string().trim().min(1, "Client name is required.");
 	const prefixSchema = z.string().trim().min(1, "Invoice prefix is required.");
@@ -66,7 +67,10 @@
 			role="button"
 			tabindex="0"
 			aria-pressed={selected}
-			onclick={() => { onSelect(); expanded = !expanded; }}
+			onclick={() => {
+				onSelect();
+				session.toggleClientExpanded(client.id);
+			}}
 			onkeydown={selectCard}
 			class="hover:bg-accent/40 flex cursor-pointer items-center gap-3 px-4 py-3 transition-colors"
 		>
@@ -103,7 +107,7 @@
 				class="text-muted-foreground hover:text-foreground h-11 w-11 shrink-0 sm:h-7 sm:w-7"
 				onclick={e => {
 					e.stopPropagation();
-					expanded = !expanded;
+					session.toggleClientExpanded(client.id);
 				}}
 				aria-label={expanded ? "Collapse client" : "Expand client"}
 			>
@@ -328,9 +332,16 @@
 				</div>
 
 				{#if client.invoices.length === 0}
-					<div class="border-border text-muted-foreground rounded-lg border border-dashed px-3 py-4 text-xs">
-						No invoice months scheduled.
-					</div>
+					<button
+						type="button"
+						class="border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground grid min-h-36 w-full cursor-pointer place-items-center rounded-lg border border-dashed text-center transition-colors"
+						onclick={() => session.addInvoiceEntry(client.id)}
+					>
+						<div class="flex flex-col items-center gap-2">
+							<Plus size={18} />
+							<p class="text-sm font-medium">Add entry</p>
+						</div>
+					</button>
 				{:else}
 					<Table.Root>
 						<Table.Header>
@@ -351,25 +362,21 @@
 							{/each}
 						</Table.Body>
 					</Table.Root>
-				{/if}
 
-				<div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+					<div class="text-muted-foreground flex items-center justify-between gap-3 text-xs">
+						<span>{client.invoices.length} invoice{client.invoices.length !== 1 ? "s" : ""}</span>
+						<span class="font-mono tabular-nums">{totalAmount} × {client.invoices.length}</span>
+					</div>
+
 					<Button
 						variant="outline"
-						size="sm"
-						class="h-11 w-full border-dashed sm:h-7 sm:w-auto"
+						class="text-muted-foreground hover:text-foreground w-full border-dashed"
 						onclick={() => session.addInvoiceEntry(client.id)}
 					>
-						<Plus size={12} />
+						<Plus size={14} />
 						Add entry
 					</Button>
-					{#if client.invoices.length > 0}
-						<div class="text-muted-foreground flex items-center justify-between gap-3 text-xs">
-							<span>{client.invoices.length} invoice{client.invoices.length !== 1 ? "s" : ""}</span>
-							<span class="font-mono tabular-nums">{totalAmount} × {client.invoices.length}</span>
-						</div>
-					{/if}
-				</div>
+				{/if}
 			</div>
 
 			{#if client.payment.method === "bank"}
