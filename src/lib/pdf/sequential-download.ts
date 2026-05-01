@@ -125,10 +125,7 @@ export const downloadGroups = async (groups: DownloadGroup[]): Promise<DownloadR
 		if (isAbortError(err)) {
 			return { ...emptyResult(fileCount), cancelled: true };
 		}
-		console.warn(
-			"Directory picker unavailable, falling back to sequential download.",
-			err
-		);
+		console.warn("Directory picker unavailable, falling back to sequential download.", err);
 		await triggerSequentialDownloads(groups);
 		return { ...emptyResult(fileCount), fellBackToSequential: true };
 	}

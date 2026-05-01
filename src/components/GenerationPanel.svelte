@@ -2,6 +2,7 @@
 	import { buildInvoiceHtml, getFileName, getInvoiceId } from "$lib/invoice/builder";
 	import { generatePdf } from "$lib/pdf/generator";
 	import { downloadGroups, isUserAbort, type DownloadGroup } from "$lib/pdf/sequential-download";
+	import { downloadInvoicesZip } from "$lib/pdf/zip";
 	import { fixed } from "$lib/stores/fixed.svelte";
 	import { session } from "$lib/stores/session.svelte";
 	import { ACTIVE_THEME_ID, getTheme } from "$lib/themes/registry";
@@ -10,15 +11,7 @@
 	import { Card, CardContent, CardHeader, CardTitle } from "$lib/components/ui/card";
 	import { Progress } from "$lib/components/ui/progress";
 	import * as Table from "$lib/components/ui/table";
-	import {
-		AlertCircle,
-		Download,
-		FileDown,
-		FolderDown,
-		Loader2,
-		RotateCcw,
-		TriangleAlert
-	} from "@lucide/svelte";
+	import { AlertCircle, Download, FileDown, FolderDown, Loader2, RotateCcw, TriangleAlert } from "@lucide/svelte";
 
 	interface ClientGroup {
 		clientId: string;
@@ -154,14 +147,16 @@
 		if (clientGroups.length === 0) return;
 		busyAll = true;
 		try {
-			const result = await downloadGroups(clientGroups.map(toDownloadGroup));
-			if (result.cancelled) return;
-			await notifySuccess("Downloads started", describeOutcome(result, null));
+			const result = await downloadInvoicesZip(clientGroups.map(toDownloadGroup));
+			if (result.fileCount === 0) return;
+			await notifySuccess(
+				"Download started",
+				`${pluraliseFiles(result.fileCount)} packaged into ${result.zipFileName}.`
+			);
 		} catch (err) {
-			if (isUserAbort(err)) return;
 			await notifyError(
 				"Download failed",
-				err instanceof Error ? err.message : "Could not save to the selected folder."
+				err instanceof Error ? err.message : "Could not package invoices into a ZIP archive."
 			);
 		} finally {
 			busyAll = false;
