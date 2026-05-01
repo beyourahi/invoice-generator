@@ -132,7 +132,7 @@
 					<Field.FieldLabel for="name-{client.id}">Client name</Field.FieldLabel>
 					<Input
 						id="name-{client.id}"
-						placeholder="e.g., Wayne Enterprises"
+						placeholder="e.g., Ollivanders Wand Shop"
 						value={client.name}
 						aria-invalid={nameError !== ""}
 						oninput={e => set("name", valueFromInput(e))}
@@ -147,7 +147,7 @@
 					<Field.FieldLabel for="prefix-{client.id}">Invoice prefix</Field.FieldLabel>
 					<Input
 						id="prefix-{client.id}"
-						placeholder="e.g., WAYNE"
+						placeholder="e.g., OLLIVAND"
 						value={client.invoicePrefix}
 						aria-invalid={prefixError !== ""}
 						oninput={e => set("invoicePrefix", valueFromInput(e))}
@@ -173,7 +173,7 @@
 					<Input
 						id="email-{client.id}"
 						type="email"
-						placeholder="e.g., bruce@wayne.co"
+						placeholder="e.g., orders@ollivanders.co"
 						value={client.email}
 						aria-invalid={emailError !== ""}
 						oninput={e => set("email", valueFromInput(e))}
@@ -188,7 +188,7 @@
 					<Field.FieldLabel for="address-{client.id}">Address</Field.FieldLabel>
 					<Textarea
 						id="address-{client.id}"
-						placeholder="e.g., 1007 Mountain Drive, Gotham"
+						placeholder="e.g., 93A Diagon Alley, London"
 						value={client.address[0] ?? ""}
 						oninput={e =>
 							update(c => ({
@@ -206,7 +206,7 @@
 					<Field.FieldLabel for="desc-{client.id}">Service description</Field.FieldLabel>
 					<Textarea
 						id="desc-{client.id}"
-						placeholder="e.g., Web design retainer for {'{MONTH}'}"
+						placeholder="e.g., Spellwork retainer for {'{MONTH}'}"
 						value={client.service.description}
 						oninput={e =>
 							update(c => ({

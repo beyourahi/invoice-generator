@@ -6,7 +6,7 @@ import type {
 } from "$lib/types";
 
 const bankFields: PaymentFieldDef[] = [
-	{ key: "holder", label: "Account holder", placeholder: "e.g., Tony Stark" },
+	{ key: "holder", label: "Account holder", placeholder: "e.g., Albus Dumbledore" },
 	{ key: "bankName", label: "Bank name", placeholder: "e.g., Gringotts Wizarding Bank" },
 	{ key: "account", label: "Account number", placeholder: "0000000000000", monospace: true },
 	{ key: "branch", label: "Branch", placeholder: "e.g., Diagon Alley", optional: true },
@@ -15,7 +15,7 @@ const bankFields: PaymentFieldDef[] = [
 ];
 
 const mobileWalletFields = (provider: string): PaymentFieldDef[] => [
-	{ key: "holder", label: "Account holder", placeholder: "e.g., Tony Stark" },
+	{ key: "holder", label: "Account holder", placeholder: "e.g., Albus Dumbledore" },
 	{
 		key: "number",
 		label: `${provider} number`,
@@ -82,7 +82,7 @@ export const PAYMENT_METHOD_DEFS: Record<PaymentMethodKind, PaymentMethodDef> = 
 			{
 				key: "email",
 				label: "Wise email",
-				placeholder: "e.g., tony@stark.io",
+				placeholder: "e.g., albus@hogwarts.edu",
 				type: "email",
 				optional: true
 			}
@@ -106,7 +106,7 @@ export const PAYMENT_METHOD_DEFS: Record<PaymentMethodKind, PaymentMethodDef> = 
 			{
 				key: "email",
 				label: "Payoneer email",
-				placeholder: "e.g., tony@stark.io",
+				placeholder: "e.g., albus@hogwarts.edu",
 				type: "email",
 				optional: true
 			}
@@ -124,13 +124,13 @@ export const PAYMENT_METHOD_DEFS: Record<PaymentMethodKind, PaymentMethodDef> = 
 			{
 				key: "link",
 				label: "PayPal.me link",
-				placeholder: "e.g., https://paypal.me/tonystark",
+				placeholder: "e.g., https://paypal.me/albusdumbledore",
 				type: "url"
 			},
 			{
 				key: "email",
 				label: "PayPal email",
-				placeholder: "e.g., tony@stark.io",
+				placeholder: "e.g., albus@hogwarts.edu",
 				type: "email",
 				optional: true
 			}
