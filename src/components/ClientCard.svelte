@@ -204,6 +204,11 @@
 								}
 							}))}
 					/>
+					<Field.FieldDescription>
+						Insert <code class="bg-muted text-foreground rounded px-1 py-0.5 font-mono text-[11px]"
+							>{"{MONTH}"}</code
+						> to auto-fill each invoice's month name (e.g. January).
+					</Field.FieldDescription>
 				</Field.Field>
 				<Field.Field class="gap-1.5">
 					<Field.FieldLabel for="amount-{client.id}">Amount</Field.FieldLabel>
