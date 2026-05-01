@@ -49,7 +49,7 @@
 				<Field.FieldLabel for="from-name">Name</Field.FieldLabel>
 				<Input
 					id="from-name"
-					placeholder="Full name"
+					placeholder="e.g., Tony Stark"
 					value={fixed.value.from.name}
 					oninput={e => fixed.updateFrom("name", valueFromInput(e))}
 				/>
@@ -59,7 +59,7 @@
 				<Input
 					id="from-phone"
 					type="tel"
-					placeholder="+880..."
+					placeholder="e.g., +880 1XXXXXXXXX"
 					value={fixed.value.from.phone}
 					oninput={e => fixed.updateFrom("phone", valueFromInput(e))}
 				/>
@@ -69,7 +69,7 @@
 				<Input
 					id="from-email"
 					type="email"
-					placeholder="you@email.com"
+					placeholder="e.g., tony@stark.io"
 					value={fixed.value.from.email}
 					aria-invalid={senderEmailError !== ""}
 					oninput={e => fixed.updateFrom("email", valueFromInput(e))}
@@ -82,7 +82,7 @@
 				<Field.FieldLabel for="from-address">Address</Field.FieldLabel>
 				<Textarea
 					id="from-address"
-					placeholder="City, Country"
+					placeholder="e.g., 10880 Malibu Point, CA"
 					value={fixed.value.from.address}
 					oninput={e => fixed.updateFrom("address", valueFromTextArea(e))}
 				/>

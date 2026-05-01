@@ -6,16 +6,16 @@ import type {
 } from "$lib/types";
 
 const bankFields: PaymentFieldDef[] = [
-	{ key: "holder", label: "Account holder", placeholder: "Full name" },
-	{ key: "bankName", label: "Bank name", placeholder: "e.g. Dutch-Bangla Bank" },
+	{ key: "holder", label: "Account holder", placeholder: "e.g., Tony Stark" },
+	{ key: "bankName", label: "Bank name", placeholder: "e.g., Gringotts Wizarding Bank" },
 	{ key: "account", label: "Account number", placeholder: "0000000000000", monospace: true },
-	{ key: "branch", label: "Branch", placeholder: "Branch name", optional: true },
+	{ key: "branch", label: "Branch", placeholder: "e.g., Diagon Alley", optional: true },
 	{ key: "routing", label: "Routing", placeholder: "000000000", monospace: true, optional: true },
 	{ key: "swift", label: "SWIFT / BIC", placeholder: "DBBLBDDH", optional: true, monospace: true }
 ];
 
 const mobileWalletFields = (provider: string): PaymentFieldDef[] => [
-	{ key: "holder", label: "Account holder", placeholder: "Full name" },
+	{ key: "holder", label: "Account holder", placeholder: "e.g., Tony Stark" },
 	{
 		key: "number",
 		label: `${provider} number`,
@@ -82,7 +82,7 @@ export const PAYMENT_METHOD_DEFS: Record<PaymentMethodKind, PaymentMethodDef> = 
 			{
 				key: "email",
 				label: "Wise email",
-				placeholder: "you@email.com",
+				placeholder: "e.g., tony@stark.io",
 				type: "email",
 				optional: true
 			}
@@ -106,7 +106,7 @@ export const PAYMENT_METHOD_DEFS: Record<PaymentMethodKind, PaymentMethodDef> = 
 			{
 				key: "email",
 				label: "Payoneer email",
-				placeholder: "you@email.com",
+				placeholder: "e.g., tony@stark.io",
 				type: "email",
 				optional: true
 			}
@@ -124,13 +124,13 @@ export const PAYMENT_METHOD_DEFS: Record<PaymentMethodKind, PaymentMethodDef> = 
 			{
 				key: "link",
 				label: "PayPal.me link",
-				placeholder: "https://paypal.me/yourname",
+				placeholder: "e.g., https://paypal.me/tonystark",
 				type: "url"
 			},
 			{
 				key: "email",
 				label: "PayPal email",
-				placeholder: "you@email.com",
+				placeholder: "e.g., tony@stark.io",
 				type: "email",
 				optional: true
 			}
@@ -146,7 +146,7 @@ export const PAYMENT_METHOD_DEFS: Record<PaymentMethodKind, PaymentMethodDef> = 
 			{
 				key: "details",
 				label: "Payment details",
-				placeholder: "Free-form details",
+				placeholder: "e.g., Owl post galleons to Hogwarts",
 				type: "textarea"
 			}
 		]
