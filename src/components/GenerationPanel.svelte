@@ -1,17 +1,24 @@
 <script lang="ts">
 	import { buildInvoiceHtml, getFileName, getInvoiceId } from "$lib/invoice/builder";
 	import { generatePdf } from "$lib/pdf/generator";
-	import { buildClientZip } from "$lib/pdf/zip";
+	import { downloadGroups, isUserAbort, type DownloadGroup } from "$lib/pdf/sequential-download";
 	import { fixed } from "$lib/stores/fixed.svelte";
 	import { session } from "$lib/stores/session.svelte";
 	import { ACTIVE_THEME_ID, getTheme } from "$lib/themes/registry";
 	import type { GeneratedInvoice } from "$lib/types";
-	import { downloadBlob } from "$lib/utils";
 	import Button from "$lib/components/ui/button.svelte";
 	import { Card, CardContent, CardHeader, CardTitle } from "$lib/components/ui/card";
 	import { Progress } from "$lib/components/ui/progress";
 	import * as Table from "$lib/components/ui/table";
-	import { AlertCircle, Download, FileDown, Loader2, RotateCcw, TriangleAlert } from "@lucide/svelte";
+	import {
+		AlertCircle,
+		Download,
+		FileDown,
+		FolderDown,
+		Loader2,
+		RotateCcw,
+		TriangleAlert
+	} from "@lucide/svelte";
 
 	interface ClientGroup {
 		clientId: string;
@@ -23,6 +30,7 @@
 
 	let progress = $state(0);
 	let busyClientId = $state<string | null>(null);
+	let busyAll = $state(false);
 
 	const totalCount = $derived(session.totalInvoiceCount);
 	const canGenerate = $derived(
@@ -101,24 +109,65 @@
 		);
 	};
 
+	const toDownloadGroup = (group: ClientGroup): DownloadGroup => ({
+		folderName: group.folderName,
+		invoices: group.invoices
+	});
+
+	const describeDestination = (
+		usedDirectoryPicker: boolean,
+		fileCount: number,
+		fallbackLabel: string
+	): string => {
+		if (usedDirectoryPicker) {
+			return `${fileCount} file${fileCount !== 1 ? "s" : ""} saved to selected folder.`;
+		}
+		return fallbackLabel;
+	};
+
 	const downloadGroup = async (group: ClientGroup) => {
-		if (busyClientId) return;
+		if (busyClientId || busyAll) return;
 		busyClientId = group.clientId;
 		try {
-			if (group.invoices.length === 1) {
-				const invoice = group.invoices[0];
-				downloadBlob(invoice.pdfBlob, invoice.fileName);
-				await notifySuccess("PDF download started", invoice.fileName);
-			} else {
-				const zipName = `${group.folderName}.zip`;
-				const blob = await buildClientZip(group.invoices, group.folderName);
-				downloadBlob(blob, zipName);
-				await notifySuccess("ZIP download started", zipName);
-			}
+			const result = await downloadGroups([toDownloadGroup(group)]);
+			const fallback =
+				group.invoices.length === 1
+					? group.invoices[0].fileName
+					: `${group.invoices.length} files queued for download.`;
+			await notifySuccess(
+				"Download started",
+				describeDestination(result.usedDirectoryPicker, result.fileCount, fallback)
+			);
 		} catch (err) {
-			await notifyError("Download failed", err instanceof Error ? err.message : "Could not prepare download.");
+			if (isUserAbort(err)) return;
+			await notifyError(
+				"Download failed",
+				err instanceof Error ? err.message : "Could not prepare download."
+			);
 		} finally {
 			busyClientId = null;
+		}
+	};
+
+	const downloadAll = async () => {
+		if (busyAll || busyClientId) return;
+		if (clientGroups.length === 0) return;
+		busyAll = true;
+		try {
+			const result = await downloadGroups(clientGroups.map(toDownloadGroup));
+			const fallback = `${result.fileCount} file${result.fileCount !== 1 ? "s" : ""} queued for download.`;
+			await notifySuccess(
+				"Downloads started",
+				describeDestination(result.usedDirectoryPicker, result.fileCount, fallback)
+			);
+		} catch (err) {
+			if (isUserAbort(err)) return;
+			await notifyError(
+				"Download failed",
+				err instanceof Error ? err.message : "Could not prepare downloads."
+			);
+		} finally {
+			busyAll = false;
 		}
 	};
 </script>
@@ -135,7 +184,28 @@
 			</div>
 			<div class="flex flex-wrap items-center gap-2">
 				{#if session.generationState === "done"}
-					<Button variant="outline" size="sm" class="h-11 sm:h-7" onclick={session.resetGeneration}>
+					<Button
+						size="sm"
+						class="bg-brand text-brand-foreground hover:bg-brand/90 h-11 sm:h-7"
+						onclick={downloadAll}
+						disabled={busyAll || busyClientId !== null || clientGroups.length === 0}
+						aria-label="Download all generated invoices"
+					>
+						{#if busyAll}
+							<Loader2 size={13} class="animate-spin" />
+							Preparing
+						{:else}
+							<FolderDown size={13} />
+							Download all
+						{/if}
+					</Button>
+					<Button
+						variant="outline"
+						size="sm"
+						class="h-11 sm:h-7"
+						onclick={session.resetGeneration}
+						disabled={busyAll}
+					>
 						<RotateCcw size={12} />
 						Reset
 					</Button>
@@ -224,19 +294,19 @@
 								<Table.Cell class="py-2 pr-3 text-right">
 									<Button
 										size="sm"
-										class="bg-brand text-brand-foreground hover:bg-brand/90 h-11 px-2 text-xs sm:h-7"
+										class="bg-brand text-brand-foreground hover:bg-brand/90 h-11 min-w-11 px-2 text-xs sm:h-7 sm:min-w-0"
 										onclick={() => downloadGroup(group)}
-										disabled={isBusy}
+										disabled={isBusy || busyAll}
 										aria-label={isSingle
 											? `Download ${group.invoices[0].fileName}`
-											: `Download ${group.folderName}.zip`}
+											: `Download ${group.invoices.length} invoices for ${group.clientName}`}
 									>
 										{#if isBusy}
 											<Loader2 size={11} class="animate-spin" />
 										{:else}
 											<Download size={11} />
 										{/if}
-										<span class="hidden sm:inline">{isSingle ? "PDF" : "ZIP"}</span>
+										<span class="hidden sm:inline">{isSingle ? "PDF" : "Folder"}</span>
 									</Button>
 								</Table.Cell>
 							</Table.Row>
