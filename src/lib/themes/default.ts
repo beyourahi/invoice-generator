@@ -28,7 +28,7 @@ const html = `<!DOCTYPE html>
 <div class="meta-value">{MONTH} {DUE_DAY}, {YEAR}</div>
 </div>
 </div>
-<h1 class="invoice-title">Invoice</h1>
+<h1 class="invoice-title" aria-label="Invoice"><span>I</span><span>N</span><span>V</span><span>O</span><span>I</span><span>C</span><span>E</span></h1>
 </header>
 <section class="parties">
 <div class="party">
@@ -116,14 +116,21 @@ body {
 	word-break: break-word;
 }
 .invoice-title {
+	display: flex;
+	justify-content: space-between;
+	align-items: baseline;
+	width: 100%;
 	font-family: 'Inter Tight', 'Inter', sans-serif;
-	font-size: 132px;
+	font-size: 144px;
 	font-weight: 500;
 	line-height: 1;
-	letter-spacing: -0.05em;
+	letter-spacing: -0.04em;
+	text-transform: uppercase;
 	color: #000;
 	margin: 0;
+	white-space: nowrap;
 }
+.invoice-title > span { display: inline-block; }
 
 .parties {
 	display: grid;
