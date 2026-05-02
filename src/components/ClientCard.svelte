@@ -7,7 +7,7 @@
 	import Button from "$lib/components/ui/button.svelte";
 	import Input from "$lib/components/ui/input.svelte";
 	import Textarea from "$lib/components/ui/textarea.svelte";
-	import Separator from "$lib/components/ui/separator.svelte";
+	import { Separator } from "$lib/components/ui/separator";
 	import { Card, CardContent, CardHeader } from "$lib/components/ui/card";
 	import * as Field from "$lib/components/ui/field";
 	import * as Select from "$lib/components/ui/select";
