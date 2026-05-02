@@ -39,9 +39,9 @@
 <button
 	class={cn(
 		"inline-flex items-center justify-center font-medium whitespace-nowrap",
-		"transition-all duration-150 select-none",
-		"focus-visible:outline-ring focus-visible:outline-2 focus-visible:outline-offset-2",
-		"disabled:pointer-events-none disabled:opacity-40",
+		"transition-all duration-150 outline-none select-none",
+		"focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3",
+		"disabled:pointer-events-none disabled:opacity-50",
 		"active:translate-y-px active:scale-[0.97]",
 		variants[variant],
 		sizes[size],

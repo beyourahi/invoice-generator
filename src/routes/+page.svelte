@@ -58,11 +58,11 @@
 	<User user={page.data.user} currentUser={page.data.currentUser} />
 {/if}
 
-<main class="flex w-full grow flex-col items-center gap-12 px-4 py-6 sm:gap-16 sm:py-8 lg:gap-20">
+<main class="flex w-full grow flex-col items-center gap-12 px-4 pt-16 pb-6 sm:gap-16 sm:pt-20 sm:pb-8 lg:gap-20">
 	<Heading />
 
 	<div class="container flex w-full flex-col gap-8 sm:gap-10 lg:gap-12">
-		<div class="grid grid-cols-1 items-start gap-2 lg:grid-cols-2 lg:gap-4">
+		<div class="grid grid-cols-1 items-start gap-6 lg:grid-cols-2 lg:gap-8">
 			<section class="space-y-4">
 				<FixedSenderPanel />
 
@@ -78,9 +78,10 @@
 						<button
 							class="border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground grid min-h-36 w-full cursor-pointer place-items-center rounded-lg border border-dashed text-center transition-colors"
 							onclick={session.addClient}
+							aria-label="Add client"
 						>
 							<div class="flex flex-col items-center gap-2">
-								<UserPlus size={18} />
+								<UserPlus size={18} aria-hidden="true" />
 								<p class="text-sm font-medium">Add client</p>
 							</div>
 						</button>

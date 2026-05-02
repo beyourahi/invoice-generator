@@ -63,11 +63,11 @@
 		<Button
 			variant="ghost"
 			size="icon"
-			class="text-muted-foreground/30 hover:bg-destructive/10 hover:text-destructive h-11 w-11 sm:h-9 sm:w-9"
+			class="text-muted-foreground hover:bg-destructive/10 hover:text-destructive h-11 w-11 sm:h-9 sm:w-9"
 			onclick={() => session.removeInvoiceEntry(clientId, entry.id)}
 			aria-label="Remove entry"
 		>
-			<Trash2 size={12} />
+			<Trash2 size={12} aria-hidden="true" />
 		</Button>
 	</Table.Cell>
 </Table.Row>

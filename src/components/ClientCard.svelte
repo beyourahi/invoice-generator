@@ -2,6 +2,7 @@
 	import { fixed } from "$lib/stores/fixed.svelte";
 	import { session, type ClientPatch } from "$lib/stores/session.svelte";
 	import { getMethodDef } from "$lib/payments/registry";
+	import { formatAmount } from "$lib/format/currency";
 	import type { Client, Currency, SavedPaymentMethod } from "$lib/types";
 	import { cn } from "$lib/utils";
 	import Button from "$lib/components/ui/button.svelte";
@@ -13,6 +14,7 @@
 	import * as Select from "$lib/components/ui/select";
 	import * as Table from "$lib/components/ui/table";
 	import InvoiceEntryRow from "$src/components/InvoiceEntryRow.svelte";
+	import SectionEyebrow from "$src/components/SectionEyebrow.svelte";
 	import { ChevronDown, Check, Plus, ReceiptText, Trash2, Wallet } from "@lucide/svelte";
 	import { z } from "zod";
 
@@ -39,9 +41,7 @@
 		if (e.key === "Enter" || e.key === " ") onSelect();
 	};
 
-	const totalAmount = $derived(
-		`${client.service.currency === "BDT" ? "৳" : "$"}${client.service.amount.toLocaleString("en-US")}`
-	);
+	const totalAmount = $derived(formatAmount(client.service.amount, client.service.currency));
 	const nameError = $derived(
 		nameTouched && !nameSchema.safeParse(client.name).success ? "Client name is required." : ""
 	);
@@ -73,7 +73,7 @@
 	});
 </script>
 
-<Card class={cn("py-0", selected && "ring-brand ring-2")}>
+<Card class={cn("py-0", selected && "ring-foreground ring-offset-background ring-2 ring-offset-2")}>
 	<CardHeader class="px-0 py-0">
 		<div
 			role="button"
@@ -86,7 +86,9 @@
 			onkeydown={selectCard}
 			class="hover:bg-accent/40 flex cursor-pointer items-center gap-3 px-4 py-3 transition-colors"
 		>
-			<span class="text-brand w-6 shrink-0 font-mono text-[11px] tabular-nums">{badgeNum}</span>
+			<span class="text-muted-foreground w-6 shrink-0 font-mono text-[11px] tabular-nums">
+				{badgeNum}
+			</span>
 			<div class="min-w-0 flex-1">
 				<p class="truncate text-sm font-medium">{client.name || "New client"}</p>
 				<p class="text-muted-foreground truncate text-xs">
@@ -94,11 +96,11 @@
 				</p>
 			</div>
 			<div class="hidden shrink-0 items-center gap-1.5 sm:flex">
-				<span class="bg-muted text-muted-foreground rounded-md px-1.5 py-0.5 font-mono text-[10px]">
+				<span class="bg-muted text-muted-foreground rounded-md px-1.5 py-0.5 font-mono text-[11px]">
 					{client.service.currency}
 				</span>
 				<span
-					class="bg-muted text-muted-foreground max-w-[140px] truncate rounded-md px-1.5 py-0.5 text-[10px]"
+					class="bg-muted text-muted-foreground max-w-[140px] truncate rounded-md px-1.5 py-0.5 text-[11px]"
 				>
 					{paymentSummary}
 				</span>
@@ -106,26 +108,30 @@
 			<Button
 				variant="ghost"
 				size="icon-sm"
-				class="text-muted-foreground hover:bg-destructive/10 hover:text-destructive h-11 w-11 shrink-0 sm:h-7 sm:w-7"
+				class="text-muted-foreground hover:bg-destructive/10 hover:text-destructive h-9 w-9 shrink-0 sm:h-7 sm:w-7"
 				onclick={e => {
 					e.stopPropagation();
 					session.removeClient(client.id);
 				}}
 				aria-label="Remove client"
 			>
-				<Trash2 size={12} />
+				<Trash2 size={12} aria-hidden="true" />
 			</Button>
 			<Button
 				variant="ghost"
 				size="icon-sm"
-				class="text-muted-foreground hover:text-foreground h-11 w-11 shrink-0 sm:h-7 sm:w-7"
+				class="text-muted-foreground hover:text-foreground h-9 w-9 shrink-0 sm:h-7 sm:w-7"
 				onclick={e => {
 					e.stopPropagation();
 					session.toggleClientExpanded(client.id);
 				}}
 				aria-label={expanded ? "Collapse client" : "Expand client"}
 			>
-				<ChevronDown size={14} class={cn("transition-transform duration-200", expanded && "rotate-180")} />
+				<ChevronDown
+					size={14}
+					class={cn("transition-transform duration-200", expanded && "rotate-180")}
+					aria-hidden="true"
+				/>
 			</Button>
 		</div>
 	</CardHeader>
@@ -267,12 +273,7 @@
 
 			<div class="space-y-3">
 				<div class="flex items-center justify-between gap-3">
-					<div class="flex items-center gap-2">
-						<Wallet size={14} class="text-muted-foreground" />
-						<p class="text-muted-foreground text-xs font-medium tracking-wider uppercase">
-							Payment methods
-						</p>
-					</div>
+					<SectionEyebrow icon={Wallet} label="Payment methods" />
 					{#if savedMethods.length > 0}
 						<p class="text-muted-foreground text-xs tabular-nums">
 							{client.payment.methodIds.length} of {savedMethods.length} selected
@@ -306,14 +307,14 @@
 								aria-pressed={active}
 							>
 								{#if active}
-									<Check size={12} />
+									<Check size={12} aria-hidden="true" />
 								{:else}
-									<Plus size={12} />
+									<Plus size={12} aria-hidden="true" />
 								{/if}
 								<span class="font-medium">{method.label || def.name}</span>
 								<span
 									class={cn(
-										"font-mono text-[10px] uppercase",
+										"font-mono text-[11px] uppercase",
 										active ? "text-brand/70" : "text-muted-foreground/70"
 									)}
 								>
@@ -329,12 +330,7 @@
 
 			<div class="space-y-3">
 				<div class="flex items-center justify-between gap-3">
-					<div class="flex items-center gap-2">
-						<ReceiptText size={14} class="text-muted-foreground" />
-						<p class="text-muted-foreground text-xs font-medium tracking-wider uppercase">
-							Invoice schedule
-						</p>
-					</div>
+					<SectionEyebrow icon={ReceiptText} label="Invoice schedule" />
 					{#if client.invoices.length > 0}
 						<p class="text-muted-foreground text-xs">{client.invoices.length} rows</p>
 					{/if}
@@ -345,9 +341,10 @@
 						type="button"
 						class="border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground grid min-h-36 w-full cursor-pointer place-items-center rounded-lg border border-dashed text-center transition-colors"
 						onclick={() => session.addInvoiceEntry(client.id)}
+						aria-label="Add invoice entry"
 					>
 						<div class="flex flex-col items-center gap-2">
-							<Plus size={18} />
+							<Plus size={18} aria-hidden="true" />
 							<p class="text-sm font-medium">Add entry</p>
 						</div>
 					</button>
@@ -355,11 +352,11 @@
 					<Table.Root>
 						<Table.Header>
 							<Table.Row class="border-border hover:bg-transparent">
-								<Table.Head class="h-8 pl-0 text-[10px] tracking-wider uppercase">Month</Table.Head>
-								<Table.Head class="h-8 w-[72px] text-center text-[10px] tracking-wider uppercase">
+								<Table.Head class="h-8 pl-0 text-[11px] tracking-wider uppercase">Month</Table.Head>
+								<Table.Head class="h-8 w-[72px] text-center text-[11px] tracking-wider uppercase">
 									Issue
 								</Table.Head>
-								<Table.Head class="h-8 w-[72px] text-center text-[10px] tracking-wider uppercase">
+								<Table.Head class="h-8 w-[72px] text-center text-[11px] tracking-wider uppercase">
 									Due
 								</Table.Head>
 								<Table.Head class="h-8 w-8"></Table.Head>
@@ -383,7 +380,7 @@
 						class="text-muted-foreground hover:text-foreground w-full border-dashed"
 						onclick={() => session.addInvoiceEntry(client.id)}
 					>
-						<Plus size={12} />
+						<Plus size={12} aria-hidden="true" />
 						Add entry
 					</Button>
 				{/if}

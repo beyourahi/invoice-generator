@@ -177,51 +177,47 @@
 			<div class="flex flex-wrap items-center gap-2">
 				{#if session.generationState === "done"}
 					<Button
-						size="sm"
-						class="bg-brand text-brand-foreground hover:bg-brand/90 h-11 sm:h-7"
+						class="bg-brand text-brand-foreground hover:bg-brand/90 w-full sm:w-auto"
 						onclick={downloadAll}
 						disabled={busyAll || busyClientId !== null || clientGroups.length === 0}
 						aria-label="Download all generated invoices"
 					>
 						{#if busyAll}
-							<Loader2 size={13} class="animate-spin" />
+							<Loader2 size={14} class="animate-spin" aria-hidden="true" />
 							Preparing
 						{:else}
-							<FolderDown size={13} />
+							<FolderDown size={14} aria-hidden="true" />
 							Download all
 						{/if}
 					</Button>
 					<Button
 						variant="outline"
-						size="sm"
-						class="h-11 sm:h-7"
+						class="w-full sm:w-auto"
 						onclick={session.resetGeneration}
 						disabled={busyAll}
 					>
-						<RotateCcw size={12} />
+						<RotateCcw size={14} aria-hidden="true" />
 						Reset
 					</Button>
 				{:else if session.generationState === "error"}
 					<Button
-						size="sm"
-						class="bg-brand text-brand-foreground hover:bg-brand/90 h-11 sm:h-7"
+						class="bg-brand text-brand-foreground hover:bg-brand/90 w-full sm:w-auto"
 						onclick={generateAll}
 					>
-						<RotateCcw size={13} />
+						<RotateCcw size={14} aria-hidden="true" />
 						Retry
 					</Button>
 				{:else}
 					<Button
-						size="sm"
-						class="bg-brand text-brand-foreground hover:bg-brand/90 h-11 w-full disabled:opacity-30 sm:h-7 sm:w-auto"
+						class="bg-brand text-brand-foreground hover:bg-brand/90 w-full sm:w-auto"
 						onclick={generateAll}
 						disabled={!canGenerate || session.generationState === "generating"}
 					>
 						{#if session.generationState === "generating"}
-							<Loader2 size={13} class="animate-spin" />
+							<Loader2 size={14} class="animate-spin" aria-hidden="true" />
 							Generating
 						{:else}
-							<FileDown size={13} />
+							<FileDown size={14} aria-hidden="true" />
 							Generate{totalCount > 0 ? ` (${totalCount})` : ""}
 						{/if}
 					</Button>
@@ -241,13 +237,13 @@
 		{/if}
 
 		{#if session.generationState === "error" && session.generationError}
-			<div class="text-destructive flex items-center gap-2 text-xs">
-				<AlertCircle size={13} class="shrink-0" />
+			<div class="text-destructive flex items-center gap-2 text-xs" role="alert">
+				<AlertCircle size={13} class="shrink-0" aria-hidden="true" />
 				<span>{session.generationError}</span>
 			</div>
 		{:else if session.clients.length > 0 && !session.allClientsValid && session.generationState === "idle"}
 			<div class="text-muted-foreground flex items-center gap-2 text-xs">
-				<TriangleAlert size={13} class="shrink-0" />
+				<TriangleAlert size={13} class="shrink-0" aria-hidden="true" />
 				<span>Every client needs a name and invoice prefix before generation.</span>
 			</div>
 		{:else if session.generationState === "idle"}
@@ -261,9 +257,9 @@
 				<Table.Root>
 					<Table.Header>
 						<Table.Row class="border-border hover:bg-transparent">
-							<Table.Head class="h-9 pl-3 text-[10px] tracking-wider uppercase">Client</Table.Head>
-							<Table.Head class="h-9 text-[10px] tracking-wider uppercase">Invoices</Table.Head>
-							<Table.Head class="hidden h-9 text-[10px] tracking-wider uppercase sm:table-cell">
+							<Table.Head class="h-9 pl-3 text-[11px] tracking-wider uppercase">Client</Table.Head>
+							<Table.Head class="h-9 text-[11px] tracking-wider uppercase">Invoices</Table.Head>
+							<Table.Head class="hidden h-9 text-[11px] tracking-wider uppercase sm:table-cell">
 								Year
 							</Table.Head>
 							<Table.Head class="h-9 w-28 pr-3"></Table.Head>
@@ -286,7 +282,7 @@
 								<Table.Cell class="py-2 pr-3 text-right">
 									<Button
 										size="sm"
-										class="bg-brand text-brand-foreground hover:bg-brand/90 h-10 w-full px-2 text-xs sm:h-7 sm:w-auto sm:min-w-0"
+										class="bg-brand text-brand-foreground hover:bg-brand/90 w-full sm:w-auto"
 										onclick={() => downloadGroup(group)}
 										disabled={isBusy || busyAll}
 										aria-label={isSingle
@@ -294,9 +290,9 @@
 											: `Download ${group.invoices.length} invoices for ${group.clientName}`}
 									>
 										{#if isBusy}
-											<Loader2 size={11} class="animate-spin" />
+											<Loader2 size={12} class="animate-spin" aria-hidden="true" />
 										{:else}
-											<Download size={11} />
+											<Download size={12} aria-hidden="true" />
 										{/if}
 										<span>{isSingle ? "PDF" : "Folder"}</span>
 									</Button>

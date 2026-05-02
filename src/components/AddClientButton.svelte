@@ -9,6 +9,6 @@
 	class="text-muted-foreground hover:text-foreground w-full border-dashed"
 	onclick={session.addClient}
 >
-	<UserPlus size={14} />
+	<UserPlus size={14} aria-hidden="true" />
 	Add Client
 </Button>

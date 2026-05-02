@@ -10,6 +10,7 @@
 	import * as Field from "$lib/components/ui/field";
 	import * as Select from "$lib/components/ui/select";
 	import PaymentMethodCard from "$src/components/PaymentMethodCard.svelte";
+	import SectionEyebrow from "$src/components/SectionEyebrow.svelte";
 	import { UserRound, Wallet } from "@lucide/svelte";
 	import { z } from "zod";
 
@@ -59,7 +60,7 @@
 <Card size="sm">
 	<CardHeader>
 		<CardTitle class="flex items-center gap-2 !text-base font-semibold">
-			<UserRound size={15} />
+			<UserRound size={15} aria-hidden="true" />
 			Your details
 		</CardTitle>
 		<CardDescription class="text-xs">Stays on this device — autofills every invoice.</CardDescription>
@@ -114,10 +115,7 @@
 
 		<div class="space-y-3">
 			<div class="flex items-center justify-between gap-3">
-				<div class="flex items-center gap-2">
-					<Wallet size={14} class="text-muted-foreground" />
-					<p class="text-muted-foreground text-xs font-medium tracking-wider uppercase">Payment methods</p>
-				</div>
+				<SectionEyebrow icon={Wallet} label="Payment methods" />
 				{#if methods.length > 0}
 					<p class="text-muted-foreground text-xs tabular-nums">{methods.length} saved</p>
 				{/if}
@@ -176,7 +174,7 @@
 									</div>
 									{#if already}
 										<span
-											class="text-muted-foreground/80 shrink-0 text-[10px] tracking-wider uppercase"
+											class="text-muted-foreground/80 shrink-0 text-[11px] tracking-wider uppercase"
 										>
 											Open
 										</span>

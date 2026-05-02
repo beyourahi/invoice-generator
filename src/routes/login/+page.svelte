@@ -44,7 +44,8 @@
 
 	{#if error}
 		<div
-			class="bg-destructive/10 text-destructive max-w-xs rounded-lg px-4 py-2.5 text-center text-xs sm:max-w-sm sm:text-sm"
+			class="bg-destructive/10 text-destructive max-w-sm rounded-lg px-4 py-2.5 text-center text-sm"
+			role="alert"
 		>
 			{error}
 		</div>
@@ -53,14 +54,15 @@
 	<button
 		onclick={handleGoogleLogin}
 		disabled={isLoading}
-		class="sleek group text-foreground flex cursor-pointer items-center justify-center gap-2.5 rounded-full border border-white/30 bg-white/10 px-6 py-3 text-sm font-medium backdrop-blur-sm transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 sm:gap-3 sm:px-8 sm:py-3.5 xl:hover:border-white/20 xl:hover:bg-white/5"
+		class="border-border bg-card text-foreground hover:bg-accent hover:text-accent-foreground focus-visible:ring-ring sleek group focus-visible:ring-offset-background flex cursor-pointer items-center justify-center gap-2.5 rounded-full border px-6 py-3 text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 sm:gap-3 sm:px-8 sm:py-3.5"
 	>
 		{#if isLoading}
 			<div
 				class="border-muted-foreground h-4 w-4 animate-spin rounded-full border-2 border-t-transparent sm:h-5 sm:w-5"
+				aria-hidden="true"
 			></div>
 		{:else}
-			<svg class="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 24 24">
+			<svg class="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 24 24" aria-hidden="true">
 				<path
 					fill="#4285F4"
 					d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -82,7 +84,5 @@
 		<span>Continue with Google</span>
 	</button>
 
-	<p class="text-muted-foreground max-w-xs text-center text-xs sm:max-w-none sm:text-sm">
-		Sign in with your Google account to get started
-	</p>
+	<p class="text-muted-foreground max-w-sm text-center text-sm">Sign in with your Google account to get started</p>
 </div>

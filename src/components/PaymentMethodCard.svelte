@@ -62,7 +62,7 @@
 	>
 		<span
 			class={cn(
-				"rounded-md px-1.5 py-0.5 font-mono text-[10px] tracking-wider uppercase",
+				"rounded-md px-1.5 py-0.5 font-mono text-[11px] tracking-wider uppercase",
 				complete ? "bg-brand/15 text-brand" : "bg-muted text-muted-foreground"
 			)}
 		>
@@ -81,7 +81,7 @@
 				disabled={index === 0}
 				aria-label="Move up"
 			>
-				<ArrowUp size={12} />
+				<ArrowUp size={12} aria-hidden="true" />
 			</Button>
 			<Button
 				variant="ghost"
@@ -91,7 +91,7 @@
 				disabled={index === total - 1}
 				aria-label="Move down"
 			>
-				<ArrowDown size={12} />
+				<ArrowDown size={12} aria-hidden="true" />
 			</Button>
 			<Button
 				variant="ghost"
@@ -100,11 +100,12 @@
 				onclick={remove}
 				aria-label="Remove payment method"
 			>
-				<Trash2 size={12} />
+				<Trash2 size={12} aria-hidden="true" />
 			</Button>
 			<ChevronDown
 				size={14}
 				class={cn("text-muted-foreground ml-1 transition-transform duration-200", expanded && "rotate-180")}
+				aria-hidden="true"
 			/>
 		</div>
 	</button>
@@ -128,7 +129,7 @@
 						<Field.FieldLabel for="{method.id}-{field.key}">
 							{field.label}
 							{#if field.optional}
-								<span class="text-muted-foreground/60 ml-1 text-[10px]">optional</span>
+								<span class="text-muted-foreground/60 ml-1 text-[11px]">optional</span>
 							{/if}
 						</Field.FieldLabel>
 						{#if field.type === "textarea"}

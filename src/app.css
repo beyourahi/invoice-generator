@@ -28,7 +28,6 @@
 	--ring: hsl(240 5.9% 10%);
 	--brand: hsl(240 5.9% 10%);
 	--brand-foreground: hsl(0 0% 98%);
-	--brand-muted: hsl(240 5.9% 10% / 0.14);
 	--preview-paper: hsl(0 0% 100%);
 	--font-sans: Inter, sans-serif;
 	--font-mono: ui-monospace, "SF Mono", Consolas, monospace;
@@ -60,7 +59,6 @@
 	--ring: hsl(240 4.9% 83.9%);
 	--brand: hsl(160.1 84.1% 39.4%);
 	--brand-foreground: hsl(0 0% 98%);
-	--brand-muted: hsl(160.1 84.1% 39.4% / 0.14);
 	--preview-paper: hsl(0 0% 100%);
 }
 
@@ -88,7 +86,6 @@
 	--color-ring: var(--ring);
 	--color-brand: var(--brand);
 	--color-brand-foreground: var(--brand-foreground);
-	--color-brand-muted: var(--brand-muted);
 	--color-preview-paper: var(--preview-paper);
 	--font-sans: var(--font-sans);
 	--font-mono: var(--font-mono);

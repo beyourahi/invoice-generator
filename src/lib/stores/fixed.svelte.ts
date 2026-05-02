@@ -75,13 +75,6 @@ const createFixedStore = () => {
 		void sync(() => api.put<void>("/api/payment-methods", { orderedIds: next.map((m) => m.id) }));
 	};
 
-	const purgePaymentMethodFromState = (methodId: string) => {
-		state = {
-			...state,
-			paymentMethods: state.paymentMethods.filter((m) => m.id !== methodId)
-		};
-	};
-
 	return {
 		get value() {
 			return state;
@@ -92,8 +85,7 @@ const createFixedStore = () => {
 		removePaymentMethod,
 		updatePaymentMethodLabel,
 		updatePaymentMethodValue,
-		movePaymentMethod,
-		purgePaymentMethodFromState
+		movePaymentMethod
 	};
 };
 

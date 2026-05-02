@@ -2,6 +2,7 @@
 	import { authClient } from "$lib/auth-client";
 	import { goto } from "$app/navigation";
 	import { cn } from "$lib/utils";
+	import * as Tooltip from "$lib/components/ui/tooltip";
 	import type { CurrentUser } from "$lib/types";
 
 	interface Props {
@@ -16,7 +17,6 @@
 	let { user, currentUser }: Props = $props();
 
 	let isLoggingOut = $state(false);
-	let showTooltip = $state(false);
 	let expanded = $state(false);
 
 	const handleLogout = async () => {
@@ -57,6 +57,7 @@
 					stroke-width="2"
 					stroke-linecap="round"
 					stroke-linejoin="round"
+					aria-hidden="true"
 				>
 					<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
 					<circle cx="12" cy="7" r="4" />
@@ -66,7 +67,7 @@
 
 		<div
 			class={cn(
-				"border-border bg-card absolute right-0 flex h-9 items-center overflow-hidden rounded-full border whitespace-nowrap backdrop-blur-sm transition-all duration-300 sm:h-10",
+				"border-border bg-card sleek absolute right-0 flex h-9 items-center overflow-hidden rounded-full border whitespace-nowrap backdrop-blur-sm sm:h-10",
 				expanded ? "w-auto pr-11 pl-3 opacity-100 sm:pr-12" : "w-0 pr-0 pl-0 opacity-0"
 			)}
 		>
@@ -74,60 +75,51 @@
 				<span class="text-foreground text-xs leading-tight font-medium sm:text-sm">
 					{currentUser.name}
 				</span>
-				<span class="text-muted-foreground text-[10px] leading-tight sm:text-xs">
+				<span class="text-muted-foreground text-[11px] leading-tight sm:text-xs">
 					{user.email}
 				</span>
 			</div>
 		</div>
 	</div>
 
-	<div class="relative">
-		<button
-			onclick={handleLogout}
-			disabled={isLoggingOut}
-			onmouseenter={() => (showTooltip = true)}
-			onmouseleave={() => (showTooltip = false)}
-			onfocus={() => (showTooltip = true)}
-			onblur={() => (showTooltip = false)}
-			aria-label="Sign out"
-			class={cn(
-				"sleek group flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border backdrop-blur-sm sm:h-10 sm:w-10",
-				"focus-visible:ring-destructive/50 focus:outline-none focus-visible:ring-2",
-				isLoggingOut
-					? "border-border bg-card cursor-wait"
-					: "border-destructive/40 bg-destructive/10 hover:border-destructive hover:bg-destructive active:scale-95"
-			)}
-		>
-			{#if isLoggingOut}
-				<div
-					class="border-muted-foreground h-4 w-4 animate-spin rounded-full border-2 border-t-transparent"
-				></div>
-			{:else}
-				<svg
-					class="text-destructive group-hover:text-destructive-foreground h-4 w-4 transition-colors sm:h-[1.125rem] sm:w-[1.125rem]"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="2"
-					stroke-linecap="round"
-					stroke-linejoin="round"
-				>
-					<path d="M18.36 6.64a9 9 0 1 1-12.73 0" />
-					<line x1="12" y1="2" x2="12" y2="12" />
-				</svg>
-			{/if}
-		</button>
-
-		{#if showTooltip && !isLoggingOut}
-			<div
-				class="bg-card text-card-foreground absolute top-full left-1/2 z-10 mt-2 -translate-x-1/2 rounded-md px-2.5 py-1.5 text-xs font-medium whitespace-nowrap shadow-lg"
-				role="tooltip"
+	<Tooltip.Provider delayDuration={150}>
+		<Tooltip.Root>
+			<Tooltip.Trigger
+				onclick={handleLogout}
+				disabled={isLoggingOut}
+				aria-label="Sign out"
+				class={cn(
+					"sleek group flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border backdrop-blur-sm sm:h-10 sm:w-10",
+					"focus-visible:ring-destructive/50 focus:outline-none focus-visible:ring-2",
+					isLoggingOut
+						? "border-border bg-card cursor-wait"
+						: "border-destructive/40 bg-destructive/10 hover:border-destructive hover:bg-destructive active:scale-95"
+				)}
 			>
-				Sign out
-				<div
-					class="border-b-card absolute bottom-full left-1/2 -translate-x-1/2 border-4 border-transparent"
-				></div>
-			</div>
-		{/if}
-	</div>
+				{#if isLoggingOut}
+					<div
+						class="border-muted-foreground h-4 w-4 animate-spin rounded-full border-2 border-t-transparent"
+						aria-hidden="true"
+					></div>
+				{:else}
+					<svg
+						class="text-destructive group-hover:text-destructive-foreground h-4 w-4 transition-colors sm:h-[1.125rem] sm:w-[1.125rem]"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						aria-hidden="true"
+					>
+						<path d="M18.36 6.64a9 9 0 1 1-12.73 0" />
+						<line x1="12" y1="2" x2="12" y2="12" />
+					</svg>
+				{/if}
+			</Tooltip.Trigger>
+			{#if !isLoggingOut}
+				<Tooltip.Content side="bottom">Sign out</Tooltip.Content>
+			{/if}
+		</Tooltip.Root>
+	</Tooltip.Provider>
 </div>

@@ -31,18 +31,18 @@
 	};
 </script>
 
-<Card class="gap-0 py-0">
-	<CardHeader class="border-border border-b px-4 py-3">
+<Card size="sm" class="gap-0 py-0">
+	<CardHeader class="border-border border-b">
 		<div class="flex items-center justify-between gap-3">
 			<div>
 				<CardTitle class="flex items-center gap-2 text-base font-semibold">
-					<ScanLine size={15} />
+					<ScanLine size={15} aria-hidden="true" />
 					Preview
 				</CardTitle>
 				<CardDescription class="text-xs">First scheduled invoice for the selected client.</CardDescription>
 			</div>
 			{#if html}
-				<span class="bg-muted text-muted-foreground rounded-md px-2 py-1 font-mono text-[10px]"> A4 </span>
+				<span class="bg-muted text-muted-foreground rounded-md px-2 py-1 font-mono text-[11px]">A4</span>
 			{/if}
 		</div>
 	</CardHeader>
@@ -61,22 +61,24 @@
 			>
 				<div class="space-y-2">
 					<div class="bg-muted mx-auto flex size-10 items-center justify-center rounded-lg">
-						<FileText size={17} />
+						<FileText size={17} aria-hidden="true" />
 					</div>
 					<p class="text-sm font-medium">No preview available</p>
 					<p class="max-w-56 text-xs">Select a client with at least one invoice entry.</p>
 				</div>
 			</div>
 		{:else}
-			<div
-				use:measurePreview
-				class="invoice-preview-stage overflow-hidden"
-				style:--preview-height={scaledHeight}
-				style:--preview-scale={previewScale}
-			>
-				{#if containerWidth > 0}
-					<iframe srcdoc={html} title="Invoice preview" class="invoice-preview-frame"></iframe>
-				{/if}
+			<div class="max-h-[calc(100dvh-8rem)] overflow-auto lg:max-h-[calc(100dvh-6rem)]">
+				<div
+					use:measurePreview
+					class="invoice-preview-stage overflow-hidden"
+					style:--preview-height={scaledHeight}
+					style:--preview-scale={previewScale}
+				>
+					{#if containerWidth > 0}
+						<iframe srcdoc={html} title="Invoice preview" class="invoice-preview-frame"></iframe>
+					{/if}
+				</div>
 			</div>
 		{/if}
 	</CardContent>

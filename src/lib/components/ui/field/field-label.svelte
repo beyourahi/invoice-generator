@@ -10,7 +10,7 @@
 	bind:ref
 	data-slot="field-label"
 	class={cn(
-		"mb-1.5 block text-xs font-medium text-zinc-400",
+		"text-muted-foreground mb-1.5 block text-xs font-medium",
 		"group-data-[disabled=true]/field:opacity-50",
 		className
 	)}

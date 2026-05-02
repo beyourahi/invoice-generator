@@ -1,13 +1,9 @@
 import type { Client, Fixed, InvoiceEntry, SavedPaymentMethod } from "$lib/types";
 import type { Theme } from "$lib/themes/registry";
 import { getMethodDef } from "$lib/payments/registry";
+import { formatAmount } from "$lib/format/currency";
 import { MONTH_TO_NUMBER } from "./months";
 import { resolveTokens } from "./resolver";
-
-const CURRENCIES: Record<string, string> = {
-	BDT: "৳",
-	USD: "$"
-};
 
 const escapeHtml = (value: string): string =>
 	value
@@ -75,8 +71,7 @@ export const buildInvoiceHtml = (
 ): string => {
 	const mm = MONTH_TO_NUMBER[entry.month];
 	const invoiceId = `${client.invoicePrefix}-${mm}${entry.issueDay}-${client.year}`;
-	const symbol = CURRENCIES[client.service.currency] ?? client.service.currency;
-	const amount = `${symbol}${client.service.amount.toLocaleString("en-US")}`;
+	const amount = formatAmount(client.service.amount, client.service.currency);
 	const description = client.service.description.replace("{MONTH}", entry.month);
 
 	const clientDetails = [
