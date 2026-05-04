@@ -33,7 +33,7 @@ interface DirectoryPickerWindow {
 
 const DOWNLOAD_DELAY_MS = 150;
 const DIRECTORY_PICKER_ID = "invoice-generator-downloads";
-const INVOICES_ROOT_FOLDER = "invoices";
+export const INVOICES_ROOT_FOLDER = "invoices";
 
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
@@ -99,7 +99,7 @@ const triggerSequentialDownloads = async (groups: DownloadGroup[]): Promise<void
 	}
 };
 
-const countFiles = (groups: DownloadGroup[]): number =>
+export const countFiles = (groups: DownloadGroup[]): number =>
 	groups.reduce((total, group) => total + group.invoices.length, 0);
 
 const emptyResult = (fileCount: number): DownloadResult => ({
@@ -115,7 +115,7 @@ export const downloadGroups = async (groups: DownloadGroup[]): Promise<DownloadR
 
 	if (!supportsDirectoryPicker()) {
 		await triggerSequentialDownloads(groups);
-		return { ...emptyResult(fileCount), fellBackToSequential: false };
+		return { ...emptyResult(fileCount), fellBackToSequential: true };
 	}
 
 	let root: FileSystemDirectoryHandle;

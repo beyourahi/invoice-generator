@@ -10,5 +10,5 @@
 	onclick={session.addClient}
 >
 	<UserPlus size={14} aria-hidden="true" />
-	Add Client
+	Add client
 </Button>

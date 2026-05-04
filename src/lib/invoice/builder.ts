@@ -114,5 +114,3 @@ export const getFileName = (client: Client, entry: InvoiceEntry): string => {
 	const mm = MONTH_TO_NUMBER[entry.month];
 	return `invoice-${client.invoicePrefix}-${mm}${entry.issueDay}-${client.year}.pdf`;
 };
-
-export const getFolderName = (client: Client): string => `${client.name}-${client.year}-Invoices`;

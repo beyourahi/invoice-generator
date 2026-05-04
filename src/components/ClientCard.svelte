@@ -79,6 +79,7 @@
 			role="button"
 			tabindex="0"
 			aria-pressed={selected}
+			aria-expanded={expanded}
 			onclick={() => {
 				onSelect();
 				session.toggleClientExpanded(client.id);

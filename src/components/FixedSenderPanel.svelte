@@ -59,7 +59,7 @@
 
 <Card size="sm">
 	<CardHeader>
-		<CardTitle class="flex items-center gap-2 !text-base font-semibold">
+		<CardTitle class="flex items-center gap-2 text-base font-semibold">
 			<UserRound size={15} aria-hidden="true" />
 			Your details
 		</CardTitle>

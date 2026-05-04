@@ -47,9 +47,3 @@ export const sync = async <T>(fn: () => Promise<T>): Promise<T | null> => {
 		return null;
 	}
 };
-
-export const flushSync = async (): Promise<void> => {
-	const timers = Array.from(pending.values());
-	pending.clear();
-	for (const t of timers) clearTimeout(t);
-};

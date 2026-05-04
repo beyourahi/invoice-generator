@@ -29,7 +29,7 @@
 	--brand: hsl(240 5.9% 10%);
 	--brand-foreground: hsl(0 0% 98%);
 	--preview-paper: hsl(0 0% 100%);
-	--font-sans: Inter, sans-serif;
+	--font-sans: "Manrope", sans-serif;
 	--font-mono: ui-monospace, "SF Mono", Consolas, monospace;
 	--radius: 0.5rem;
 }

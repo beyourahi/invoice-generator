@@ -46,10 +46,6 @@
 	});
 </script>
 
-<svelte:head>
-	<title>Invoice Generator</title>
-</svelte:head>
-
 {#if ToasterComponent}
 	<ToasterComponent theme="dark" position="bottom-right" richColors closeButton />
 {/if}

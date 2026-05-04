@@ -1,8 +1,7 @@
 import { zipSync, type Zippable } from "fflate";
-import type { DownloadGroup } from "$lib/pdf/sequential-download";
+import { countFiles, INVOICES_ROOT_FOLDER, type DownloadGroup } from "$lib/pdf/sequential-download";
 import { downloadBlob } from "$lib/utils";
 
-const INVOICES_ROOT_FOLDER = "invoices";
 const ZIP_FILE_NAME = "invoices.zip";
 
 const blobToBytes = async (blob: Blob): Promise<Uint8Array> =>
@@ -29,9 +28,6 @@ const buildZippable = async (groups: DownloadGroup[]): Promise<Zippable> => {
 
 	return { [INVOICES_ROOT_FOLDER]: root };
 };
-
-const countFiles = (groups: DownloadGroup[]): number =>
-	groups.reduce((total, group) => total + group.invoices.length, 0);
 
 export interface ZipDownloadResult {
 	fileCount: number;
