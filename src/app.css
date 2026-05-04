@@ -131,6 +131,18 @@ textarea {
 	cursor: text;
 }
 
+/* iOS Safari auto-zooms on focus when font-size < 16px. The only accessible
+   fix is enforcing 1rem on touch devices — viewport user-scalable hacks are
+   deprecated and break WCAG 1.4.4. Scoped to touch screens so desktop keeps
+   the text-sm design token unchanged. */
+@media (hover: none) and (pointer: coarse) {
+	input,
+	textarea,
+	select {
+		font-size: 1rem;
+	}
+}
+
 @layer base {
 	* {
 		@apply border-border;
