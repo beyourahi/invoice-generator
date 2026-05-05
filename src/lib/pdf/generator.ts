@@ -3,8 +3,35 @@ import jsPDF from "jspdf";
 
 const A4_WIDTH_PX = 794;
 const A4_HEIGHT_PX = 1123;
+const A4_WIDTH_MM = 210;
+const A4_HEIGHT_MM = 297;
 
 const waitForFrame = () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+
+interface LinkAnnotation {
+	x: number;
+	y: number;
+	w: number;
+	h: number;
+	url: string;
+}
+
+const extractLinks = (doc: Document): LinkAnnotation[] =>
+	Array.from(doc.querySelectorAll("a[href]")).flatMap((el) => {
+		const anchor = el as HTMLAnchorElement;
+		const url = anchor.href.trim();
+		if (!url) return [];
+		const rect = anchor.getBoundingClientRect();
+		return [
+			{
+				x: (rect.left / A4_WIDTH_PX) * A4_WIDTH_MM,
+				y: (rect.top / A4_HEIGHT_PX) * A4_HEIGHT_MM,
+				w: (rect.width / A4_WIDTH_PX) * A4_WIDTH_MM,
+				h: (rect.height / A4_HEIGHT_PX) * A4_HEIGHT_MM,
+				url
+			}
+		];
+	});
 
 export const generatePdf = async (html: string): Promise<Blob> => {
 	const iframe = document.createElement("iframe");
@@ -35,6 +62,8 @@ export const generatePdf = async (html: string): Promise<Blob> => {
 	await iframeDoc.fonts.ready;
 	await waitForFrame();
 
+	const linkAnnotations = extractLinks(iframeDoc);
+
 	const canvas = await html2canvas(iframeDoc.body, {
 		scale: 2,
 		useCORS: true,
@@ -55,6 +84,10 @@ export const generatePdf = async (html: string): Promise<Blob> => {
 	});
 
 	pdf.addImage(canvas.toDataURL("image/png", 1.0), "PNG", 0, 0, 210, 297);
+
+	for (const { x, y, w, h, url } of linkAnnotations) {
+		pdf.link(x, y, w, h, { url });
+	}
 
 	return pdf.output("blob");
 };
