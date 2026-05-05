@@ -17,11 +17,10 @@ interface LinkAnnotation {
 }
 
 const extractLinks = (doc: Document): LinkAnnotation[] =>
-	Array.from(doc.querySelectorAll("a[href]")).flatMap((el) => {
-		const anchor = el as HTMLAnchorElement;
-		const url = anchor.href.trim();
+	Array.from(doc.querySelectorAll("[data-href]")).flatMap((el) => {
+		const url = (el as HTMLElement).dataset.href?.trim() ?? "";
 		if (!url) return [];
-		const rect = anchor.getBoundingClientRect();
+		const rect = el.getBoundingClientRect();
 		return [
 			{
 				x: (rect.left / A4_WIDTH_PX) * A4_WIDTH_MM,

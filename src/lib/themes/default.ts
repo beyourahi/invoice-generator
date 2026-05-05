@@ -10,6 +10,6 @@ export const defaultTheme: Theme = {
 	html,
 	css,
 	paymentMethodFields: `<div class="payment-label">{METHOD_LABEL}</div><div class="bank-details">{FIELDS}</div>`,
-	paymentMethodLink: `<div class="payment-label">{METHOD_LABEL}</div><a href="{LINK_URL}" class="payment-button"><span style="color:#fff">{LINK_TEXT}</span><span class="arrow" style="color:#fff">→</span></a>`,
+	paymentMethodLink: `<div class="payment-label">{METHOD_LABEL}</div><div class="payment-button" data-href="{LINK_URL}"><span style="color:#fff">{LINK_TEXT}</span><span class="arrow" style="color:#fff">→</span></div>`,
 	paymentField: `<div>{FIELD_LABEL}: {FIELD_VALUE}</div>`
 };
