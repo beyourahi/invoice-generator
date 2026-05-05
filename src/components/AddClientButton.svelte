@@ -4,11 +4,7 @@
 	import { UserPlus } from "@lucide/svelte";
 </script>
 
-<Button
-	size="lg"
-	class="w-full"
-	onclick={session.addClient}
->
+<Button size="lg" class="w-full" onclick={session.addClient}>
 	<UserPlus size={16} aria-hidden="true" />
 	Add client
 </Button>

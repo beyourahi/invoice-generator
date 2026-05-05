@@ -8,7 +8,7 @@
 	import { Separator } from "$lib/components/ui/separator";
 	import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "$lib/components/ui/card";
 	import * as Field from "$lib/components/ui/field";
-	import * as Select from "$lib/components/ui/select";
+	import SelectDialog from "$src/components/SelectDialog.svelte";
 	import PaymentMethodCard from "$src/components/PaymentMethodCard.svelte";
 	import SectionEyebrow from "$src/components/SectionEyebrow.svelte";
 	import { UserRound, Wallet } from "@lucide/svelte";
@@ -147,43 +147,27 @@
 			{/if}
 
 			<div class="bg-muted/30 rounded-lg p-2">
-				<Select.Root
-					type="single"
-					bind:value={pickerValue}
-					onValueChange={handlePickerChange}
+				<SelectDialog
+					value={pickerValue}
+					title="Add payment method"
+					placeholder={pendingKind
+						? `Adding ${getMethodDef(pendingKind).name}…`
+						: methods.length === 0
+							? "Choose a payment method to add…"
+							: "Add or open another method…"}
+					options={PAYMENT_METHOD_KINDS.map(kind => {
+						const def = getMethodDef(kind);
+						const already = methods.some(m => m.kind === kind);
+						return {
+							value: kind,
+							label: def.name,
+							description: def.description,
+							badge: already ? "Open" : undefined
+						};
+					})}
+					onSelect={handlePickerChange}
 					disabled={pendingKind !== null}
-				>
-					<Select.Trigger class="h-9 w-full" aria-label="Add or open a payment method">
-						<span data-slot="select-value" class="text-muted-foreground">
-							{pendingKind
-								? `Adding ${getMethodDef(pendingKind).name}…`
-								: methods.length === 0
-									? "Choose a payment method to add…"
-									: "Add or open another method…"}
-						</span>
-					</Select.Trigger>
-					<Select.Content>
-						{#each PAYMENT_METHOD_KINDS as kind (kind)}
-							{@const def = getMethodDef(kind)}
-							{@const already = methods.some(m => m.kind === kind)}
-							<Select.Item value={kind} label={def.name}>
-								<div class="flex w-full items-center justify-between gap-3">
-									<div class="flex flex-col gap-0.5">
-										<span class="text-sm font-medium">{def.name}</span>
-										<span class="text-muted-foreground text-[11px]">{def.description}</span>
-									</div>
-									{#if already}
-										<span
-											class="text-muted-foreground/80 shrink-0 text-[11px] tracking-wider uppercase"
-										>
-											Open
-										</span>
-									{/if}
-								</div>
-							</Select.Item>
-						{/each}
-					</Select.Content>
-				</Select.Root>
+				/>
 			</div>
 		</div>
 	</CardContent>

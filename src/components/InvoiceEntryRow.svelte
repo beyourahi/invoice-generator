@@ -4,8 +4,8 @@
 	import type { InvoiceEntry, MonthName } from "$lib/types";
 	import Input from "$lib/components/ui/input.svelte";
 	import Button from "$lib/components/ui/button.svelte";
-	import * as Select from "$lib/components/ui/select";
 	import * as Table from "$lib/components/ui/table";
+	import SelectDialog from "$src/components/SelectDialog.svelte";
 	import { Trash2 } from "@lucide/svelte";
 
 	let { clientId, entry }: { clientId: string; entry: InvoiceEntry } = $props();
@@ -20,20 +20,13 @@
 
 <Table.Row class="border-0 hover:bg-transparent">
 	<Table.Cell class="py-1 pr-2 pl-0">
-		<Select.Root
-			type="single"
+		<SelectDialog
 			value={entry.month}
-			onValueChange={v => session.updateInvoiceEntry(clientId, entry.id, "month", v as MonthName)}
-		>
-			<Select.Trigger class="h-11 w-full text-xs sm:h-8">
-				<span data-slot="select-value">{entry.month}</span>
-			</Select.Trigger>
-			<Select.Content>
-				{#each MONTHS as month (month)}
-					<Select.Item value={month} label={month} class="text-xs">{month}</Select.Item>
-				{/each}
-			</Select.Content>
-		</Select.Root>
+			title="Month"
+			options={MONTHS.map(m => ({ value: m, label: m }))}
+			onSelect={v => session.updateInvoiceEntry(clientId, entry.id, "month", v as MonthName)}
+			class="h-11 text-xs sm:h-8"
+		/>
 	</Table.Cell>
 	<Table.Cell class="w-[72px] px-1 py-1">
 		<Input

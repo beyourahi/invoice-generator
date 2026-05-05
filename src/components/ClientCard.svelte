@@ -11,8 +11,8 @@
 	import { Separator } from "$lib/components/ui/separator";
 	import { Card, CardContent, CardHeader } from "$lib/components/ui/card";
 	import * as Field from "$lib/components/ui/field";
-	import * as Select from "$lib/components/ui/select";
 	import * as Table from "$lib/components/ui/table";
+	import SelectDialog from "$src/components/SelectDialog.svelte";
 	import InvoiceEntryRow from "$src/components/InvoiceEntryRow.svelte";
 	import SectionEyebrow from "$src/components/SectionEyebrow.svelte";
 	import { ChevronDown, Check, Plus, ReceiptText, Trash2, Wallet } from "@lucide/svelte";
@@ -240,21 +240,15 @@
 				</Field.Field>
 				<Field.Field class="gap-1.5">
 					<Field.FieldLabel for="currency-{client.id}">Currency</Field.FieldLabel>
-					<Select.Root
-						type="single"
+					<SelectDialog
 						value={client.service.currency}
-						onValueChange={v => patch({ serviceCurrency: v as Currency })}
-					>
-						<Select.Trigger id="currency-{client.id}" class="h-9 w-full">
-							<span data-slot="select-value">
-								{client.service.currency === "BDT" ? "BDT (৳)" : "USD ($)"}
-							</span>
-						</Select.Trigger>
-						<Select.Content>
-							<Select.Item value="BDT" label="BDT (৳)">BDT (৳)</Select.Item>
-							<Select.Item value="USD" label="USD ($)">USD ($)</Select.Item>
-						</Select.Content>
-					</Select.Root>
+						title="Currency"
+						options={[
+							{ value: "BDT", label: "BDT (৳)" },
+							{ value: "USD", label: "USD ($)" }
+						]}
+						onSelect={v => patch({ serviceCurrency: v as Currency })}
+					/>
 				</Field.Field>
 				<Field.Field class="gap-1.5">
 					<Field.FieldLabel for="year-{client.id}">Year</Field.FieldLabel>
@@ -372,11 +366,7 @@
 						<span class="font-mono tabular-nums">{totalAmount} × {client.invoices.length}</span>
 					</div>
 
-					<Button
-						size="default"
-						class="w-full"
-						onclick={() => session.addInvoiceEntry(client.id)}
-					>
+					<Button size="default" class="w-full" onclick={() => session.addInvoiceEntry(client.id)}>
 						<Plus size={14} aria-hidden="true" />
 						Add entry
 					</Button>
