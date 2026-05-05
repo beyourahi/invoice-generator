@@ -61,6 +61,10 @@ export const generatePdf = async (html: string): Promise<Blob> => {
 	await iframeDoc.fonts.ready;
 	await waitForFrame();
 
+	iframeDoc.querySelectorAll<HTMLElement>(".payment-button, .payment-button *").forEach((el) => {
+		el.style.setProperty("color", "#ffffff", "important");
+	});
+
 	const linkAnnotations = extractLinks(iframeDoc);
 
 	const canvas = await html2canvas(iframeDoc.body, {
