@@ -24,9 +24,7 @@
 
 	const toggleMonth = (month: MonthName) => {
 		if (scheduledMonths.includes(month)) return;
-		pending = pending.includes(month)
-			? pending.filter((m) => m !== month)
-			: [...pending, month];
+		pending = pending.includes(month) ? pending.filter(m => m !== month) : [...pending, month];
 	};
 
 	const confirm = async () => {
@@ -78,7 +76,7 @@
 	{/if}
 
 	<Dialog.Content
-		class="gap-0 p-0 data-open:slide-in-from-bottom-2 data-closed:slide-out-to-bottom-1 sm:max-w-sm"
+		class="data-open:slide-in-from-bottom-2 data-closed:slide-out-to-bottom-1 gap-0 p-0 sm:max-w-sm"
 		showCloseButton={false}
 	>
 		<Dialog.Header class="border-border border-b px-4 py-3.5">
@@ -99,7 +97,7 @@
 					class={cn(
 						"relative flex h-10 items-center justify-center rounded-md border text-sm font-medium transition-colors",
 						isScheduled
-							? "border-border text-muted-foreground cursor-not-allowed opacity-30 line-through"
+							? "border-border text-muted-foreground cursor-not-allowed line-through opacity-30"
 							: isSelected
 								? "border-brand bg-brand/10 text-brand cursor-pointer"
 								: "border-border hover:border-foreground/40 hover:bg-accent/40 cursor-pointer"
@@ -108,11 +106,7 @@
 					aria-disabled={isScheduled}
 				>
 					{#if isSelected}
-						<Check
-							size={10}
-							class="absolute top-1 right-1"
-							aria-hidden="true"
-						/>
+						<Check size={10} class="absolute top-1 right-1" aria-hidden="true" />
 					{/if}
 					{MONTH_ABBR[month]}
 				</button>
@@ -127,11 +121,7 @@
 			{/if}
 			<div class="flex items-center gap-2">
 				<Button variant="ghost" size="sm" onclick={() => (open = false)}>Cancel</Button>
-				<Button
-					size="sm"
-					disabled={pending.length === 0 || loading}
-					onclick={confirm}
-				>
+				<Button size="sm" disabled={pending.length === 0 || loading} onclick={confirm}>
 					{#if loading}
 						<Loader2 size={14} class="animate-spin" aria-hidden="true" />
 					{/if}

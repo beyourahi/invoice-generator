@@ -278,7 +278,12 @@ export const setClientPaymentMethods = async (
 	return true;
 };
 
-export const addInvoiceEntry = async (db: Database, userId: string, clientId: string, month?: MonthName) => {
+export const addInvoiceEntry = async (
+	db: Database,
+	userId: string,
+	clientId: string,
+	month?: MonthName
+) => {
 	if (!(await ownsClient(db, userId, clientId))) return null;
 
 	const last = await db
@@ -289,9 +294,9 @@ export const addInvoiceEntry = async (db: Database, userId: string, clientId: st
 		.limit(1)
 		.get();
 
-	const nextMonth: MonthName = month ?? (last
-		? MONTHS[(MONTHS.indexOf(last.month as MonthName) + 1) % MONTHS.length]
-		: "January");
+	const nextMonth: MonthName =
+		month ??
+		(last ? MONTHS[(MONTHS.indexOf(last.month as MonthName) + 1) % MONTHS.length] : "January");
 
 	const id = crypto.randomUUID();
 	const position = await nextEntryPosition(db, clientId);

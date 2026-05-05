@@ -43,7 +43,7 @@
 	};
 
 	const totalAmount = $derived(formatAmount(client.service.amount, client.service.currency));
-	const scheduledMonths = $derived(client.invoices.map((e) => e.month));
+	const scheduledMonths = $derived(client.invoices.map(e => e.month));
 	const nameError = $derived(
 		nameTouched && !nameSchema.safeParse(client.name).success ? "Client name is required." : ""
 	);
@@ -337,7 +337,7 @@
 				{#if client.invoices.length === 0}
 					<MonthPickerDialog
 						{scheduledMonths}
-						onConfirm={(months) => session.addInvoiceEntries(client.id, months)}
+						onConfirm={months => session.addInvoiceEntries(client.id, months)}
 						variant="empty"
 					/>
 				{:else}
@@ -368,7 +368,7 @@
 
 					<MonthPickerDialog
 						{scheduledMonths}
-						onConfirm={(months) => session.addInvoiceEntries(client.id, months)}
+						onConfirm={months => session.addInvoiceEntries(client.id, months)}
 					/>
 				{/if}
 			</div>

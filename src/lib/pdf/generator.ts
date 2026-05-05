@@ -71,12 +71,7 @@ export const generatePdf = async (html: string): Promise<Blob> => {
 		width: A4_WIDTH_PX,
 		height: A4_HEIGHT_PX,
 		windowWidth: A4_WIDTH_PX,
-		windowHeight: A4_HEIGHT_PX,
-		onclone: (_doc, element) => {
-			element.querySelectorAll<HTMLElement>(".payment-button, .payment-button *").forEach((el) => {
-				el.style.color = "#ffffff";
-			});
-		}
+		windowHeight: A4_HEIGHT_PX
 	});
 
 	document.body.removeChild(iframe);
