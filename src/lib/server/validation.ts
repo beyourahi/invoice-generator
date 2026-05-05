@@ -69,6 +69,10 @@ export const setClientMethodsSchema = z.object({
 	methodIds: z.array(z.string()).max(32)
 });
 
+export const createEntrySchema = z.object({
+	month: monthSchema.optional()
+});
+
 export const updateEntrySchema = z
 	.object({
 		month: monthSchema.optional(),

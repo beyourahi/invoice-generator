@@ -15,6 +15,7 @@
 	import SelectDialog from "$src/components/SelectDialog.svelte";
 	import InvoiceEntryRow from "$src/components/InvoiceEntryRow.svelte";
 	import SectionEyebrow from "$src/components/SectionEyebrow.svelte";
+	import MonthPickerDialog from "$src/components/MonthPickerDialog.svelte";
 	import { ChevronDown, Check, Plus, ReceiptText, Trash2, Wallet } from "@lucide/svelte";
 	import { z } from "zod";
 
@@ -42,6 +43,7 @@
 	};
 
 	const totalAmount = $derived(formatAmount(client.service.amount, client.service.currency));
+	const scheduledMonths = $derived(client.invoices.map((e) => e.month));
 	const nameError = $derived(
 		nameTouched && !nameSchema.safeParse(client.name).success ? "Client name is required." : ""
 	);
@@ -333,14 +335,11 @@
 				</div>
 
 				{#if client.invoices.length === 0}
-					<Button
-						class="h-auto min-h-20 w-full flex-col gap-2"
-						onclick={() => session.addInvoiceEntry(client.id)}
-						aria-label="Add invoice entry"
-					>
-						<Plus size={16} aria-hidden="true" />
-						<span class="text-sm font-medium">Add entry</span>
-					</Button>
+					<MonthPickerDialog
+						{scheduledMonths}
+						onConfirm={(months) => session.addInvoiceEntries(client.id, months)}
+						variant="empty"
+					/>
 				{:else}
 					<Table.Root>
 						<Table.Header>
@@ -367,10 +366,10 @@
 						<span class="font-mono tabular-nums">{totalAmount} × {client.invoices.length}</span>
 					</div>
 
-					<Button size="default" class="w-full" onclick={() => session.addInvoiceEntry(client.id)}>
-						<Plus size={14} aria-hidden="true" />
-						Add entry
-					</Button>
+					<MonthPickerDialog
+						{scheduledMonths}
+						onConfirm={(months) => session.addInvoiceEntries(client.id, months)}
+					/>
 				{/if}
 			</div>
 		</CardContent>

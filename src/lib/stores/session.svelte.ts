@@ -7,6 +7,7 @@ import type {
 	MonthName
 } from "$lib/types";
 import { api, debounceSync, sync } from "$lib/api/client";
+import { MONTHS } from "$lib/invoice/months";
 
 const TEXT_DEBOUNCE_MS = 400;
 
@@ -142,6 +143,19 @@ const createSessionStore = () => {
 		);
 	};
 
+	const addInvoiceEntries = async (clientId: string, months: MonthName[]) => {
+		const sorted = [...months].sort((a, b) => MONTHS.indexOf(a) - MONTHS.indexOf(b));
+		for (const month of sorted) {
+			const created = await sync(() =>
+				api.post<InvoiceEntry>(`/api/clients/${clientId}/entries`, { month })
+			);
+			if (!created) continue;
+			clients = clients.map((c) =>
+				c.id === clientId ? { ...c, invoices: [...c.invoices, created] } : c
+			);
+		}
+	};
+
 	const removeInvoiceEntry = (clientId: string, entryId: string) => {
 		clients = clients.map((c) =>
 			c.id === clientId ? { ...c, invoices: c.invoices.filter((e) => e.id !== entryId) } : c
@@ -253,6 +267,7 @@ const createSessionStore = () => {
 		ensurePaymentMethodSelected,
 		purgePaymentMethodFromClients,
 		addInvoiceEntry,
+		addInvoiceEntries,
 		removeInvoiceEntry,
 		updateInvoiceEntry,
 		setSelectedClientId,
