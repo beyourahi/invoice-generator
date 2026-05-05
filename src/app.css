@@ -166,3 +166,22 @@ textarea {
 	transform: scale(var(--preview-scale));
 	transform-origin: top left;
 }
+
+[data-slot="dialog-overlay"] {
+	--tw-duration: 200ms;
+	background-color: hsl(0 0% 0% / 0.6);
+	backdrop-filter: blur(6px);
+}
+
+[data-slot="dialog-content"] {
+	--tw-duration: 200ms;
+	animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	[data-slot="dialog-overlay"],
+	[data-slot="dialog-content"] {
+		--tw-duration: 0ms;
+		animation: none;
+	}
+}

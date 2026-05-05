@@ -243,6 +243,7 @@
 					<SelectDialog
 						value={client.service.currency}
 						title="Currency"
+						columns={2}
 						options={[
 							{ value: "BDT", label: "BDT (৳)" },
 							{ value: "USD", label: "USD ($)" }

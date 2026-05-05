@@ -15,6 +15,7 @@
 		options = [],
 		placeholder = "Select…",
 		title = "Select",
+		columns = 1,
 		onSelect,
 		disabled = false,
 		class: className = ""
@@ -23,6 +24,7 @@
 		options: SelectOption[];
 		placeholder?: string;
 		title?: string;
+		columns?: number;
 		onSelect: (value: string) => void;
 		disabled?: boolean;
 		class?: string;
@@ -59,6 +61,21 @@
 			}
 		};
 	};
+
+	const contentClass = $derived(
+		cn(
+			"gap-0 p-0 data-open:slide-in-from-bottom-2 data-closed:slide-out-to-bottom-1",
+			columns === 1 ? "sm:max-w-sm" : columns === 2 ? "sm:max-w-md" : "sm:max-w-lg"
+		)
+	);
+
+	const listClass = $derived(
+		cn(
+			"max-h-72 overflow-y-auto p-1.5",
+			columns === 2 && "sm:grid sm:grid-cols-2 sm:gap-x-1",
+			columns === 3 && "grid grid-cols-2 gap-x-1 sm:grid-cols-3"
+		)
+	);
 </script>
 
 <Dialog.Root bind:open>
@@ -76,8 +93,8 @@
 		<ChevronDown size={14} class="text-muted-foreground shrink-0" aria-hidden="true" />
 	</Dialog.Trigger>
 
-	<Dialog.Content class="gap-0 p-0 sm:max-w-xs" showCloseButton={false}>
-		<Dialog.Header class="border-border border-b px-4 py-3">
+	<Dialog.Content class={contentClass} showCloseButton={false}>
+		<Dialog.Header class="border-border border-b px-4 py-3.5">
 			<Dialog.Title class="text-left text-sm font-semibold">{title}</Dialog.Title>
 		</Dialog.Header>
 
@@ -87,7 +104,7 @@
 			aria-label={title}
 			tabindex="-1"
 			onkeydown={handleKeyDown}
-			class="max-h-72 overflow-y-auto p-1.5"
+			class={listClass}
 		>
 			{#each options as option (option.value)}
 				{@const isSelected = option.value === value}
@@ -103,7 +120,8 @@
 						"flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors",
 						"hover:bg-accent hover:text-accent-foreground",
 						"focus:bg-accent focus:text-accent-foreground focus:outline-none",
-						isSelected && "bg-accent/40"
+						isSelected && "bg-accent/40",
+						columns > 1 && "justify-between"
 					)}
 				>
 					<div class="min-w-0 flex-1">
