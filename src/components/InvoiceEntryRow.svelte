@@ -24,7 +24,7 @@
 			value={entry.month}
 			title="Month"
 			columns={3}
-			options={MONTHS.filter(m => m !== entry.month).map(m => ({ value: m, label: m }))}
+			options={MONTHS.map(m => ({ value: m, label: m }))}
 			onSelect={v => session.updateInvoiceEntry(clientId, entry.id, "month", v as MonthName)}
 			class="h-11 text-xs sm:h-8"
 		/>

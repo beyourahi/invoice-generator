@@ -303,7 +303,7 @@ export const addInvoiceEntry = async (db: Database, userId: string, clientId: st
 			clientId,
 			month: nextMonth,
 			issueDay: last?.issueDay ?? "01",
-			dueDay: last?.dueDay ?? "07",
+			dueDay: last?.dueDay ?? "01",
 			position
 		})
 		.run();

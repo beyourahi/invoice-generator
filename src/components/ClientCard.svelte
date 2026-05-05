@@ -334,11 +334,11 @@
 
 				{#if client.invoices.length === 0}
 					<Button
-						class="h-auto min-h-36 w-full flex-col gap-2"
+						class="h-auto min-h-20 w-full flex-col gap-2"
 						onclick={() => session.addInvoiceEntry(client.id)}
 						aria-label="Add invoice entry"
 					>
-						<Plus size={18} aria-hidden="true" />
+						<Plus size={16} aria-hidden="true" />
 						<span class="text-sm font-medium">Add entry</span>
 					</Button>
 				{:else}
