@@ -338,17 +338,14 @@
 				</div>
 
 				{#if client.invoices.length === 0}
-					<button
-						type="button"
-						class="border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground grid min-h-36 w-full cursor-pointer place-items-center rounded-lg border border-dashed text-center transition-colors"
+					<Button
+						class="h-auto min-h-36 w-full flex-col gap-2"
 						onclick={() => session.addInvoiceEntry(client.id)}
 						aria-label="Add invoice entry"
 					>
-						<div class="flex flex-col items-center gap-2">
-							<Plus size={18} aria-hidden="true" />
-							<p class="text-sm font-medium">Add entry</p>
-						</div>
-					</button>
+						<Plus size={18} aria-hidden="true" />
+						<span class="text-sm font-medium">Add entry</span>
+					</Button>
 				{:else}
 					<Table.Root>
 						<Table.Header>
@@ -376,12 +373,11 @@
 					</div>
 
 					<Button
-						variant="outline"
-						size="sm"
-						class="text-muted-foreground hover:text-foreground w-full border-dashed"
+						size="default"
+						class="w-full"
 						onclick={() => session.addInvoiceEntry(client.id)}
 					>
-						<Plus size={12} aria-hidden="true" />
+						<Plus size={14} aria-hidden="true" />
 						Add entry
 					</Button>
 				{/if}

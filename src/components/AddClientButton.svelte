@@ -5,10 +5,10 @@
 </script>
 
 <Button
-	variant="outline"
-	class="text-muted-foreground hover:text-foreground w-full border-dashed"
+	size="lg"
+	class="w-full"
 	onclick={session.addClient}
 >
-	<UserPlus size={14} aria-hidden="true" />
+	<UserPlus size={16} aria-hidden="true" />
 	Add client
 </Button>
