@@ -29,11 +29,11 @@ All commits go directly to `main`. No feature branches. Worktrees allow parallel
 
 ## Project Overview
 
-A SvelteKit app that generates batches of PDF invoices. Users configure a fixed sender identity, add multiple clients (each with service details and a list of invoice months), then trigger bulk generation. Each invoice is rendered as HTML, captured via `html2canvas`, and exported to a jsPDF Blob. Multiple PDFs can be downloaded individually or zipped together via `fflate`.
+A SvelteKit app that generates batches of PDF invoices. Users configure a fixed sender identity and payment methods, add multiple clients (each with service details and a list of invoice months), then trigger bulk generation. Each invoice is rendered as HTML, captured via `html2canvas`, and exported to a jsPDF Blob. Multiple PDFs can be downloaded via the File System Access API (directory picker) or, if unavailable, as sequential individual downloads. A ZIP fallback is also available.
 
 **Stack**: SvelteKit 2 + Svelte 5 runes, Tailwind CSS v4, shadcn-svelte, Cloudflare Workers, Better Auth (Google OAuth), Cloudflare D1, Drizzle ORM, Bun.
 
-**Auth-gated**: Google OAuth via Better Auth. Any authenticated user can access the app. Unauthenticated users are redirected to `/login`. The PDF generation pipeline itself is still entirely client-side (no server actions). The server layer handles only auth session management and routing guards.
+**Auth-gated**: Google OAuth via Better Auth. Any authenticated user can access the app. Unauthenticated users are redirected to `/login`. All user data (sender info, payment methods, clients, invoice entries) is persisted server-side in D1 and loaded on page load. The PDF generation pipeline itself is entirely client-side.
 
 ---
 
@@ -62,7 +62,7 @@ A SvelteKit app that generates batches of PDF invoices. Users configure a fixed 
 ```bash
 bun run dev              # Start Vite dev server (opens browser automatically)
 bun run build            # Production build
-bun run preview          # Preview via Wrangler (requires build first)
+bun run preview          # Build then start Wrangler dev (requires build first)
 bun run check            # svelte-check TypeScript validation
 bun run lint             # ESLint
 bun run format           # Prettier
@@ -92,95 +92,139 @@ Route files use `$src/components/...`; library files use `$lib/...`. Never use r
 
 ### Auth Layer
 
-The server layer handles only authentication — the PDF pipeline itself remains entirely client-side.
+The server layer handles only authentication and data persistence — the PDF pipeline remains entirely client-side.
 
 - **`$lib/server/auth.ts`** — `createAuth(d1, env)` factory. Returns a Better Auth instance configured with Google OAuth, Drizzle adapter (D1/SQLite), 7-day session expiry, 5-minute cookie cache, and database rate limiting. `env` must include `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`.
 
-- **`$lib/server/schema.ts`** — Drizzle schema for Better Auth tables: `users`, `sessions`, `accounts`, `verifications`, `rateLimits`. Snake_case column names required by the Drizzle adapter.
+- **`$lib/server/schema.ts`** — Drizzle schema for all tables: Better Auth tables (`users`, `sessions`, `accounts`, `verifications`, `rateLimits`) and app tables (`fixedSettings`, `paymentMethods`, `clients`, `clientPaymentMethods`, `invoiceEntries`). Snake_case column names required by the Drizzle adapter.
+
+- **`$lib/server/db.ts`** — `getDatabase(d1)` factory returning a Drizzle instance. Exports `Database` type and `schema`.
+
+- **`$lib/server/api.ts`** — `requireApiContext(event)` → `{ db, userId }`. Throws 401 if unauthenticated, 503 if D1 unavailable. Also exports `parseJson(event, schema)` for Zod-validated request bodies and `ok(data?)` for 200/204 responses.
+
+- **`$lib/server/dto.ts`** — Pure row-to-domain mappers: `toSavedPaymentMethod`, `toInvoiceEntry`, `toClient`, `toFixed`. Also exports `AppState` interface: `{ fixed, clients, selectedClientId, expandedClients }`.
+
+- **`$lib/server/repositories/`** — Four repository files: `fixed.ts`, `clients.ts`, `payment-methods.ts`, `state.ts`. `state.ts` exports `loadAppState(db, userId)` → `AppState` used in `+page.server.ts`.
+
+- **`$lib/server/validation.ts`** — Shared Zod schemas for API request bodies.
 
 - **`$lib/auth-client.ts`** — Better Auth Svelte client (`createAuthClient`). Exports `authClient`, `signIn`, `signOut`, `useSession`.
 
-- **`$lib/config/app.ts`** — `APP_CONFIG` object (`name`, `description`, `url`, `author`). App metadata used for `<title>` and `<meta>` tags. Exported via `$lib/config/index.ts`.
+- **`$lib/config/app.ts`** — `APP_CONFIG` object. App metadata used for `<title>` and `<meta>` tags.
 
-- **`$lib/hooks/use-current-user.ts`** — `getCurrentUser(user)` → `CurrentUser | null`. Accepts a `{ name, email }` object and returns a `CurrentUser` or `null` for unauthenticated users.
+- **`$lib/hooks/use-current-user.ts`** — `getCurrentUser(user)` → `CurrentUser | null`.
 
-- **`src/hooks.server.ts`** — SvelteKit `handle` hook. Instantiates `createAuth` per request (D1 binding from `event.platform.env`), delegates Better Auth routes to `svelteKitHandler` (from `better-auth/svelte-kit`), calls `auth.api.getSession`, populates `event.locals.user`, `event.locals.session`, `event.locals.currentUser`. Also applies CSP and security headers on every response. Gracefully degrades if D1 is unavailable (auth disabled, locals set to `null`). Also exports `handleError` for server-side error logging with UUID correlation.
+- **`src/hooks.server.ts`** — SvelteKit `handle` hook. Instantiates `createAuth` per request, delegates Better Auth routes to `svelteKitHandler`, calls `auth.api.getSession`, populates `event.locals.user`, `event.locals.session`, `event.locals.currentUser`. Applies CSP and security headers on every response. Gracefully degrades if D1 unavailable. Exports `handleError` with UUID correlation.
 
-- **`src/hooks.client.ts`** — Client-side `handleError` that logs errors with a UUID for correlation.
+- **`src/hooks.client.ts`** — Client-side `handleError` with UUID correlation.
 
 - **`src/routes/+layout.server.ts`** — Passes `user`, `session`, `currentUser` from `locals` into `PageData`.
 
-- **`src/routes/+page.server.ts`** — Redirects to `/login` if `locals.user` is null. Returns `user` and `currentUser` from `locals`.
+- **`src/routes/+page.server.ts`** — Redirects to `/login` if unauthenticated. Loads full `AppState` from D1 via `loadAppState` and returns it alongside `user` and `currentUser`.
 
-- **`src/routes/login/+page.svelte`** — Google sign-in button. Redirects to `/` (or `?redirect=`) after successful OAuth. Shows error message on failure.
+- **`src/routes/login/+page.svelte`** — Google sign-in button. Redirects to `/` after successful OAuth.
 
 - **`src/routes/login/+page.server.ts`** — Redirects to `/` if already authenticated.
 
 - **`src/routes/api/logout/+server.ts`** — `POST`/`GET` both delete the session cookie and redirect to `/login`.
 
-- **`migrations/0001_better_auth_tables.sql`** — Raw SQL migration for D1. Apply via `bun run db:migrate` (remote) or `bun run db:migrate:local` (local Wrangler preview).
+- **`src/routes/api/fixed/+server.ts`** — `PATCH` updates sender fields; `PUT` updates `selectedClientId`.
 
-**Authorization flow**: Google OAuth → any authenticated user gains full access to the invoice app. Unauthenticated users are redirected to `/login`.
+- **`src/routes/api/payment-methods/+server.ts`** and **`[id]/+server.ts`** — CRUD for payment methods. `PUT` reorders by `orderedIds` array.
+
+- **`src/routes/api/clients/+server.ts`** and **`[id]/+server.ts`** — CRUD for clients. `POST` accepts optional `templateId` to copy from an existing client.
+
+- **`src/routes/api/clients/[id]/entries/+server.ts`** and **`[id]/+server.ts`** — CRUD for invoice entries per client.
+
+- **`src/routes/api/clients/[id]/payment-methods/+server.ts`** — `PUT` updates the ordered list of payment method IDs for a client.
+
+**Authorization flow**: Google OAuth → any authenticated user gains full access. All data is scoped to `userId`.
+
+### API Client
+
+**`$lib/api/client.ts`** — Typed fetch wrapper: `api.get`, `api.post`, `api.patch`, `api.put`, `api.delete`. Also exports `sync(fn)` (try/catch wrapper returning `T | null`) and `debounceSync(key, delayMs, fn)` (debounced fire-and-forget used for text fields).
 
 ### Store Design
 
-Both stores use the **factory function + `$state` closure** pattern, exported as singletons:
+Both stores use the **factory function + `$state` closure** pattern, exported as singletons. Mutations call the API client to persist changes server-side.
 
-- **`$lib/stores/session.svelte.ts`** — Ephemeral per-session state: the `clients` array, `generatedInvoices`, `generationState` (`"idle" | "generating" | "done" | "error"`), and `generationError`. Client mutations are exposed as discrete methods: `addClient`, `removeClient`, `updateClient(id, updater)`, `addInvoiceEntry`, `removeInvoiceEntry`, `updateInvoiceEntry`. Generation lifecycle methods: `setGenerating`, `setGenerated`, `setError`, `resetGeneration`. Two `$derived` computed values: `totalInvoiceCount` and `allClientsValid` — the latter checks that every client has a non-empty `name` and `invoicePrefix` (those two fields only).
+- **`$lib/stores/session.svelte.ts`** — Per-session state: `clients`, `selectedClientId`, `expandedClients`, `generatedInvoices`, `generationState`, `generationError`. Client mutations: `addClient`, `removeClient`, `updateClient(id, patch)`, `togglePaymentMethod`, `ensurePaymentMethodSelected`, `purgePaymentMethodFromClients`, `addInvoiceEntry`, `addInvoiceEntries(clientId, months[])`, `removeInvoiceEntry`, `updateInvoiceEntry`. Selection/expansion: `setSelectedClientId`, `setClientExpanded`, `toggleClientExpanded`, `isClientExpanded`. Generation lifecycle: `setGenerating`, `setGenerated`, `setError`, `resetGeneration`. Two `$derived` values: `totalInvoiceCount` and `allClientsValid` (checks every client has non-empty `name` and `invoicePrefix`). Has a `hydrate(initial)` method called once in `+page.svelte` via `untrack` to seed from server data.
 
-- **`$lib/stores/fixed.svelte.ts`** — Persistent sender/bank data, stored in `localStorage` under key `invoice-generator:fixed`. Has a lazy `init()` method called in `+layout.svelte`'s `onMount` (SSR guard) before reads are meaningful.
+- **`$lib/stores/fixed.svelte.ts`** — Sender/bank data synced to D1. Exposes `value` getter, `hydrate(initial)`, `updateFrom(field, value)`, `addPaymentMethod(kind)`, `removePaymentMethod(id)`, `updatePaymentMethodLabel`, `updatePaymentMethodValue`, `movePaymentMethod`. All mutations call the API. Text mutations are debounced via `debounceSync`. Has a `hydrate(initial)` method called once in `+page.svelte` via `untrack`.
 
-The factory pattern is required because Svelte 5 `$state` reactivity is scoped to its declaration; returning objects with explicit `get` accessors exposes the reactive values outside the module.
+The factory pattern is required because Svelte 5 `$state` reactivity is scoped to its declaration.
+
+### Payment Methods System
+
+**`$lib/payments/registry.ts`** — Defines all supported payment method types as `PAYMENT_METHOD_DEFS: Record<PaymentMethodKind, PaymentMethodDef>`. Supported kinds: `bank`, `bkash`, `nagad`, `rocket`, `wise`, `payoneer`, `paypal`, `custom`. Each `PaymentMethodDef` has `display: "fields" | "link"`. Link methods (wise, payoneer, paypal) show a payment link button in the PDF. Field methods (bank, mobile wallets, custom) show labeled key-value rows. Exports `getMethodDef`, `createSavedMethod`, `isMethodComplete`.
+
+Currencies: `BDT` and `USD`. `$lib/format/currency.ts` exports `formatAmount` and `currencySymbol`.
 
 ### Invoice Pipeline
 
-1. **`$lib/invoice/builder.ts`** — `buildInvoiceHtml(client, entry, fixed, theme)` assembles a complete HTML document string. Calls `resolveTokens` to substitute `{TOKEN}` placeholders. Invoice ID format: `{PREFIX}-{MM}{DD}-{YEAR}` (e.g. `ACME-0101-2026`). Service description supports a `{MONTH}` token (substituted via `String.prototype.replace`, not `resolveTokens`). Also exports three pure helpers used by `GenerationPanel`: `getInvoiceId(client, entry)`, `getFileName(client, entry)` → `invoice-{PREFIX}-{MM}{DD}-{YEAR}.pdf`, and `getFolderName(client)` → `{ClientName}-{Year}-Invoices`.
+1. **`$lib/invoice/builder.ts`** — `buildInvoiceHtml(client, entry, fixed, theme)` assembles a complete HTML document string. `renderPaymentMethod` uses the payment method's `display` style to select the correct theme template. Invoice ID format: `{PREFIX}-{MM}{ISSUE_DAY}-{YEAR}` (e.g. `ACME-0101-2026`). Service description supports a `{MONTH}` token substituted via `String.prototype.replace`. Exports `getInvoiceId(client, entry)` and `getFileName(client, entry)` → `invoice-{PREFIX}-{MM}{ISSUE_DAY}-{YEAR}.pdf`.
 
 2. **`$lib/invoice/resolver.ts`** — Single pure function: string template + token map → resolved string via `replaceAll`.
 
-3. **`$lib/invoice/months.ts`** — `MONTHS` array of all `MonthName` values and `MONTH_TO_NUMBER` map (`"January" → "01"`, etc.) used by invoice entry UI.
+3. **`$lib/invoice/months.ts`** — `MONTHS` array and `MONTH_TO_NUMBER` map (`"January" → "01"`, etc.).
 
-4. **`$lib/pdf/generator.ts`** — Entirely client-side. Injects the HTML into a hidden off-screen `<iframe>`, waits for fonts, runs `html2canvas` at 2× scale on the iframe body (A4: 794×1123px), then writes the canvas to a jsPDF at 210×297mm. Returns a `Blob`.
+4. **`$lib/pdf/generator.ts`** — Entirely client-side. Injects HTML into a hidden off-screen `<iframe>`, waits for fonts, runs `html2canvas` at 2× scale on the iframe body (A4: 794×1123px), writes the canvas to jsPDF at 210×297mm. Returns a `Blob`.
 
-5. **`$lib/pdf/zip.ts`** — Collects all `GeneratedInvoice` Blobs into a `fflate` `zipSync` with paths `{ClientName}-{Year}-Invoices/{fileName}.pdf`. `level: 0` (store-only, no compression) since PDFs are already compressed.
+5. **`$lib/pdf/sequential-download.ts`** — `downloadGroups(groups)` → `DownloadResult`. Tries the File System Access API (`showDirectoryPicker`) first; falls back to sequential individual downloads with 150ms delay between files. Returns `{ usedDirectoryPicker, fellBackToSequential, cancelled, fileCount }`. Files are organized under an `invoices/` root; clients with more than one invoice get a subfolder named `{ClientName}-{Year}-Invoices`. Exports `DownloadGroup`, `DownloadResult`, `countFiles`, `downloadGroups`, `isUserAbort`.
+
+6. **`$lib/pdf/zip.ts`** — `downloadInvoicesZip(groups)` — ZIP fallback using `fflate`. Builds the same folder structure as the directory picker and triggers a single `invoices.zip` download.
 
 ### Theme System
 
-`$lib/themes/registry.ts` maps `ThemeId` → `Theme`. A `Theme` contains four strings: `html` (full document template), `css` (minified stylesheet injected into `{CSS}`), `bankPayment`, and `wisePayment` (partial HTML for the payment section). Only one theme exists: `default`. `ACTIVE_THEME_ID` is the hardcoded active theme.
+**`$lib/themes/registry.ts`** maps `ThemeId` → `Theme`. A `Theme` contains: `html` (full document template), `css` (minified stylesheet injected into `{CSS}`), `paymentMethodFields` (partial template for field-style methods), `paymentMethodLink` (partial template for link-style methods), and `paymentField` (partial template for a single field row). Only one theme exists: `default`. `ACTIVE_THEME_ID` is the hardcoded active theme.
 
-To add a theme: implement the `Theme` interface in a new file, register it in `themes` in `registry.ts`, and update `ThemeId`.
+To add a theme: implement the full `Theme` interface, register in `themes` in `registry.ts`, and update `ThemeId`.
 
 ### UI Layout
 
-The main page (`+page.svelte`) renders the invoice app for any authenticated user. Unauthenticated users are redirected to `/login` server-side before the page renders.
-
 **App layout** — two-column grid at `lg` breakpoint:
 
-- **`User`** — fixed-position avatar + sign-out button (`src/components/User.svelte`), rendered top-right when the user is authenticated. Shows the user's avatar image (or a fallback icon), expands on hover to reveal name and email, and has a separate sign-out button with a loading spinner. Calls `authClient.signOut()` then redirects to `/login`.
-- **`Heading`** — shared heading component (`$lib/components/ui/heading/heading.svelte`) rendered above the grid
-- **Left column** — `FixedSenderPanel` + `ClientCard` list + `AddClientButton` (ephemeral session state)
-- **Right column** (sticky) — `InvoicePreview` (live scaled iframe of first invoice for the selected client)
-- **Below grid** (full-width, after `<Separator>`) — `GenerationPanel`
+- **`User`** (`src/components/User.svelte`) — fixed-position avatar + sign-out button, rendered top-right when authenticated.
+- **`Heading`** (`$lib/components/ui/heading/heading.svelte`) — shared heading above the grid.
+- **Left column** — `FixedSenderPanel` + `ClientCard` list + `AddClientButton`.
+- **Right column** (sticky) — `InvoicePreview` (live scaled iframe of the selected/first client's first invoice).
+- **Below grid** (full-width) — `GenerationPanel`.
 
-`GenerationPanel` owns the generate loop: iterates `session.clients → client.invoices`, calls `buildInvoiceHtml` + `generatePdf` sequentially (each PDF render is async/blocking), tracks progress with a local `$state<number>` (0–100) bound to a shadcn `Progress` component. On completion, renders a `Table` of generated invoices with per-row download buttons and a ZIP button. Uses `svelte-sonner` toast (lazy-imported via dynamic `import()`) for success/error feedback.
+`GenerationPanel` owns the generate loop: iterates `session.clients → client.invoices`, calls `buildInvoiceHtml` + `generatePdf` sequentially, tracks progress with `$state<number>` (0–100) bound to a shadcn `Progress`. On completion renders a `Table` of results with per-client download (directory picker or sequential) and ZIP buttons. Uses `svelte-sonner` toasts for success/error feedback.
+
+**`src/components/MonthPickerDialog.svelte`** — Dialog-based multi-month picker for adding invoice entries (multiple months at once). Opened from `ClientCard` to add entries.
+
+**`src/components/SelectDialog.svelte`** — Generic dialog-based single-item picker used in place of native `<select>` elements.
+
+**`src/components/InvoiceEntryRow.svelte`** — A single invoice entry row (month, issue day, due day, remove button).
+
+**`src/components/PaymentMethodCard.svelte`** — Card UI for configuring a single payment method's fields.
+
+**`src/components/AddClientButton.svelte`** — Button that creates a new client entry; shown below the `ClientCard` list.
+
+**`src/components/SectionEyebrow.svelte`** — Small label/eyebrow text rendered above section headings.
 
 ### InvoicePreview
 
-`src/components/InvoicePreview.svelte` renders a live scaled preview of the first `invoices[0]` entry for the selected client. Uses an iframe with `srcdoc={html}`, measures container width via a Svelte action (`use:measurePreview`) using `requestAnimationFrame` + `window.addEventListener("resize")`, and derives a CSS scale factor (`containerWidth / 794`) to fit A4 (794×1123px) into the panel. When no client is selected or no invoice entry exists, shows an empty state. The selected client is tracked as `selectedClientId` state in `+page.svelte`, defaulting to `session.clients[0]`.
+`src/components/InvoicePreview.svelte` renders a live scaled preview of the first `invoices[0]` entry for the selected client. Uses `srcdoc={html}` on an iframe, derives a CSS scale factor from container width (`containerWidth / 794`) via a Svelte action (`use:measurePreview`). Selected client is `session.selectedClientId` (falling back to `session.clients[0]`).
 
 ### Toast Notifications
 
-`svelte-sonner` (via shadcn `sonner` component) provides success/error toasts. The `Toaster` component is lazy-imported in `onMount` in `+page.svelte` (SSR guard — `localStorage` and `document` are unavailable during SSR). Individual toasts are fired from `GenerationPanel` via `import("svelte-sonner")` dynamic imports inside async handlers.
+`svelte-sonner` via shadcn `sonner` component. The `Toaster` component is lazy-imported in `onMount` in `+page.svelte`. Individual toasts are fired via dynamic `import("svelte-sonner")` inside async handlers in `GenerationPanel`.
+
+### Server-side Data Hydration
+
+`+page.server.ts` loads full `AppState` (fixed settings + payment methods + clients + invoice entries + selected/expanded state) from D1 via `loadAppState(db, userId)`. `+page.svelte` calls `fixed.hydrate(data.appState.fixed)` and `session.hydrate(...)` inside `untrack()` to seed both stores without triggering reactive side effects.
 
 ---
 
 ## Development Principles
 
-- **PDF pipeline is client-side only** — `builder.ts`, `generator.ts`, `zip.ts`, and all stores run in the browser. The server layer (`hooks.server.ts`, `+page.server.ts`, `+layout.server.ts`, `/api/logout`) handles only auth session management.
+- **PDF pipeline is client-side only** — `builder.ts`, `generator.ts`, `zip.ts`, `sequential-download.ts`, and all stores run in the browser. Server files handle only auth and data persistence.
 - **Prefer existing abstractions** — check `$lib/` before creating new utilities.
-- **No duplication** — if logic exists in `resolver.ts`, use it; don't inline token-substitution calls elsewhere.
-- **Minimal scope** — No animation library. Use shadcn `Progress`, `Skeleton`, and Lucide `Loader2` for UI feedback. Don't add GSAP or other animation libraries.
-- **Performance** — PDF generation is blocking by design. Each `generatePdf()` call is sequential. Do not parallelize (browser canvas limits).
+- **No duplication** — use `resolver.ts` for token substitution; use `api` client for all fetch calls.
+- **Minimal scope** — no animation library. Use shadcn `Progress`, `Skeleton`, and Lucide `Loader2`. Don't add GSAP or other animation libraries.
+- **Performance** — PDF generation is blocking by design. Each `generatePdf()` call is sequential. Do not parallelize.
 - **Type safety** — TypeScript strict mode. No `any` except for external library compatibility.
 
 ---
@@ -204,13 +248,12 @@ The main page (`+page.svelte`) renders the invoice app for any authenticated use
 
 - `$state`, `$derived`, `$props`, `$effect` — never legacy `export let` or `$:` reactive statements
 - `$effect` only for side effects with external systems; prefer `onMount` for DOM/lifecycle work
-- Svelte `writable` stores only for global cross-component state in `$lib/stores/`
 
 ### TypeScript
 
 - Strict mode. No `any`. No loose casts.
 - `import type { ... }` for type-only imports
-- All component prop types defined explicitly (never implicit)
+- All component prop types defined explicitly
 - `cn()` from `$lib/utils` for conditional class merging
 
 ### Imports
@@ -242,7 +285,7 @@ No inline, block, or JSDoc comments in shipped code. Names and structure must be
 
 - CSS-first config in `src/app.css` under `@theme inline`. No `tailwind.config.js`.
 - CSS variables only for colors — never hardcode hex/rgb/oklch values directly.
-- Design is **dark-only**. No light mode. All `--color-*` tokens are dark values.
+- Design is **dark-only**. No light mode.
 
 ### shadcn-svelte Components
 
@@ -265,13 +308,13 @@ Add components: `bunx shadcn-svelte@latest add <component>`
 ## Agent Behavior Guidelines
 
 - **Read before write** — always use the Read tool before Edit/Write.
-- **No assumptions** — verify the invoice pipeline, store signatures, and theme structure before modifying them. Read the source file first.
-- **Prefer existing abstractions** — `resolver.ts` exists for token substitution. `generator.ts` owns the iframe/canvas/jsPDF pipeline. Do not replicate this logic inline.
-- **No scope creep** — a bug fix does not need surrounding cleanup. A new theme does not need a theme-switcher UI unless asked.
+- **No assumptions** — verify the invoice pipeline, store signatures, and theme structure before modifying them.
+- **Prefer existing abstractions** — `resolver.ts` for token substitution; `api` client for all fetch calls; `requireApiContext` for API route auth.
+- **No scope creep** — a bug fix does not need surrounding cleanup.
 - **Validate Svelte code** — run `svelte-autofixer` (svelte MCP) before delivering any `.svelte` file changes.
 - **Validate before committing** — run `bun run check` and `bun run lint` before every commit. Never commit failing builds.
-- **No feature flags** — this is a single-user tool. No A/B testing, no staged rollouts.
-- **No backwards-compat shims** — if you change a store shape, update all callers. Don't add legacy adapters.
+- **No feature flags** — this is a single-user tool.
+- **No backwards-compat shims** — if you change a store shape or API contract, update all callers.
 
 ---
 
@@ -283,7 +326,7 @@ Consult MCP tools in this priority order:
    - `list-sections` → discover doc sections
    - `get-documentation` → fetch relevant sections
    - `svelte-autofixer` → **mandatory** before delivering Svelte code
-2. **`context7` MCP** — for Tailwind CSS v4, shadcn-svelte, jsPDF, html2canvas, fflate, svelte-sonner
+2. **`context7` MCP** — for Tailwind CSS v4, shadcn-svelte, jsPDF, html2canvas, fflate, svelte-sonner, Drizzle ORM, Better Auth
 3. **Web search** — last resort
 
 Never use `shopify-dev` MCP (this is not a Shopify project).
@@ -296,12 +339,11 @@ No test framework is currently configured. Validation is done through:
 
 - `bun run check` — svelte-check with strict TypeScript
 - `bun run lint` — Prettier formatting + ESLint rules
-- Manual testing: generate PDFs, verify file names, verify ZIP structure, test with multiple clients and months
+- Manual testing: generate PDFs, verify file names, test directory picker and ZIP fallback, test with multiple clients and months
 
 When adding tests:
-
 - Use Vitest (compatible with the Vite setup)
-- Priority test targets: `resolver.ts` (token substitution), `builder.ts` (invoice ID format), `zip.ts` (path generation)
+- Priority test targets: `resolver.ts`, `builder.ts` (invoice ID format), `sequential-download.ts` (group logic), `dto.ts` (row mappers)
 - Place test files alongside source: `*.test.ts`
 
 ---
@@ -344,14 +386,14 @@ bun install
 bun run dev
 ```
 
-Sender/bank data is still browser-local (`localStorage`). Auth state requires D1 + secrets (see below).
+Auth state and all user data require D1 + secrets (see below). Without D1, auth is disabled and all routes treat the user as unauthenticated — the PDF pipeline still works if you bypass auth guards.
 
 ### Cloudflare Bindings
 
 Configured in `wrangler.jsonc`:
 
 - **Assets**: static SvelteKit output
-- **DB**: D1 database binding (required for auth at runtime)
+- **DB**: D1 database binding (required for auth and data at runtime)
 - **Compatibility**: `nodejs_compat` flag
 - Run `bun run cf-typegen` after any `wrangler.jsonc` changes
 
@@ -366,18 +408,18 @@ Set via `wrangler secret put` or in the Cloudflare dashboard:
 | `GOOGLE_CLIENT_ID`     | Google OAuth client ID                                                |
 | `GOOGLE_CLIENT_SECRET` | Google OAuth client secret                                            |
 
-`BETTER_AUTH_URL` is also a non-secret binding in `wrangler.jsonc` (exposed to `process.env` for client-side usage). The other three are secrets and must not appear in config files.
+`BETTER_AUTH_URL` is also a non-secret binding in `wrangler.jsonc`. The other three are secrets — never commit them.
 
-Auth is disabled gracefully during local dev if `platform.env.DB` is unavailable (Vite dev server without Wrangler). Use `bun run preview` (Wrangler-backed) to test auth locally.
+Use `bun run preview` (Wrangler-backed) to test auth locally.
 
 ### Database Migration
-
-Apply migrations per environment:
 
 ```bash
 bun run db:migrate        # Remote (production)
 bun run db:migrate:local  # Local (Wrangler preview)
 ```
+
+Two migrations exist: `0001_better_auth_tables.sql` (Better Auth tables) and `0002_daffy_synch.sql` (app tables: clients, invoice_entries, payment_methods, etc.).
 
 ### Clean Rebuild
 
@@ -387,43 +429,45 @@ rm -rf node_modules/ .wrangler/ .svelte-kit/ && bun install
 
 ---
 
-## Documentation References (Progressive Disclosure)
+## Documentation References
 
 When encountering unfamiliar patterns, check in this order:
 
-1. **Svelte 5 docs** — runes (`$state`, `$derived`, `$props`, `$effect`), snippets
+1. **Svelte 5 docs** — runes, snippets
 2. **SvelteKit docs** — routing, hooks, adapters, `event.platform`
-3. **jsPDF docs** — PDF generation API
-4. **html2canvas docs** — canvas capture options, `scale`, iframe rendering
-5. **fflate docs** — `zipSync`, compression levels, Uint8Array encoding
-
-For extended documentation, create an `agent_docs/` directory at the project root. Store invoice schema specs, theme development guides, or PDF rendering edge cases there.
+3. **Better Auth docs** — session management, OAuth, Drizzle adapter
+4. **Drizzle ORM docs** — D1 adapter, query builder
+5. **jsPDF docs** — PDF generation API
+6. **html2canvas docs** — canvas capture options, `scale`, iframe rendering
+7. **fflate docs** — `zipSync`, compression levels
 
 ---
 
 ## Project-Specific Warnings
 
-1. **`fixed.init()` is called in `+layout.svelte`'s `onMount`** — `fixed.svelte.ts` reads from `localStorage`. During SSR, `localStorage` is unavailable. The `init()` call lives in the layout's `onMount` so it applies across all pages. Never call it at module scope or in `$effect` on the server, and don't add a second call elsewhere.
+1. **Store hydration uses `untrack`** — `+page.svelte` calls `fixed.hydrate()` and `session.hydrate()` inside `untrack()`. This prevents triggering reactive side effects during initialization. Do not add a second hydrate call anywhere else.
 
-2. **PDF generation is sequential and blocking** — `generatePdf()` uses `html2canvas` which paints to canvas synchronously. Running multiple invocations concurrently causes canvas corruption. `GenerationPanel` iterates clients sequentially (`for...of`, awaiting each).
+2. **PDF generation is sequential and blocking** — `generatePdf()` uses `html2canvas` which paints to canvas synchronously. Do not parallelize; `GenerationPanel` iterates sequentially via `for...of`, awaiting each.
 
-3. **iframe positioning is intentional — do not change it** — `generator.ts` uses `position: fixed; top: -9999px; left: -9999px; visibility: hidden` on the iframe wrapper. The `visibility: hidden` is intentional: it hides the wrapper from the main document while `html2canvas` captures `iframeDoc.body` directly (the iframe's internal document, not the wrapper element). Do not set `display: none` on the iframe or its body — that prevents `html2canvas` from rendering content.
+3. **iframe positioning is intentional — do not change it** — `generator.ts` uses `position: fixed; top: -9999px; left: -9999px; visibility: hidden` on the iframe wrapper. `visibility: hidden` is intentional: it hides the wrapper while `html2canvas` captures `iframeDoc.body` directly. Do not use `display: none` on the iframe or its body — that prevents `html2canvas` from rendering content.
 
-4. **Token substitution is `replaceAll`, not regex** — `resolver.ts` uses `String.prototype.replaceAll`. Tokens like `{MONTH}` will only resolve if the template string contains that exact literal. Case-sensitive.
+4. **Token substitution is `replaceAll`, not regex** — `resolver.ts` uses `String.prototype.replaceAll`. Tokens like `{MONTH}` only resolve if the exact literal is present. Case-sensitive.
 
-5. **`allClientsValid` gates generation** — the generate button is disabled unless all clients pass validation. Validation state is `$derived` in `session.svelte.ts`. If generation appears broken, check whether clients have all required fields populated.
+5. **`allClientsValid` gates generation** — the generate button is disabled unless all clients have `name` and `invoicePrefix`. If generation appears broken, check client validation state.
 
-6. **`ACTIVE_THEME_ID` is hardcoded** — there is no runtime theme switcher. Changing themes requires updating `ACTIVE_THEME_ID` in `$lib/themes/registry.ts` and rebuilding.
+6. **`ACTIVE_THEME_ID` is hardcoded** — no runtime theme switcher. Changing themes requires updating `ACTIVE_THEME_ID` in `$lib/themes/registry.ts` and rebuilding.
 
-7. **Never commit `tmp_screenshots/` or `.playwright-mcp/`** — these are visual verification artifacts. Clean up before committing.
+7. **Never commit `tmp_screenshots/` or `.playwright-mcp/`** — visual verification artifacts. Clean up before committing.
 
 8. **shadcn-svelte components in `$lib/components/ui/` are auto-generated** — never modify them by hand. Use the CLI to update.
 
-9. **GSAP and formsnap are stale dependencies** — `package.json` lists both `gsap` and `formsnap` but no source file imports either. Safe to remove with `bun remove gsap formsnap`. Do not add new imports for either.
+9. **Auth requires D1 at runtime** — if D1 is unavailable (plain Vite dev without Wrangler), auth is silently disabled and all routes treat the user as unauthenticated. Use `bun run preview` to test auth locally.
 
-10. **Auth requires D1 at runtime** — `hooks.server.ts` checks for `platform.env.DB`. If D1 is unavailable (e.g. plain Vite dev without Wrangler), auth is silently disabled and all routes treat the user as unauthenticated. Use `bun run preview` (Wrangler-backed) to test auth locally. The PDF pipeline still works without auth.
+10. **Do not add email/password auth** — `emailAndPassword` is explicitly disabled in `createAuth`. Google OAuth is the only sign-in method.
 
-11. **Do not add email/password auth** — `emailAndPassword` is explicitly disabled in `createAuth`. Google OAuth is the only sign-in method. Adding email/password would require schema changes and is out of scope.
+11. **Payment methods are stored in D1, not localStorage** — `fixed.svelte.ts` no longer reads from `localStorage`. All mutations call the REST API. The `hydrate()` method seeds the store from server-loaded data at page load.
+
+12. **API routes require D1** — `requireApiContext` throws 503 if `platform.env.DB` is unavailable. All `/api/*` routes will fail in plain Vite dev without Wrangler.
 
 ---
 

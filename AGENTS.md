@@ -167,7 +167,7 @@ Each worktree shares the same repository. Agents commit directly to their worktr
 
 **Rules**:
 
-- Implement the full `Theme` interface: `html`, `css`, `bankPayment`, `wisePayment`
+- Implement the full `Theme` interface: `html`, `css`, `paymentMethodFields`, `paymentMethodLink`, `paymentField`
 - CSS in the `css` field must be minified (single-line)
 - Test by setting `ACTIVE_THEME_ID` to the new theme, generating a sample PDF, and screenshotting the result
 - Restore `ACTIVE_THEME_ID` to `"default"` after testing unless the task requires a theme change
