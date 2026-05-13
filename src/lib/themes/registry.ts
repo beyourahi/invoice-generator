@@ -12,7 +12,7 @@ export interface Theme {
 	paymentField: string;
 }
 
-export const themes: Record<ThemeId, Theme> = {
+const themes: Record<ThemeId, Theme> = {
 	default: defaultTheme
 };
 

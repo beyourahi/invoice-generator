@@ -31,7 +31,7 @@ const mobileWalletFields = (provider: string): PaymentFieldDef[] => [
 	}
 ];
 
-export const PAYMENT_METHOD_DEFS: Record<PaymentMethodKind, PaymentMethodDef> = {
+const PAYMENT_METHOD_DEFS: Record<PaymentMethodKind, PaymentMethodDef> = {
 	bank: {
 		kind: "bank",
 		name: "Bank transfer",

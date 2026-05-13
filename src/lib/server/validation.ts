@@ -3,13 +3,13 @@ import { PAYMENT_METHOD_KINDS } from "$lib/payments/registry";
 import { MONTHS } from "$lib/invoice/months";
 import type { MonthName, PaymentMethodKind } from "$lib/types";
 
-export const paymentKindSchema: z.ZodType<PaymentMethodKind> = z.enum(
+const paymentKindSchema: z.ZodType<PaymentMethodKind> = z.enum(
 	PAYMENT_METHOD_KINDS as [PaymentMethodKind, ...PaymentMethodKind[]]
 );
 
-export const monthSchema: z.ZodType<MonthName> = z.enum(MONTHS as [MonthName, ...MonthName[]]);
+const monthSchema: z.ZodType<MonthName> = z.enum(MONTHS as [MonthName, ...MonthName[]]);
 
-export const dayStringSchema = z
+const dayStringSchema = z
 	.string()
 	.regex(/^\d{0,2}$/, "Day must be up to 2 digits")
 	.max(2);
