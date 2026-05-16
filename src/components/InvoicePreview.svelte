@@ -87,10 +87,10 @@
 				</div>
 			</div>
 		{:else}
-			<div class="max-h-[calc(100dvh-8rem)] overflow-auto lg:max-h-[calc(100dvh-6rem)]">
+			<div class="max-h-[calc(100dvh-8rem)] overflow-x-clip overflow-y-auto lg:max-h-[calc(100dvh-6rem)]">
 				<div
 					use:measurePreview
-					class="invoice-preview-stage overflow-hidden"
+					class="invoice-preview-stage w-full overflow-hidden"
 					style:--preview-height={scaledHeight}
 					style:--preview-scale={previewScale}
 				>

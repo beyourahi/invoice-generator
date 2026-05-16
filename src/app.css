@@ -171,6 +171,12 @@
 	@apply rounded-xl bg-transparent;
 }
 
+html,
+body {
+	overflow-x: clip;
+	max-width: 100%;
+}
+
 html {
 	overscroll-behavior: none;
 	scroll-behavior: auto;

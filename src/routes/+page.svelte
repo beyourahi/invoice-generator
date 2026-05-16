@@ -65,9 +65,9 @@
 <main class="flex w-full grow flex-col items-center gap-12 px-4 pt-16 pb-6 sm:gap-16 sm:pt-20 sm:pb-8 lg:gap-20">
 	<Heading />
 
-	<div class="container flex w-full flex-col gap-8 sm:gap-10 lg:gap-12">
-		<div class="grid grid-cols-1 items-start gap-6 lg:grid-cols-2 lg:gap-8">
-			<section class="space-y-4">
+	<div class="container flex w-full min-w-0 flex-col gap-8 sm:gap-10 lg:gap-12">
+		<div class="grid w-full min-w-0 grid-cols-1 items-start gap-6 lg:grid-cols-2 lg:gap-8">
+			<section class="min-w-0 space-y-4">
 				<FixedSenderPanel />
 
 				<div class="space-y-3">
@@ -108,7 +108,7 @@
 				</div>
 			</section>
 
-			<section class="space-y-3 lg:sticky lg:top-8 lg:self-start lg:space-y-0">
+			<section class="min-w-0 space-y-3 lg:sticky lg:top-8 lg:self-start lg:space-y-0">
 				<button
 					type="button"
 					onclick={() => (previewOpen = !previewOpen)}
@@ -130,12 +130,12 @@
 				<div
 					id="preview-panel"
 					class={cn(
-						"grid transition-[grid-template-rows] duration-200",
+						"grid grid-cols-1 transition-[grid-template-rows] duration-200",
 						"lg:grid-rows-[1fr]",
 						previewOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr] lg:grid-rows-[1fr]"
 					)}
 				>
-					<div class="min-h-0 overflow-hidden lg:overflow-visible">
+					<div class="min-h-0 min-w-0 overflow-hidden lg:overflow-visible">
 						<InvoicePreview html={previewHtml} loading={false} emptyReason={previewEmptyReason} />
 					</div>
 				</div>
