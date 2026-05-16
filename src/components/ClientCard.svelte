@@ -81,7 +81,6 @@
 <Card
 	class={cn(
 		"status-transition relative py-0",
-		selected && "ring-foreground ring-[0.5px]",
 		!client.isActive &&
 			"bg-status-inactive-bg before:bg-status-inactive-border before:absolute before:top-2 before:bottom-2 before:left-0 before:w-[3px] before:rounded-full"
 	)}
@@ -141,7 +140,7 @@
 					checked={client.isActive}
 					onCheckedChange={v => session.setClientActive(client.id, v)}
 					aria-label={client.isActive ? "Deactivate client" : "Activate client"}
-					class="data-checked:bg-status-active-track data-unchecked:bg-status-inactive-track status-transition"
+					class="data-[state=checked]:bg-status-active-track data-[state=unchecked]:bg-status-inactive-track status-transition"
 				/>
 			</div>
 			<Button

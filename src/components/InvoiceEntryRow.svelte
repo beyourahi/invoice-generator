@@ -21,7 +21,7 @@
 	const inactive = $derived(!clientActive || !entry.isActive);
 	const suppressed = $derived(!clientActive);
 	const switchTone =
-		"data-checked:bg-status-active-track data-unchecked:bg-status-inactive-track status-transition";
+		"data-[state=checked]:bg-status-active-track data-[state=unchecked]:bg-status-inactive-track status-transition";
 
 	const handleNumericInput = (field: "issueDay" | "dueDay", e: Event) => {
 		const target = e.currentTarget as HTMLInputElement;

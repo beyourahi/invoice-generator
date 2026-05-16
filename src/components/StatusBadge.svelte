@@ -17,10 +17,12 @@
 	);
 
 	const sizing = $derived(
-		size === "sm" ? "gap-1 px-1.5 py-0 text-[10px] tracking-wide uppercase" : "gap-1.5 px-2 py-0.5 text-xs"
+		size === "sm"
+			? "gap-1.5 px-2 py-0.5 text-[11px] font-semibold tracking-wider uppercase"
+			: "gap-1.5 px-2.5 py-0.5 text-xs font-semibold"
 	);
 
-	const dotSize = $derived(size === "sm" ? "size-1.5" : "size-2");
+	const dotSize = $derived(size === "sm" ? "size-[7px]" : "size-2");
 
 	const label = $derived(status === "active" ? "Active" : "Inactive");
 </script>
