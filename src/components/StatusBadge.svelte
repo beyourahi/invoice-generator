@@ -12,7 +12,9 @@
 			: "bg-status-inactive-bg text-status-inactive-foreground border-status-inactive-border"
 	);
 
-	const dotTone = $derived(status === "active" ? "bg-status-active" : "bg-status-inactive");
+	const dotTone = $derived(
+		status === "active" ? "bg-status-active status-dot-pulse" : "bg-status-inactive"
+	);
 
 	const sizing = $derived(
 		size === "sm" ? "gap-1 px-1.5 py-0 text-[10px] tracking-wide uppercase" : "gap-1.5 px-2 py-0.5 text-xs"
@@ -23,7 +25,14 @@
 	const label = $derived(status === "active" ? "Active" : "Inactive");
 </script>
 
-<span class={cn("inline-flex shrink-0 items-center rounded-full border font-medium", sizing, tone, className)}>
-	<span class={cn("shrink-0 rounded-full", dotSize, dotTone)} aria-hidden="true"></span>
+<span
+	class={cn(
+		"status-transition inline-flex shrink-0 items-center rounded-full border font-medium",
+		sizing,
+		tone,
+		className
+	)}
+>
+	<span class={cn("status-transition shrink-0 rounded-full", dotSize, dotTone)} aria-hidden="true"></span>
 	<span>{label}</span>
 </span>

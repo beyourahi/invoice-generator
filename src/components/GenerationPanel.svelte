@@ -178,16 +178,29 @@
 		<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 			<div>
 				<CardTitle class="text-base font-semibold">Generation</CardTitle>
-				<p class="text-muted-foreground mt-1 text-xs tabular-nums">
-					{session.clients.length} client{session.clients.length !== 1 ? "s" : ""} ·
+				<div class="text-muted-foreground mt-1 flex flex-wrap items-center gap-1.5 text-xs tabular-nums">
+					<span>{session.clients.length} client{session.clients.length !== 1 ? "s" : ""}</span>
 					{#if generatableCount === totalCount}
-						{totalCount} invoice{totalCount !== 1 ? "s" : ""}
+						<span aria-hidden="true">·</span>
+						<span>{totalCount} invoice{totalCount !== 1 ? "s" : ""}</span>
 					{:else}
-						<span class="text-status-active-foreground font-medium">{generatableCount}</span>
-						of {totalCount} active ·
-						<span class="text-status-inactive-foreground">{totalCount - generatableCount} inactive</span>
+						<span
+							class="border-status-active-border bg-status-active-bg text-status-active-foreground status-transition inline-flex items-center gap-1 rounded-full border px-1.5 py-px text-[10px] font-medium tracking-wide uppercase"
+						>
+							<span
+								class="bg-status-active status-dot-pulse inline-block size-1.5 rounded-full"
+								aria-hidden="true"
+							></span>
+							{generatableCount} active
+						</span>
+						<span
+							class="border-status-inactive-border bg-status-inactive-bg text-status-inactive-foreground status-transition inline-flex items-center gap-1 rounded-full border px-1.5 py-px text-[10px] font-medium tracking-wide uppercase"
+						>
+							<span class="bg-status-inactive inline-block size-1.5 rounded-full" aria-hidden="true"></span>
+							{totalCount - generatableCount} inactive
+						</span>
 					{/if}
-				</p>
+				</div>
 			</div>
 			<div class="flex flex-wrap items-center gap-2">
 				{#if session.generationState === "done"}
@@ -262,9 +275,17 @@
 				<span>Every client needs a name and invoice prefix before generation.</span>
 			</div>
 		{:else if totalCount > 0 && generatableCount === 0 && session.generationState === "idle"}
-			<div class="text-status-inactive-foreground flex items-center gap-2 text-xs">
-				<TriangleAlert size={13} class="shrink-0" aria-hidden="true" />
-				<span>All clients or invoices are inactive. Toggle at least one to generate.</span>
+			<div
+				class="border-status-inactive-border bg-status-inactive-bg text-status-inactive-foreground status-transition flex items-start gap-2 rounded-md border px-3 py-2 text-xs"
+				role="status"
+			>
+				<TriangleAlert size={14} class="mt-px shrink-0" aria-hidden="true" />
+				<div class="space-y-0.5">
+					<p class="font-medium">Nothing to generate</p>
+					<p class="opacity-90">
+						All clients or invoices are inactive. Toggle at least one to generate.
+					</p>
+				</div>
 			</div>
 		{:else if session.generationState === "idle"}
 			<p class="text-muted-foreground text-xs">

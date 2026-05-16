@@ -18,8 +18,10 @@
 		as = "row"
 	}: { clientId: string; clientActive: boolean; entry: InvoiceEntry; as?: "row" | "card" } = $props();
 
-	const dimmed = $derived(!clientActive || !entry.isActive);
-	const showAccent = $derived(!entry.isActive);
+	const inactive = $derived(!clientActive || !entry.isActive);
+	const suppressed = $derived(!clientActive);
+	const switchTone =
+		"data-checked:bg-status-active-track data-unchecked:bg-status-inactive-track status-transition";
 
 	const handleNumericInput = (field: "issueDay" | "dueDay", e: Event) => {
 		const target = e.currentTarget as HTMLInputElement;
@@ -30,37 +32,49 @@
 </script>
 
 {#snippet activeSwitch(size: "sm" | "default")}
-	{#if clientActive}
-		<Switch
-			{size}
-			checked={entry.isActive}
-			onCheckedChange={v => session.setInvoiceActive(clientId, entry.id, v)}
-			aria-label={entry.isActive ? "Deactivate invoice" : "Activate invoice"}
-		/>
-	{:else}
+	{#if suppressed}
 		<Tooltip.Provider>
 			<Tooltip.Root>
 				<Tooltip.Trigger
-					class="inline-flex items-center justify-center"
+					class="inline-flex cursor-not-allowed items-center justify-center"
 					aria-label="Client is inactive — all invoices suppressed"
 				>
-					<Switch {size} checked={entry.isActive} disabled aria-label="Invoice toggle disabled" />
+					<Switch
+						{size}
+						checked={entry.isActive}
+						disabled
+						aria-label="Invoice toggle disabled"
+						class={cn(switchTone, "cursor-not-allowed opacity-60")}
+					/>
 				</Tooltip.Trigger>
 				<Tooltip.Content side="left" class="text-[11px]">
 					Client is inactive — all invoices suppressed
 				</Tooltip.Content>
 			</Tooltip.Root>
 		</Tooltip.Provider>
+	{:else}
+		<Switch
+			{size}
+			checked={entry.isActive}
+			onCheckedChange={v => session.setInvoiceActive(clientId, entry.id, v)}
+			aria-label={entry.isActive ? "Deactivate invoice" : "Activate invoice"}
+			class={switchTone}
+		/>
 	{/if}
 {/snippet}
 
 {#if as === "row"}
-	<Table.Row class={cn("border-0 transition-opacity hover:bg-transparent", dimmed && "opacity-75")}>
+	<Table.Row
+		class={cn(
+			"status-transition border-0 hover:bg-transparent",
+			inactive && "bg-status-inactive-bg opacity-80"
+		)}
+	>
 		<Table.Cell
 			class={cn(
-				"relative py-1 pr-2 pl-0",
-				showAccent &&
-					"before:bg-status-inactive/60 before:absolute before:top-1.5 before:bottom-1.5 before:-left-1 before:w-[2px] before:rounded-full"
+				"status-transition relative py-1 pr-2 pl-0",
+				inactive &&
+					"before:bg-status-inactive-border before:absolute before:top-1.5 before:bottom-1.5 before:-left-1 before:w-[3px] before:rounded-full"
 			)}
 		>
 			<SelectDialog
@@ -116,10 +130,9 @@
 {:else}
 	<div
 		class={cn(
-			"border-border bg-card relative space-y-2.5 rounded-lg border p-3 transition-opacity",
-			dimmed && "opacity-75",
-			showAccent &&
-				"before:bg-status-inactive/60 before:absolute before:top-2 before:bottom-2 before:left-0 before:w-[2px] before:rounded-full"
+			"border-border bg-card status-transition relative space-y-2.5 rounded-lg border p-3",
+			inactive &&
+				"bg-status-inactive-bg opacity-80 before:bg-status-inactive-border before:absolute before:top-2 before:bottom-2 before:left-0 before:w-[3px] before:rounded-full"
 		)}
 	>
 		<div class="flex items-start gap-2">

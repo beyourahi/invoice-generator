@@ -80,10 +80,10 @@
 
 <Card
 	class={cn(
-		"relative py-0 transition-opacity",
+		"status-transition relative py-0",
 		selected && "ring-foreground ring-offset-background ring-2 ring-offset-2",
 		!client.isActive &&
-			"before:bg-status-inactive/60 opacity-75 before:absolute before:top-2 before:bottom-2 before:left-0 before:w-[2px] before:rounded-full"
+			"bg-status-inactive-bg before:bg-status-inactive-border before:absolute before:top-2 before:bottom-2 before:left-0 before:w-[3px] before:rounded-full"
 	)}
 >
 	<CardHeader class="px-0 py-0">
@@ -99,10 +99,15 @@
 			onkeydown={selectCard}
 			class="hover:bg-accent/40 flex cursor-pointer items-center gap-3 px-4 py-3 transition-colors"
 		>
-			<span class="text-muted-foreground w-6 shrink-0 font-mono text-[11px] tabular-nums">
+			<span
+				class={cn(
+					"status-transition text-muted-foreground w-6 shrink-0 font-mono text-[11px] tabular-nums",
+					!client.isActive && "opacity-70"
+				)}
+			>
 				{badgeNum}
 			</span>
-			<div class="min-w-0 flex-1">
+			<div class={cn("status-transition min-w-0 flex-1", !client.isActive && "opacity-70")}>
 				<div class="flex items-center gap-2">
 					<p class="truncate text-sm font-medium">{client.name || "New client"}</p>
 					<StatusBadge status={client.isActive ? "active" : "inactive"} size="sm" />
@@ -111,7 +116,12 @@
 					{client.invoicePrefix || "No prefix"} · {client.invoices.length} scheduled
 				</p>
 			</div>
-			<div class="hidden shrink-0 items-center gap-1.5 sm:flex">
+			<div
+				class={cn(
+					"status-transition hidden shrink-0 items-center gap-1.5 sm:flex",
+					!client.isActive && "opacity-70"
+				)}
+			>
 				<span class="bg-muted text-muted-foreground rounded-md px-1.5 py-0.5 font-mono text-[11px]">
 					{client.service.currency}
 				</span>
@@ -131,6 +141,7 @@
 					checked={client.isActive}
 					onCheckedChange={v => session.setClientActive(client.id, v)}
 					aria-label={client.isActive ? "Deactivate client" : "Activate client"}
+					class="data-checked:bg-status-active-track data-unchecked:bg-status-inactive-track status-transition"
 				/>
 			</div>
 			<Button
@@ -178,7 +189,12 @@
 	</CardHeader>
 
 	{#if expanded}
-		<CardContent class="border-border space-y-5 border-t pb-4">
+		<CardContent
+			class={cn(
+				"status-transition border-border space-y-5 border-t pb-4",
+				!client.isActive && "opacity-70"
+			)}
+		>
 			<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
 				<Field.Field class="gap-1.5" data-invalid={nameError !== ""}>
 					<Field.FieldLabel for="name-{client.id}">Client name</Field.FieldLabel>
