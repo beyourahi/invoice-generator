@@ -342,6 +342,7 @@ No test framework is currently configured. Validation is done through:
 - Manual testing: generate PDFs, verify file names, test directory picker and ZIP fallback, test with multiple clients and months
 
 When adding tests:
+
 - Use Vitest (compatible with the Vite setup)
 - Priority test targets: `resolver.ts`, `builder.ts` (invoice ID format), `sequential-download.ts` (group logic), `dto.ts` (row mappers)
 - Place test files alongside source: `*.test.ts`
@@ -468,6 +469,10 @@ When encountering unfamiliar patterns, check in this order:
 11. **Payment methods are stored in D1, not localStorage** — `fixed.svelte.ts` no longer reads from `localStorage`. All mutations call the REST API. The `hydrate()` method seeds the store from server-loaded data at page load.
 
 12. **API routes require D1** — `requireApiContext` throws 503 if `platform.env.DB` is unavailable. All `/api/*` routes will fail in plain Vite dev without Wrangler.
+
+13. **html2canvas ignores UA stylesheet overrides on `<a>` elements** — anchor tags get browser-default link colors that persist even with `!important`, inline styles, or `element.style.setProperty()`. Never use `<a>` in PDF templates. Use `div[data-href]` instead; `generator.ts` queries `[data-href]` to build jsPDF link annotations via `pdf.link()`.
+
+14. **Use inline SVG for PDF buttons, not HTML/CSS** — html2canvas CSS cascade is unreliable for button-like elements. The default theme's `paymentMethodLink` renders the payment button as an inline `<svg>` with `fill="#ffffff"` on SVG `<text>`, bypassing the cascade entirely. Do not replace with HTML/CSS.
 
 ---
 

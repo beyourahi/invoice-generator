@@ -169,6 +169,7 @@ Each worktree shares the same repository. Agents commit directly to their worktr
 
 - Implement the full `Theme` interface: `html`, `css`, `paymentMethodFields`, `paymentMethodLink`, `paymentField`
 - CSS in the `css` field must be minified (single-line)
+- **`paymentMethodLink` must use inline SVG, not `<a>` or CSS-styled HTML** — html2canvas respects UA link colors on `<a>` elements even with `!important` or inline overrides; use `<svg>` with explicit `fill` attributes instead. The clickable link is provided by `div[data-href]` + `pdf.link()` in `generator.ts`, not by the element's href.
 - Test by setting `ACTIVE_THEME_ID` to the new theme, generating a sample PDF, and screenshotting the result
 - Restore `ACTIVE_THEME_ID` to `"default"` after testing unless the task requires a theme change
 
