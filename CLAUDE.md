@@ -60,7 +60,7 @@ A SvelteKit app that generates batches of PDF invoices. Users configure a fixed 
 ## Commands
 
 ```bash
-bun run dev              # Start Vite dev server (opens browser automatically)
+bun run dev              # Start Vite dev server (--open --host: opens browser, exposes on LAN)
 bun run build            # Production build
 bun run preview          # Build then start Wrangler dev (requires build first)
 bun run check            # svelte-check TypeScript validation
@@ -148,7 +148,7 @@ The server layer handles only authentication and data persistence — the PDF pi
 
 Both stores use the **factory function + `$state` closure** pattern, exported as singletons. Mutations call the API client to persist changes server-side.
 
-- **`$lib/stores/session.svelte.ts`** — Per-session state: `clients`, `selectedClientId`, `expandedClients`, `generatedInvoices`, `generationState`, `generationError`. Client mutations: `addClient`, `removeClient`, `updateClient(id, patch)`, `togglePaymentMethod`, `ensurePaymentMethodSelected`, `purgePaymentMethodFromClients`, `addInvoiceEntry`, `addInvoiceEntries(clientId, months[])`, `removeInvoiceEntry`, `updateInvoiceEntry`. Selection/expansion: `setSelectedClientId`, `setClientExpanded`, `toggleClientExpanded`, `isClientExpanded`. Generation lifecycle: `setGenerating`, `setGenerated`, `setError`, `resetGeneration`. Two `$derived` values: `totalInvoiceCount` and `allClientsValid` (checks every client has non-empty `name` and `invoicePrefix`). Has a `hydrate(initial)` method called once in `+page.svelte` via `untrack` to seed from server data.
+- **`$lib/stores/session.svelte.ts`** — Per-session state: `clients`, `selectedClientId`, `expandedClients`, `generatedInvoices`, `generationState`, `generationError`. Client mutations: `addClient`, `removeClient`, `updateClient(id, patch)`, `togglePaymentMethod`, `ensurePaymentMethodSelected`, `purgePaymentMethodFromClients`, `addInvoiceEntry`, `addInvoiceEntries(clientId, months[])`, `removeInvoiceEntry`, `updateInvoiceEntry`. Activation toggles: `setClientActive(id, isActive)`, `setInvoiceActive(clientId, entryId, isActive)` — both capture previous state and roll back on API failure so stale `isActive` flags cannot leak into the generation queue. Selection/expansion: `setSelectedClientId`, `setClientExpanded`, `toggleClientExpanded`, `isClientExpanded`. Generation lifecycle: `setGenerating`, `setGenerated`, `setError`, `resetGeneration`. Three `$derived` values: `totalInvoiceCount`, `generatableInvoiceCount` (count after active filter), and `allClientsValid` (checks every client has non-empty `name` and `invoicePrefix`). Has a `hydrate(initial)` method called once in `+page.svelte` via `untrack` to seed from server data.
 
 - **`$lib/stores/fixed.svelte.ts`** — Sender/bank data synced to D1. Exposes `value` getter, `hydrate(initial)`, `updateFrom(field, value)`, `addPaymentMethod(kind)`, `removePaymentMethod(id)`, `updatePaymentMethodLabel`, `updatePaymentMethodValue`, `movePaymentMethod`. All mutations call the API. Text mutations are debounced via `debounceSync`. Has a `hydrate(initial)` method called once in `+page.svelte` via `untrack`.
 
@@ -162,17 +162,19 @@ Currencies: `BDT` and `USD`. `$lib/format/currency.ts` exports `formatAmount` an
 
 ### Invoice Pipeline
 
-1. **`$lib/invoice/builder.ts`** — `buildInvoiceHtml(client, entry, fixed, theme)` assembles a complete HTML document string. `renderPaymentMethod` uses the payment method's `display` style to select the correct theme template. Invoice ID format: `{PREFIX}-{MM}{ISSUE_DAY}-{YEAR}` (e.g. `ACME-0101-2026`). Service description supports a `{MONTH}` token substituted via `String.prototype.replace`. Exports `getInvoiceId(client, entry)` and `getFileName(client, entry)` → `invoice-{PREFIX}-{MM}{ISSUE_DAY}-{YEAR}.pdf`.
+1. **`$lib/invoice/active.ts`** — Single source of truth for the active filter. Exports `getGeneratableInvoices(clients)`, `countGeneratableInvoices(clients)`, and `firstGeneratableInvoice(client)`. Filter rule: `client.isActive AND entry.isActive` (strict AND gate). All generation paths (`GenerationPanel`, `InvoicePreview`, store derived count) consume these helpers — no caller iterates raw `session.clients` for generation.
 
-2. **`$lib/invoice/resolver.ts`** — Single pure function: string template + token map → resolved string via `replaceAll`.
+2. **`$lib/invoice/builder.ts`** — `buildInvoiceHtml(client, entry, fixed, theme)` assembles a complete HTML document string. `renderPaymentMethod` uses the payment method's `display` style to select the correct theme template. Invoice ID format: `{PREFIX}-{MM}{ISSUE_DAY}-{YEAR}` (e.g. `ACME-0101-2026`). Service description supports a `{MONTH}` token substituted via `String.prototype.replace`. Exports `getInvoiceId(client, entry)` and `getFileName(client, entry)` → `invoice-{PREFIX}-{MM}{ISSUE_DAY}-{YEAR}.pdf`.
 
-3. **`$lib/invoice/months.ts`** — `MONTHS` array and `MONTH_TO_NUMBER` map (`"January" → "01"`, etc.).
+3. **`$lib/invoice/resolver.ts`** — Single pure function: string template + token map → resolved string via `replaceAll`.
 
-4. **`$lib/pdf/generator.ts`** — Entirely client-side. Injects HTML into a hidden off-screen `<iframe>`, waits for fonts, runs `html2canvas` at 2× scale on the iframe body (A4: 794×1123px), writes the canvas to jsPDF at 210×297mm. Returns a `Blob`.
+4. **`$lib/invoice/months.ts`** — `MONTHS` array and `MONTH_TO_NUMBER` map (`"January" → "01"`, etc.).
 
-5. **`$lib/pdf/sequential-download.ts`** — `downloadGroups(groups)` → `DownloadResult`. Tries the File System Access API (`showDirectoryPicker`) first; falls back to sequential individual downloads with 150ms delay between files. Returns `{ usedDirectoryPicker, fellBackToSequential, cancelled, fileCount }`. Files are organized under an `invoices/` root; clients with more than one invoice get a subfolder named `{ClientName}-{Year}-Invoices`. Exports `DownloadGroup`, `DownloadResult`, `countFiles`, `downloadGroups`, `isUserAbort`.
+5. **`$lib/pdf/generator.ts`** — Entirely client-side. Injects HTML into a hidden off-screen `<iframe>`, waits for fonts, runs `html2canvas` at 2× scale on the iframe body (A4: 794×1123px), writes the canvas to jsPDF at 210×297mm. Returns a `Blob`.
 
-6. **`$lib/pdf/zip.ts`** — `downloadInvoicesZip(groups)` — ZIP fallback using `fflate`. Builds the same folder structure as the directory picker and triggers a single `invoices.zip` download.
+6. **`$lib/pdf/sequential-download.ts`** — `downloadGroups(groups)` → `DownloadResult`. Tries the File System Access API (`showDirectoryPicker`) first; falls back to sequential individual downloads with 150ms delay between files. Returns `{ usedDirectoryPicker, fellBackToSequential, cancelled, fileCount }`. Files are organized under an `invoices/` root; clients with more than one invoice get a subfolder named `{ClientName}-{Year}-Invoices`. Exports `DownloadGroup`, `DownloadResult`, `countFiles`, `downloadGroups`, `isUserAbort`.
+
+7. **`$lib/pdf/zip.ts`** — `downloadInvoicesZip(groups)` — ZIP fallback using `fflate`. Builds the same folder structure as the directory picker and triggers a single `invoices.zip` download.
 
 ### Theme System
 
@@ -182,21 +184,25 @@ To add a theme: implement the full `Theme` interface, register in `themes` in `r
 
 ### UI Layout
 
-**App layout** — two-column grid at `lg` breakpoint:
+**App layout** — two-column grid at `lg` breakpoint; collapses to single column with a togglable preview panel on mobile (grid-rows animation).
 
-- **`User`** (`src/components/User.svelte`) — fixed-position avatar + sign-out button, rendered top-right when authenticated.
+- **`User`** (`src/components/User.svelte`) — top-right avatar. Desktop: hover tooltip; mobile: tap opens a `Dialog`. Both surface the sign-out action.
 - **`Heading`** (`$lib/components/ui/heading/heading.svelte`) — shared heading above the grid.
 - **Left column** — `FixedSenderPanel` + `ClientCard` list + `AddClientButton`.
-- **Right column** (sticky) — `InvoicePreview` (live scaled iframe of the selected/first client's first invoice).
+- **Right column** (sticky on desktop, collapsible on mobile) — `InvoicePreview` (live scaled iframe of the selected/first client's first generatable invoice).
 - **Below grid** (full-width) — `GenerationPanel`.
 
-`GenerationPanel` owns the generate loop: iterates `session.clients → client.invoices`, calls `buildInvoiceHtml` + `generatePdf` sequentially, tracks progress with `$state<number>` (0–100) bound to a shadcn `Progress`. On completion renders a `Table` of results with per-client download (directory picker or sequential) and ZIP buttons. Uses `svelte-sonner` toasts for success/error feedback.
+`GenerationPanel` owns the generate loop: iterates the queue from `getGeneratableInvoices(session.clients)` (active-only), calls `buildInvoiceHtml` + `generatePdf` sequentially, tracks progress with `$state<number>` (0–100) bound to a shadcn `Progress`. On completion renders a `Table` of results with per-client download (directory picker or sequential) and ZIP buttons. Uses `svelte-sonner` toasts for success/error feedback.
 
 **`src/components/MonthPickerDialog.svelte`** — Dialog-based multi-month picker for adding invoice entries (multiple months at once). Opened from `ClientCard` to add entries.
 
 **`src/components/SelectDialog.svelte`** — Generic dialog-based single-item picker used in place of native `<select>` elements.
 
-**`src/components/InvoiceEntryRow.svelte`** — A single invoice entry row (month, issue day, due day, remove button).
+**`src/components/OverflowActions.svelte`** — Mobile-only sheet that replaces inline action icon buttons on `ClientCard` and `PaymentMethodCard` at small breakpoints. Desktop renders the actions inline.
+
+**`src/components/StatusBadge.svelte`** — Reusable active/inactive badge driven by semantic status color tokens (`--color-status-active`, `--color-status-inactive` in `src/app.css`). Inactive clients/entries also render a subtle left accent bar rather than opacity-only dimming.
+
+**`src/components/InvoiceEntryRow.svelte`** — A single invoice entry row. Table layout at `sm+`, card layout on mobile. Includes the active `Switch` toggle.
 
 **`src/components/PaymentMethodCard.svelte`** — Card UI for configuring a single payment method's fields.
 
@@ -206,7 +212,7 @@ To add a theme: implement the full `Theme` interface, register in `themes` in `r
 
 ### InvoicePreview
 
-`src/components/InvoicePreview.svelte` renders a live scaled preview of the first `invoices[0]` entry for the selected client. Uses `srcdoc={html}` on an iframe, derives a CSS scale factor from container width (`containerWidth / 794`) via a Svelte action (`use:measurePreview`). Selected client is `session.selectedClientId` (falling back to `session.clients[0]`).
+`src/components/InvoicePreview.svelte` renders a live scaled preview of the first generatable entry (via `firstGeneratableInvoice(client)`) for the selected client. Uses `srcdoc={html}` on an iframe, derives a CSS scale factor from container width (`containerWidth / 794`) via a Svelte action backed by a `ResizeObserver`. Selected client is `session.selectedClientId` (falling back to `session.clients[0]`). Contextual empty states distinguish no-client, no-entries, and no-active scenarios.
 
 ### Toast Notifications
 
@@ -420,7 +426,7 @@ bun run db:migrate        # Remote (production)
 bun run db:migrate:local  # Local (Wrangler preview)
 ```
 
-Two migrations exist: `0001_better_auth_tables.sql` (Better Auth tables) and `0002_daffy_synch.sql` (app tables: clients, invoice_entries, payment_methods, etc.).
+Three migrations exist: `0001_better_auth_tables.sql` (Better Auth tables), `0002_daffy_synch.sql` (app tables: clients, invoice_entries, payment_methods, etc.), and `0003_cute_vision.sql` (additive `is_active` columns on `clients` and `invoice_entries` with `DEFAULT true NOT NULL`).
 
 ### Clean Rebuild
 
@@ -473,6 +479,10 @@ When encountering unfamiliar patterns, check in this order:
 13. **html2canvas ignores UA stylesheet overrides on `<a>` elements** — anchor tags get browser-default link colors that persist even with `!important`, inline styles, or `element.style.setProperty()`. Never use `<a>` in PDF templates. Use `div[data-href]` instead; `generator.ts` queries `[data-href]` to build jsPDF link annotations via `pdf.link()`.
 
 14. **Use inline SVG for PDF buttons, not HTML/CSS** — html2canvas CSS cascade is unreliable for button-like elements. The default theme's `paymentMethodLink` renders the payment button as an inline `<svg>` with `fill="#ffffff"` on SVG `<text>`, bypassing the cascade entirely. Do not replace with HTML/CSS.
+
+15. **Generation queue must come from `active.ts`** — never iterate `session.clients → client.invoices` directly for generation. Use `getGeneratableInvoices()` / `firstGeneratableInvoice()` / `countGeneratableInvoices()` from `$lib/invoice/active.ts`. The active filter is a strict AND gate (`client.isActive AND entry.isActive`); deactivating a client cascades to its entries via UI disable + tooltip.
+
+16. **Active toggles use optimistic updates with rollback** — `setClientActive` and `setInvoiceActive` capture the previous `isActive` value, mutate locally, then call the API. On failure they restore the prior state. Do not add a separate "saving" flag; the rollback path is the contract.
 
 ---
 

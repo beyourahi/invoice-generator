@@ -66,6 +66,7 @@ Each worktree shares the same repository. Agents commit directly to their worktr
 
 **Scope**: One logical slice at a time. Examples of valid scopes:
 
+- `$lib/invoice/active.ts` — active-filter helpers consumed by generation, preview, and the store
 - `$lib/invoice/builder.ts` — token substitution logic
 - `$lib/pdf/generator.ts` — PDF rendering pipeline
 - `$lib/stores/session.svelte.ts` — session state shape
@@ -129,7 +130,9 @@ Each worktree shares the same repository. Agents commit directly to their worktr
 7. No comments in shipped code
 8. `$lib/components/ui/` files are unmodified (shadcn-svelte auto-generated)
 9. `tmp_screenshots/` and `.playwright-mcp/` do not exist in the working tree
-10. PDF pipeline integrity: `builder.ts → resolver.ts → generator.ts` chain is unbroken
+10. PDF pipeline integrity: `active.ts → builder.ts → resolver.ts → generator.ts` chain is unbroken
+11. Generation queue derives from `getGeneratableInvoices()` / `firstGeneratableInvoice()` in `$lib/invoice/active.ts` — no caller iterates raw `session.clients` for generation
+12. `setClientActive` / `setInvoiceActive` preserve optimistic-update-with-rollback semantics
 
 ---
 
@@ -265,6 +268,7 @@ The invoice-generator shares conventions with all other SvelteKit projects in `~
 4. **Zero comments** — no inline, block, or JSDoc comments in shipped code
 5. **Tailwind CSS v4** — no `tailwind.config.js`, no hardcoded colors, CSS-first `@theme inline`
 6. **shadcn-svelte auto-generated files** — `$lib/components/ui/` is never manually edited
+7. **Active filter is centralized** — every generation/preview path consumes `$lib/invoice/active.ts`; never iterate `session.clients → client.invoices` directly for generation
 
 ---
 
