@@ -8,6 +8,7 @@
 	import Input from "$lib/components/ui/input.svelte";
 	import Textarea from "$lib/components/ui/textarea.svelte";
 	import * as Field from "$lib/components/ui/field";
+	import OverflowActions from "$src/components/OverflowActions.svelte";
 	import { ArrowDown, ArrowUp, ChevronDown, Trash2 } from "@lucide/svelte";
 
 	type FieldElement = HTMLInputElement | HTMLTextAreaElement;
@@ -50,6 +51,30 @@
 		event.stopPropagation();
 		fixed.movePaymentMethod(method.id, direction);
 	};
+
+	const overflowActions = $derived([
+		{
+			label: "Move up",
+			icon: ArrowUp,
+			disabled: index === 0,
+			onSelect: () => fixed.movePaymentMethod(method.id, -1)
+		},
+		{
+			label: "Move down",
+			icon: ArrowDown,
+			disabled: index === total - 1,
+			onSelect: () => fixed.movePaymentMethod(method.id, 1)
+		},
+		{
+			label: "Remove payment method",
+			icon: Trash2,
+			variant: "destructive" as const,
+			onSelect: () => {
+				fixed.removePaymentMethod(method.id);
+				session.purgePaymentMethodFromClients(method.id);
+			}
+		}
+	]);
 </script>
 
 <div class="border-border bg-card rounded-lg border">
@@ -73,35 +98,40 @@
 			<p class="text-muted-foreground truncate text-xs">{summary}</p>
 		</div>
 		<div class="flex shrink-0 items-center gap-0.5">
-			<Button
-				variant="ghost"
-				size="icon-sm"
-				class="text-muted-foreground hover:text-foreground h-8 w-8"
-				onclick={(e: MouseEvent) => move(-1, e)}
-				disabled={index === 0}
-				aria-label="Move up"
-			>
-				<ArrowUp size={12} aria-hidden="true" />
-			</Button>
-			<Button
-				variant="ghost"
-				size="icon-sm"
-				class="text-muted-foreground hover:text-foreground h-8 w-8"
-				onclick={(e: MouseEvent) => move(1, e)}
-				disabled={index === total - 1}
-				aria-label="Move down"
-			>
-				<ArrowDown size={12} aria-hidden="true" />
-			</Button>
-			<Button
-				variant="ghost"
-				size="icon-sm"
-				class="text-muted-foreground hover:bg-destructive/10 hover:text-destructive h-8 w-8"
-				onclick={remove}
-				aria-label="Remove payment method"
-			>
-				<Trash2 size={12} aria-hidden="true" />
-			</Button>
+			<div class="hidden items-center gap-0.5 sm:flex">
+				<Button
+					variant="ghost"
+					size="icon-sm"
+					class="text-muted-foreground hover:text-foreground h-8 w-8"
+					onclick={(e: MouseEvent) => move(-1, e)}
+					disabled={index === 0}
+					aria-label="Move up"
+				>
+					<ArrowUp size={12} aria-hidden="true" />
+				</Button>
+				<Button
+					variant="ghost"
+					size="icon-sm"
+					class="text-muted-foreground hover:text-foreground h-8 w-8"
+					onclick={(e: MouseEvent) => move(1, e)}
+					disabled={index === total - 1}
+					aria-label="Move down"
+				>
+					<ArrowDown size={12} aria-hidden="true" />
+				</Button>
+				<Button
+					variant="ghost"
+					size="icon-sm"
+					class="text-muted-foreground hover:bg-destructive/10 hover:text-destructive h-8 w-8"
+					onclick={remove}
+					aria-label="Remove payment method"
+				>
+					<Trash2 size={12} aria-hidden="true" />
+				</Button>
+			</div>
+			<div class="sm:hidden">
+				<OverflowActions actions={overflowActions} label={method.label || def.name} />
+			</div>
 			<ChevronDown
 				size={14}
 				class={cn("text-muted-foreground ml-1 transition-transform duration-200", expanded && "rotate-180")}

@@ -27,12 +27,13 @@
 		};
 
 		frame = requestAnimationFrame(updateContainerWidth);
-		window.addEventListener("resize", updateContainerWidth);
+		const observer = new ResizeObserver(updateContainerWidth);
+		observer.observe(node);
 
 		return {
 			destroy: () => {
 				cancelAnimationFrame(frame);
-				window.removeEventListener("resize", updateContainerWidth);
+				observer.disconnect();
 			}
 		};
 	};

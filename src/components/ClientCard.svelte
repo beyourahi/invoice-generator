@@ -18,6 +18,7 @@
 	import InvoiceEntryRow from "$src/components/InvoiceEntryRow.svelte";
 	import SectionEyebrow from "$src/components/SectionEyebrow.svelte";
 	import MonthPickerDialog from "$src/components/MonthPickerDialog.svelte";
+	import OverflowActions from "$src/components/OverflowActions.svelte";
 	import { ChevronDown, Check, Plus, ReceiptText, Trash2, Wallet } from "@lucide/svelte";
 	import { z } from "zod";
 
@@ -135,7 +136,7 @@
 			<Button
 				variant="ghost"
 				size="icon-sm"
-				class="text-muted-foreground hover:bg-destructive/10 hover:text-destructive h-9 w-9 shrink-0 sm:h-7 sm:w-7"
+				class="text-muted-foreground hover:bg-destructive/10 hover:text-destructive hidden h-9 w-9 shrink-0 sm:flex sm:h-7 sm:w-7"
 				onclick={e => {
 					e.stopPropagation();
 					session.removeClient(client.id);
@@ -144,6 +145,19 @@
 			>
 				<Trash2 size={12} aria-hidden="true" />
 			</Button>
+			<div class="sm:hidden">
+				<OverflowActions
+					label={client.name || "Client"}
+					actions={[
+						{
+							label: "Remove client",
+							icon: Trash2,
+							variant: "destructive" as const,
+							onSelect: () => session.removeClient(client.id)
+						}
+					]}
+				/>
+			</div>
 			<Button
 				variant="ghost"
 				size="icon-sm"
@@ -365,28 +379,35 @@
 						variant="empty"
 					/>
 				{:else}
-					<Table.Root>
-						<Table.Header>
-							<Table.Row class="border-border hover:bg-transparent">
-								<Table.Head class="h-8 pl-0 text-[11px] tracking-wider uppercase">Month</Table.Head>
-								<Table.Head class="h-8 w-[72px] text-center text-[11px] tracking-wider uppercase">
-									Issue
-								</Table.Head>
-								<Table.Head class="h-8 w-[72px] text-center text-[11px] tracking-wider uppercase">
-									Due
-								</Table.Head>
-								<Table.Head class="h-8 w-12 text-center text-[11px] tracking-wider uppercase">
-									Active
-								</Table.Head>
-								<Table.Head class="h-8 w-8"></Table.Head>
-							</Table.Row>
-						</Table.Header>
-						<Table.Body>
-							{#each client.invoices as entry (entry.id)}
-								<InvoiceEntryRow clientId={client.id} clientActive={client.isActive} {entry} />
-							{/each}
-						</Table.Body>
-					</Table.Root>
+					<div class="hidden sm:block">
+						<Table.Root>
+							<Table.Header>
+								<Table.Row class="border-border hover:bg-transparent">
+									<Table.Head class="h-8 pl-0 text-[11px] tracking-wider uppercase">Month</Table.Head>
+									<Table.Head class="h-8 w-[72px] text-center text-[11px] tracking-wider uppercase">
+										Issue
+									</Table.Head>
+									<Table.Head class="h-8 w-[72px] text-center text-[11px] tracking-wider uppercase">
+										Due
+									</Table.Head>
+									<Table.Head class="h-8 w-12 text-center text-[11px] tracking-wider uppercase">
+										Active
+									</Table.Head>
+									<Table.Head class="h-8 w-8"></Table.Head>
+								</Table.Row>
+							</Table.Header>
+							<Table.Body>
+								{#each client.invoices as entry (entry.id)}
+									<InvoiceEntryRow clientId={client.id} clientActive={client.isActive} {entry} as="row" />
+								{/each}
+							</Table.Body>
+						</Table.Root>
+					</div>
+					<div class="block space-y-2 sm:hidden">
+						{#each client.invoices as entry (entry.id)}
+							<InvoiceEntryRow clientId={client.id} clientActive={client.isActive} {entry} as="card" />
+						{/each}
+					</div>
 
 					<div class="text-muted-foreground flex items-center justify-between gap-3 text-xs">
 						<span>{client.invoices.length} invoice{client.invoices.length !== 1 ? "s" : ""}</span>

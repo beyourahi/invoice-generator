@@ -14,7 +14,8 @@
 	import { page } from "$app/state";
 	import User from "$src/components/User.svelte";
 	import { onMount, untrack, type Component } from "svelte";
-	import { UserPlus } from "@lucide/svelte";
+	import { ChevronDown, ScanLine, UserPlus } from "@lucide/svelte";
+	import { cn } from "$lib/utils";
 	import type { PageData } from "./$types";
 
 	let { data }: { data: PageData } = $props();
@@ -29,6 +30,7 @@
 	});
 
 	let ToasterComponent = $state<Component | null>(null);
+	let previewOpen = $state(false);
 
 	const previewClient = $derived(
 		session.clients.find(c => c.id === session.selectedClientId) ?? session.clients[0] ?? null
@@ -106,8 +108,37 @@
 				</div>
 			</section>
 
-			<section class="lg:sticky lg:top-8 lg:self-start">
-				<InvoicePreview html={previewHtml} loading={false} emptyReason={previewEmptyReason} />
+			<section class="space-y-3 lg:sticky lg:top-8 lg:self-start lg:space-y-0">
+				<button
+					type="button"
+					onclick={() => (previewOpen = !previewOpen)}
+					aria-expanded={previewOpen}
+					aria-controls="preview-panel"
+					class="border-border bg-card hover:bg-accent/40 flex w-full items-center justify-between gap-3 rounded-lg border px-4 py-3 text-left transition-colors lg:hidden"
+				>
+					<span class="flex items-center gap-2">
+						<ScanLine size={15} class="text-muted-foreground" aria-hidden="true" />
+						<span class="text-sm font-semibold">Preview</span>
+						<span class="text-muted-foreground text-xs">First scheduled invoice</span>
+					</span>
+					<ChevronDown
+						size={16}
+						class={cn("text-muted-foreground transition-transform duration-200", previewOpen && "rotate-180")}
+						aria-hidden="true"
+					/>
+				</button>
+				<div
+					id="preview-panel"
+					class={cn(
+						"grid transition-[grid-template-rows] duration-200",
+						"lg:grid-rows-[1fr]",
+						previewOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr] lg:grid-rows-[1fr]"
+					)}
+				>
+					<div class="min-h-0 overflow-hidden lg:overflow-visible">
+						<InvoicePreview html={previewHtml} loading={false} emptyReason={previewEmptyReason} />
+					</div>
+				</div>
 			</section>
 		</div>
 
