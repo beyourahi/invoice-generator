@@ -2,9 +2,16 @@
 	import { cn } from "$lib/utils";
 	import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "$lib/components/ui/card";
 	import { Skeleton } from "$lib/components/ui/skeleton";
+	import StatusBadge from "$src/components/StatusBadge.svelte";
 	import { FileText, ScanLine } from "@lucide/svelte";
 
-	let { html, loading }: { html: string | null; loading: boolean } = $props();
+	type EmptyReason = "no-client" | "no-entries" | "no-active";
+
+	let {
+		html,
+		loading,
+		emptyReason = "no-client"
+	}: { html: string | null; loading: boolean; emptyReason?: EmptyReason } = $props();
 
 	let containerWidth = $state(0);
 
@@ -59,12 +66,23 @@
 			<div
 				class="border-border text-muted-foreground grid min-h-72 place-items-center rounded-lg border border-dashed text-center"
 			>
-				<div class="space-y-2">
+				<div class="flex flex-col items-center gap-2">
 					<div class="bg-muted mx-auto flex size-10 items-center justify-center rounded-lg">
 						<FileText size={17} aria-hidden="true" />
 					</div>
-					<p class="text-sm font-medium">No preview available</p>
-					<p class="max-w-56 text-xs">Select a client with at least one invoice entry.</p>
+					{#if emptyReason === "no-active"}
+						<StatusBadge status="inactive" size="sm" />
+						<p class="text-sm font-medium">No active invoice to preview</p>
+						<p class="max-w-56 text-xs">
+							The selected client has no active invoices. Activate at least one entry.
+						</p>
+					{:else if emptyReason === "no-entries"}
+						<p class="text-sm font-medium">No preview available</p>
+						<p class="max-w-56 text-xs">Add at least one invoice entry to this client.</p>
+					{:else}
+						<p class="text-sm font-medium">No preview available</p>
+						<p class="max-w-56 text-xs">Select a client with at least one invoice entry.</p>
+					{/if}
 				</div>
 			</div>
 		{:else}

@@ -183,8 +183,9 @@
 					{#if generatableCount === totalCount}
 						{totalCount} invoice{totalCount !== 1 ? "s" : ""}
 					{:else}
-						<span class="text-foreground font-medium">{generatableCount}</span>
-						of {totalCount} invoice{totalCount !== 1 ? "s" : ""} active
+						<span class="text-status-active-foreground font-medium">{generatableCount}</span>
+						of {totalCount} active ·
+						<span class="text-status-inactive-foreground">{totalCount - generatableCount} inactive</span>
 					{/if}
 				</p>
 			</div>
@@ -261,7 +262,7 @@
 				<span>Every client needs a name and invoice prefix before generation.</span>
 			</div>
 		{:else if totalCount > 0 && generatableCount === 0 && session.generationState === "idle"}
-			<div class="text-muted-foreground flex items-center gap-2 text-xs">
+			<div class="text-status-inactive-foreground flex items-center gap-2 text-xs">
 				<TriangleAlert size={13} class="shrink-0" aria-hidden="true" />
 				<span>All clients or invoices are inactive. Toggle at least one to generate.</span>
 			</div>

@@ -14,6 +14,7 @@
 	let { clientId, clientActive, entry }: { clientId: string; clientActive: boolean; entry: InvoiceEntry } = $props();
 
 	const dimmed = $derived(!clientActive || !entry.isActive);
+	const showAccent = $derived(!entry.isActive);
 
 	const handleNumericInput = (field: "issueDay" | "dueDay", e: Event) => {
 		const target = e.currentTarget as HTMLInputElement;
@@ -23,8 +24,14 @@
 	};
 </script>
 
-<Table.Row class={cn("border-0 transition-opacity hover:bg-transparent", dimmed && "opacity-60")}>
-	<Table.Cell class="py-1 pr-2 pl-0">
+<Table.Row class={cn("border-0 transition-opacity hover:bg-transparent", dimmed && "opacity-75")}>
+	<Table.Cell
+		class={cn(
+			"relative py-1 pr-2 pl-0",
+			showAccent &&
+				"before:bg-status-inactive/60 before:absolute before:top-1.5 before:bottom-1.5 before:-left-1 before:w-[2px] before:rounded-full"
+		)}
+	>
 		<SelectDialog
 			value={entry.month}
 			title="Month"

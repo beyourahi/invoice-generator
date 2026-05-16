@@ -40,6 +40,12 @@
 		if (!entry) return null;
 		return buildInvoiceHtml(client, entry, fixed.value, getTheme(ACTIVE_THEME_ID));
 	});
+	const previewEmptyReason = $derived.by((): "no-client" | "no-entries" | "no-active" => {
+		const client = previewClient;
+		if (!client) return "no-client";
+		if (client.invoices.length === 0) return "no-entries";
+		return "no-active";
+	});
 
 	onMount(async () => {
 		ToasterComponent = (await import("$lib/components/ui/sonner")).Toaster;
@@ -101,7 +107,7 @@
 			</section>
 
 			<section class="lg:sticky lg:top-8 lg:self-start">
-				<InvoicePreview html={previewHtml} loading={false} />
+				<InvoicePreview html={previewHtml} loading={false} emptyReason={previewEmptyReason} />
 			</section>
 		</div>
 

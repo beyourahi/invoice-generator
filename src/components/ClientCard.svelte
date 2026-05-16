@@ -7,8 +7,8 @@
 	import { cn } from "$lib/utils";
 	import Button from "$lib/components/ui/button.svelte";
 	import Input from "$lib/components/ui/input.svelte";
-	import Badge from "$lib/components/ui/badge.svelte";
 	import Textarea from "$lib/components/ui/textarea.svelte";
+	import StatusBadge from "$src/components/StatusBadge.svelte";
 	import { Separator } from "$lib/components/ui/separator";
 	import { Card, CardContent, CardHeader } from "$lib/components/ui/card";
 	import * as Field from "$lib/components/ui/field";
@@ -79,9 +79,10 @@
 
 <Card
 	class={cn(
-		"py-0 transition-opacity",
+		"relative py-0 transition-opacity",
 		selected && "ring-foreground ring-offset-background ring-2 ring-offset-2",
-		!client.isActive && "opacity-60"
+		!client.isActive &&
+			"before:bg-status-inactive/60 opacity-75 before:absolute before:top-2 before:bottom-2 before:left-0 before:w-[2px] before:rounded-full"
 	)}
 >
 	<CardHeader class="px-0 py-0">
@@ -103,11 +104,7 @@
 			<div class="min-w-0 flex-1">
 				<div class="flex items-center gap-2">
 					<p class="truncate text-sm font-medium">{client.name || "New client"}</p>
-					{#if !client.isActive}
-						<Badge variant="outline" class="shrink-0 px-1.5 py-0 text-[10px] tracking-wide uppercase">
-							Inactive
-						</Badge>
-					{/if}
+					<StatusBadge status={client.isActive ? "active" : "inactive"} size="sm" />
 				</div>
 				<p class="text-muted-foreground truncate text-xs">
 					{client.invoicePrefix || "No prefix"} · {client.invoices.length} scheduled
