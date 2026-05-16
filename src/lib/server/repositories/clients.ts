@@ -184,6 +184,7 @@ export const createClient = async (
 		month: shape.month,
 		issueDay: shape.issueDay,
 		dueDay: shape.dueDay,
+		isActive: true,
 		position: i,
 		createdAt: now
 	}));
@@ -206,6 +207,7 @@ export interface ClientPatch {
 	serviceCurrency?: Currency;
 	year?: number;
 	expanded?: boolean;
+	isActive?: boolean;
 }
 
 export const updateClient = async (
@@ -227,6 +229,7 @@ export const updateClient = async (
 	if (patch.serviceCurrency !== undefined) fields.serviceCurrency = patch.serviceCurrency;
 	if (patch.year !== undefined) fields.year = patch.year;
 	if (patch.expanded !== undefined) fields.expanded = patch.expanded;
+	if (patch.isActive !== undefined) fields.isActive = patch.isActive;
 
 	await db
 		.update(clients)
@@ -322,13 +325,14 @@ export const updateInvoiceEntry = async (
 	userId: string,
 	clientId: string,
 	entryId: string,
-	patch: { month?: MonthName; issueDay?: string; dueDay?: string }
+	patch: { month?: MonthName; issueDay?: string; dueDay?: string; isActive?: boolean }
 ) => {
 	if (!(await ownsClient(db, userId, clientId))) return false;
 	const fields: Record<string, unknown> = {};
 	if (patch.month !== undefined) fields.month = patch.month;
 	if (patch.issueDay !== undefined) fields.issueDay = patch.issueDay;
 	if (patch.dueDay !== undefined) fields.dueDay = patch.dueDay;
+	if (patch.isActive !== undefined) fields.isActive = patch.isActive;
 	if (Object.keys(fields).length === 0) return true;
 
 	await db

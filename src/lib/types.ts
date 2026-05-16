@@ -61,6 +61,7 @@ export interface InvoiceEntry {
 	month: MonthName;
 	issueDay: string;
 	dueDay: string;
+	isActive: boolean;
 }
 
 export interface ClientService {
@@ -83,6 +84,7 @@ export interface Client {
 	service: ClientService;
 	payment: ClientPayment;
 	year: number;
+	isActive: boolean;
 	invoices: InvoiceEntry[];
 }
 

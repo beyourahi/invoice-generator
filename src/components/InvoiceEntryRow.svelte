@@ -2,13 +2,18 @@
 	import { session } from "$lib/stores/session.svelte";
 	import { MONTHS } from "$lib/invoice/months";
 	import type { InvoiceEntry, MonthName } from "$lib/types";
+	import { cn } from "$lib/utils";
 	import Input from "$lib/components/ui/input.svelte";
 	import Button from "$lib/components/ui/button.svelte";
 	import * as Table from "$lib/components/ui/table";
+	import * as Tooltip from "$lib/components/ui/tooltip";
+	import { Switch } from "$lib/components/ui/switch";
 	import SelectDialog from "$src/components/SelectDialog.svelte";
 	import { Trash2 } from "@lucide/svelte";
 
-	let { clientId, entry }: { clientId: string; entry: InvoiceEntry } = $props();
+	let { clientId, clientActive, entry }: { clientId: string; clientActive: boolean; entry: InvoiceEntry } = $props();
+
+	const dimmed = $derived(!clientActive || !entry.isActive);
 
 	const handleNumericInput = (field: "issueDay" | "dueDay", e: Event) => {
 		const target = e.currentTarget as HTMLInputElement;
@@ -18,7 +23,7 @@
 	};
 </script>
 
-<Table.Row class="border-0 hover:bg-transparent">
+<Table.Row class={cn("border-0 transition-opacity hover:bg-transparent", dimmed && "opacity-60")}>
 	<Table.Cell class="py-1 pr-2 pl-0">
 		<SelectDialog
 			value={entry.month}
@@ -52,6 +57,32 @@
 			oninput={e => handleNumericInput("dueDay", e)}
 			class="h-11 text-center text-xs tabular-nums sm:h-8"
 		/>
+	</Table.Cell>
+	<Table.Cell class="w-12 px-1 py-1 text-center">
+		{#if clientActive}
+			<div class="inline-flex items-center justify-center">
+				<Switch
+					size="sm"
+					checked={entry.isActive}
+					onCheckedChange={v => session.setInvoiceActive(clientId, entry.id, v)}
+					aria-label={entry.isActive ? "Deactivate invoice" : "Activate invoice"}
+				/>
+			</div>
+		{:else}
+			<Tooltip.Provider>
+				<Tooltip.Root>
+					<Tooltip.Trigger
+						class="inline-flex items-center justify-center"
+						aria-label="Client is inactive — all invoices suppressed"
+					>
+						<Switch size="sm" checked={entry.isActive} disabled aria-label="Invoice toggle disabled" />
+					</Tooltip.Trigger>
+					<Tooltip.Content side="left" class="text-[11px]">
+						Client is inactive — all invoices suppressed
+					</Tooltip.Content>
+				</Tooltip.Root>
+			</Tooltip.Provider>
+		{/if}
 	</Table.Cell>
 	<Table.Cell class="w-11 px-0 py-1 sm:w-8">
 		<Button

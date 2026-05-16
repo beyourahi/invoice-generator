@@ -8,6 +8,7 @@ import type {
 } from "$lib/types";
 import { api, debounceSync, sync } from "$lib/api/client";
 import { MONTHS } from "$lib/invoice/months";
+import { countGeneratableInvoices } from "$lib/invoice/active";
 
 const TEXT_DEBOUNCE_MS = 400;
 
@@ -193,6 +194,42 @@ const createSessionStore = () => {
 		}
 	};
 
+	const setClientActive = async (id: string, isActive: boolean) => {
+		const current = clients.find((c) => c.id === id);
+		if (!current || current.isActive === isActive) return;
+		clients = clients.map((c) => (c.id === id ? { ...c, isActive } : c));
+		const result = await sync(() => api.patch<void>(`/api/clients/${id}`, { isActive }));
+		if (result === null) {
+			clients = clients.map((c) => (c.id === id ? { ...c, isActive: !isActive } : c));
+		}
+	};
+
+	const setInvoiceActive = async (clientId: string, entryId: string, isActive: boolean) => {
+		const client = clients.find((c) => c.id === clientId);
+		const entry = client?.invoices.find((e) => e.id === entryId);
+		if (!entry || entry.isActive === isActive) return;
+		clients = clients.map((c) =>
+			c.id === clientId
+				? { ...c, invoices: c.invoices.map((e) => (e.id === entryId ? { ...e, isActive } : e)) }
+				: c
+		);
+		const result = await sync(() =>
+			api.patch<void>(`/api/clients/${clientId}/entries/${entryId}`, { isActive })
+		);
+		if (result === null) {
+			clients = clients.map((c) =>
+				c.id === clientId
+					? {
+							...c,
+							invoices: c.invoices.map((e) =>
+								e.id === entryId ? { ...e, isActive: !isActive } : e
+							)
+						}
+					: c
+			);
+		}
+	};
+
 	const setSelectedClientId = (id: string | null) => {
 		selectedClientId = id;
 		void sync(() => api.put<void>("/api/fixed", { selectedClientId: id }));
@@ -233,6 +270,7 @@ const createSessionStore = () => {
 	};
 
 	const totalInvoiceCount = $derived(clients.reduce((sum, c) => sum + c.invoices.length, 0));
+	const generatableInvoiceCount = $derived(countGeneratableInvoices(clients));
 	const allClientsValid = $derived(
 		clients.every((c) => c.name.trim() !== "" && c.invoicePrefix.trim() !== "")
 	);
@@ -256,6 +294,9 @@ const createSessionStore = () => {
 		get totalInvoiceCount() {
 			return totalInvoiceCount;
 		},
+		get generatableInvoiceCount() {
+			return generatableInvoiceCount;
+		},
 		get allClientsValid() {
 			return allClientsValid;
 		},
@@ -263,6 +304,8 @@ const createSessionStore = () => {
 		addClient,
 		removeClient,
 		updateClient,
+		setClientActive,
+		setInvoiceActive,
 		togglePaymentMethod,
 		ensurePaymentMethodSelected,
 		purgePaymentMethodFromClients,

@@ -61,7 +61,8 @@ export const updateClientSchema = z
 		serviceAmount: z.number().min(0).max(1_000_000_000).optional(),
 		serviceCurrency: z.enum(["BDT", "USD"]).optional(),
 		year: z.number().int().min(2000).max(2099).optional(),
-		expanded: z.boolean().optional()
+		expanded: z.boolean().optional(),
+		isActive: z.boolean().optional()
 	})
 	.refine((v) => Object.keys(v).length > 0, { message: "Empty patch" });
 
@@ -77,6 +78,7 @@ export const updateEntrySchema = z
 	.object({
 		month: monthSchema.optional(),
 		issueDay: dayStringSchema.optional(),
-		dueDay: dayStringSchema.optional()
+		dueDay: dayStringSchema.optional(),
+		isActive: z.boolean().optional()
 	})
 	.refine((v) => Object.keys(v).length > 0, { message: "Empty patch" });

@@ -32,7 +32,8 @@ export const toInvoiceEntry = (row: EntryRow): InvoiceEntry => ({
 	id: row.id,
 	month: row.month as MonthName,
 	issueDay: row.issueDay,
-	dueDay: row.dueDay
+	dueDay: row.dueDay,
+	isActive: row.isActive
 });
 
 export const toClient = (row: ClientRow, entries: EntryRow[], methodIds: string[]): Client => ({
@@ -49,6 +50,7 @@ export const toClient = (row: ClientRow, entries: EntryRow[], methodIds: string[
 	},
 	payment: { methodIds },
 	year: row.year,
+	isActive: row.isActive,
 	invoices: entries.map(toInvoiceEntry)
 });
 

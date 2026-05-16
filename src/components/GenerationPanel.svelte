@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { buildInvoiceHtml, getFileName, getInvoiceId } from "$lib/invoice/builder";
+	import { getGeneratableInvoices } from "$lib/invoice/active";
 	import { generatePdf } from "$lib/pdf/generator";
 	import { downloadGroups, isUserAbort, type DownloadGroup } from "$lib/pdf/sequential-download";
 	import { downloadInvoicesZip } from "$lib/pdf/zip";
@@ -26,9 +27,10 @@
 	let busyAll = $state(false);
 
 	const totalCount = $derived(session.totalInvoiceCount);
+	const generatableCount = $derived(session.generatableInvoiceCount);
 	const canGenerate = $derived(
 		session.clients.length > 0 &&
-			totalCount > 0 &&
+			generatableCount > 0 &&
 			session.allClientsValid &&
 			session.generationState !== "generating"
 	);
@@ -64,6 +66,15 @@
 	};
 
 	const generateAll = async () => {
+		const queue = getGeneratableInvoices(session.clients);
+		if (queue.length === 0) {
+			await notifyError(
+				"Nothing to generate",
+				"All clients or invoices are inactive. Toggle at least one to generate."
+			);
+			return;
+		}
+
 		session.setGenerating();
 		progress = 0;
 
@@ -71,27 +82,25 @@
 		const results: GeneratedInvoice[] = [];
 		let completed = 0;
 
-		for (const client of session.clients) {
-			for (const entry of client.invoices) {
-				try {
-					const html = buildInvoiceHtml(client, entry, fixed.value, theme);
-					const pdfBlob = await generatePdf(html);
-					results.push({
-						clientId: client.id,
-						clientName: client.name || "client",
-						fileName: getFileName(client, entry),
-						invoiceId: getInvoiceId(client, entry),
-						year: client.year,
-						pdfBlob
-					});
-					completed++;
-					progress = Math.round((completed / totalCount) * 100);
-				} catch (err) {
-					const message = err instanceof Error ? err.message : "Generation failed";
-					session.setError(message);
-					await notifyError("Generation failed", message);
-					return;
-				}
+		for (const { client, entry } of queue) {
+			try {
+				const html = buildInvoiceHtml(client, entry, fixed.value, theme);
+				const pdfBlob = await generatePdf(html);
+				results.push({
+					clientId: client.id,
+					clientName: client.name || "client",
+					fileName: getFileName(client, entry),
+					invoiceId: getInvoiceId(client, entry),
+					year: client.year,
+					pdfBlob
+				});
+				completed++;
+				progress = Math.round((completed / queue.length) * 100);
+			} catch (err) {
+				const message = err instanceof Error ? err.message : "Generation failed";
+				session.setError(message);
+				await notifyError("Generation failed", message);
+				return;
 			}
 		}
 
@@ -171,7 +180,12 @@
 				<CardTitle class="text-base font-semibold">Generation</CardTitle>
 				<p class="text-muted-foreground mt-1 text-xs tabular-nums">
 					{session.clients.length} client{session.clients.length !== 1 ? "s" : ""} ·
-					{totalCount} invoice{totalCount !== 1 ? "s" : ""}
+					{#if generatableCount === totalCount}
+						{totalCount} invoice{totalCount !== 1 ? "s" : ""}
+					{:else}
+						<span class="text-foreground font-medium">{generatableCount}</span>
+						of {totalCount} invoice{totalCount !== 1 ? "s" : ""} active
+					{/if}
 				</p>
 			</div>
 			<div class="flex flex-wrap items-center gap-2">
@@ -218,7 +232,7 @@
 							Generating
 						{:else}
 							<FileDown size={14} aria-hidden="true" />
-							Generate{totalCount > 0 ? ` (${totalCount})` : ""}
+							Generate{generatableCount > 0 ? ` (${generatableCount})` : ""}
 						{/if}
 					</Button>
 				{/if}
@@ -245,6 +259,11 @@
 			<div class="text-muted-foreground flex items-center gap-2 text-xs">
 				<TriangleAlert size={13} class="shrink-0" aria-hidden="true" />
 				<span>Every client needs a name and invoice prefix before generation.</span>
+			</div>
+		{:else if totalCount > 0 && generatableCount === 0 && session.generationState === "idle"}
+			<div class="text-muted-foreground flex items-center gap-2 text-xs">
+				<TriangleAlert size={13} class="shrink-0" aria-hidden="true" />
+				<span>All clients or invoices are inactive. Toggle at least one to generate.</span>
 			</div>
 		{:else if session.generationState === "idle"}
 			<p class="text-muted-foreground text-xs">

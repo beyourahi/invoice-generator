@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { buildInvoiceHtml } from "$lib/invoice/builder";
+	import { firstGeneratableInvoice } from "$lib/invoice/active";
 	import { fixed } from "$lib/stores/fixed.svelte";
 	import { session } from "$lib/stores/session.svelte";
 	import { getTheme, ACTIVE_THEME_ID } from "$lib/themes/registry";
@@ -34,10 +35,9 @@
 	);
 	const previewHtml = $derived.by(() => {
 		const client = previewClient;
-		if (!client || client.invoices.length === 0) {
-			return null;
-		}
-		const entry = client.invoices[0];
+		if (!client) return null;
+		const entry = firstGeneratableInvoice(client);
+		if (!entry) return null;
 		return buildInvoiceHtml(client, entry, fixed.value, getTheme(ACTIVE_THEME_ID));
 	});
 

@@ -140,6 +140,7 @@ export const clients = sqliteTable(
 		serviceCurrency: text("service_currency").$type<Currency>().notNull().default("BDT"),
 		year: integer("year").notNull(),
 		expanded: integer("expanded", { mode: "boolean" }).notNull().default(true),
+		isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
 		position: integer("position").notNull().default(0),
 		createdAt: integer("created_at", { mode: "timestamp" })
 			.notNull()
@@ -182,6 +183,7 @@ export const invoiceEntries = sqliteTable(
 		month: text("month").$type<MonthName>().notNull(),
 		issueDay: text("issue_day").notNull().default("01"),
 		dueDay: text("due_day").notNull().default("07"),
+		isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
 		position: integer("position").notNull().default(0),
 		createdAt: integer("created_at", { mode: "timestamp" })
 			.notNull()

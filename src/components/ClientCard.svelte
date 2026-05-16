@@ -7,11 +7,13 @@
 	import { cn } from "$lib/utils";
 	import Button from "$lib/components/ui/button.svelte";
 	import Input from "$lib/components/ui/input.svelte";
+	import Badge from "$lib/components/ui/badge.svelte";
 	import Textarea from "$lib/components/ui/textarea.svelte";
 	import { Separator } from "$lib/components/ui/separator";
 	import { Card, CardContent, CardHeader } from "$lib/components/ui/card";
 	import * as Field from "$lib/components/ui/field";
 	import * as Table from "$lib/components/ui/table";
+	import { Switch } from "$lib/components/ui/switch";
 	import SelectDialog from "$src/components/SelectDialog.svelte";
 	import InvoiceEntryRow from "$src/components/InvoiceEntryRow.svelte";
 	import SectionEyebrow from "$src/components/SectionEyebrow.svelte";
@@ -75,7 +77,13 @@
 	});
 </script>
 
-<Card class={cn("py-0", selected && "ring-foreground ring-offset-background ring-2 ring-offset-2")}>
+<Card
+	class={cn(
+		"py-0 transition-opacity",
+		selected && "ring-foreground ring-offset-background ring-2 ring-offset-2",
+		!client.isActive && "opacity-60"
+	)}
+>
 	<CardHeader class="px-0 py-0">
 		<div
 			role="button"
@@ -93,7 +101,14 @@
 				{badgeNum}
 			</span>
 			<div class="min-w-0 flex-1">
-				<p class="truncate text-sm font-medium">{client.name || "New client"}</p>
+				<div class="flex items-center gap-2">
+					<p class="truncate text-sm font-medium">{client.name || "New client"}</p>
+					{#if !client.isActive}
+						<Badge variant="outline" class="shrink-0 px-1.5 py-0 text-[10px] tracking-wide uppercase">
+							Inactive
+						</Badge>
+					{/if}
+				</div>
 				<p class="text-muted-foreground truncate text-xs">
 					{client.invoicePrefix || "No prefix"} · {client.invoices.length} scheduled
 				</p>
@@ -107,6 +122,18 @@
 				>
 					{paymentSummary}
 				</span>
+			</div>
+			<div
+				role="presentation"
+				onclick={e => e.stopPropagation()}
+				onkeydown={e => e.stopPropagation()}
+				class="flex shrink-0 items-center"
+			>
+				<Switch
+					checked={client.isActive}
+					onCheckedChange={v => session.setClientActive(client.id, v)}
+					aria-label={client.isActive ? "Deactivate client" : "Activate client"}
+				/>
 			</div>
 			<Button
 				variant="ghost"
@@ -351,12 +378,15 @@
 								<Table.Head class="h-8 w-[72px] text-center text-[11px] tracking-wider uppercase">
 									Due
 								</Table.Head>
+								<Table.Head class="h-8 w-12 text-center text-[11px] tracking-wider uppercase">
+									Active
+								</Table.Head>
 								<Table.Head class="h-8 w-8"></Table.Head>
 							</Table.Row>
 						</Table.Header>
 						<Table.Body>
 							{#each client.invoices as entry (entry.id)}
-								<InvoiceEntryRow clientId={client.id} {entry} />
+								<InvoiceEntryRow clientId={client.id} clientActive={client.isActive} {entry} />
 							{/each}
 						</Table.Body>
 					</Table.Root>
