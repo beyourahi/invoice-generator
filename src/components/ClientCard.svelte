@@ -189,10 +189,7 @@
 
 	{#if expanded}
 		<CardContent
-			class={cn(
-				"status-transition border-border space-y-5 border-t pb-4",
-				!client.isActive && "opacity-70"
-			)}
+			class={cn("status-transition border-border space-y-5 border-t pb-4", !client.isActive && "opacity-70")}
 		>
 			<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
 				<Field.Field class="gap-1.5" data-invalid={nameError !== ""}>
@@ -413,7 +410,12 @@
 							</Table.Header>
 							<Table.Body>
 								{#each client.invoices as entry (entry.id)}
-									<InvoiceEntryRow clientId={client.id} clientActive={client.isActive} {entry} as="row" />
+									<InvoiceEntryRow
+										clientId={client.id}
+										clientActive={client.isActive}
+										{entry}
+										as="row"
+									/>
 								{/each}
 							</Table.Body>
 						</Table.Root>

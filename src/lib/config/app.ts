@@ -7,5 +7,11 @@ export const APP_CONFIG: AppConfig = {
 	author: {
 		name: "Rahi Khan",
 		url: "https://beyourahi.com"
-	}
+	},
+	siblings: [
+		{
+			name: "Order Processor",
+			url: "https://order-processor.beyourahi.workers.dev"
+		}
+	]
 };

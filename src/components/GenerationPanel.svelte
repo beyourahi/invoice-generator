@@ -196,7 +196,8 @@
 						<span
 							class="border-status-inactive-border bg-status-inactive-bg text-status-inactive-foreground status-transition inline-flex items-center gap-1 rounded-full border px-1.5 py-px text-[10px] font-medium tracking-wide uppercase"
 						>
-							<span class="bg-status-inactive inline-block size-1.5 rounded-full" aria-hidden="true"></span>
+							<span class="bg-status-inactive inline-block size-1.5 rounded-full" aria-hidden="true"
+							></span>
 							{totalCount - generatableCount} inactive
 						</span>
 					{/if}
@@ -282,9 +283,7 @@
 				<TriangleAlert size={14} class="mt-px shrink-0" aria-hidden="true" />
 				<div class="space-y-0.5">
 					<p class="font-medium">Nothing to generate</p>
-					<p class="opacity-90">
-						All clients or invoices are inactive. Toggle at least one to generate.
-					</p>
+					<p class="opacity-90">All clients or invoices are inactive. Toggle at least one to generate.</p>
 				</div>
 			</div>
 		{:else if session.generationState === "idle"}

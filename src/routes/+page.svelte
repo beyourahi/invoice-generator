@@ -108,7 +108,7 @@
 				</div>
 			</section>
 
-			<section class="min-w-0 space-y-3 lg:sticky lg:top-8 lg:self-start lg:space-y-0">
+			<section class="min-w-0 space-y-3 lg:sticky lg:top-8 lg:space-y-0 lg:self-start">
 				<button
 					type="button"
 					onclick={() => (previewOpen = !previewOpen)}
@@ -123,7 +123,10 @@
 					</span>
 					<ChevronDown
 						size={16}
-						class={cn("text-muted-foreground transition-transform duration-200", previewOpen && "rotate-180")}
+						class={cn(
+							"text-muted-foreground transition-transform duration-200",
+							previewOpen && "rotate-180"
+						)}
 						aria-hidden="true"
 					/>
 				</button>

@@ -65,10 +65,7 @@
 
 {#if as === "row"}
 	<Table.Row
-		class={cn(
-			"status-transition border-0 hover:bg-transparent",
-			inactive && "bg-status-inactive-bg opacity-80"
-		)}
+		class={cn("status-transition border-0 hover:bg-transparent", inactive && "bg-status-inactive-bg opacity-80")}
 	>
 		<Table.Cell
 			class={cn(
@@ -132,7 +129,7 @@
 		class={cn(
 			"border-border bg-card status-transition relative space-y-2.5 rounded-lg border p-3",
 			inactive &&
-				"bg-status-inactive-bg opacity-80 before:bg-status-inactive-border before:absolute before:top-2 before:bottom-2 before:left-0 before:w-[3px] before:rounded-full"
+				"bg-status-inactive-bg before:bg-status-inactive-border opacity-80 before:absolute before:top-2 before:bottom-2 before:left-0 before:w-[3px] before:rounded-full"
 		)}
 	>
 		<div class="flex items-start gap-2">

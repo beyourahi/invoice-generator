@@ -122,4 +122,8 @@ export interface AppConfig {
 		name: string;
 		url: string;
 	};
+	siblings: Array<{
+		name: string;
+		url: string;
+	}>;
 }

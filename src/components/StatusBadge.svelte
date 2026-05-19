@@ -12,9 +12,7 @@
 			: "bg-status-inactive-bg text-status-inactive-foreground border-status-inactive-border"
 	);
 
-	const dotTone = $derived(
-		status === "active" ? "bg-status-active status-dot-pulse" : "bg-status-inactive"
-	);
+	const dotTone = $derived(status === "active" ? "bg-status-active status-dot-pulse" : "bg-status-inactive");
 
 	const sizing = $derived(
 		size === "sm"
