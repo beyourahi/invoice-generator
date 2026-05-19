@@ -62,14 +62,14 @@
 		{#if ai.messages.length === 0}
 			<div class="text-muted-foreground py-6 text-center text-xs">
 				<Sparkles class="text-muted-foreground/70 mx-auto mb-2 size-5" aria-hidden="true" />
-				<p class="text-foreground/80 mb-1 text-sm">Type what you want. The invoices follow.</p>
-				<p class="text-muted-foreground/80 mb-3 text-xs">Try one of these:</p>
+				<p class="text-foreground/80 mb-1 text-sm text-balance">Type what you want. The invoices follow.</p>
+				<p class="text-muted-foreground/80 mb-3 text-xs text-pretty">Try one of these:</p>
 				<div class="flex flex-col gap-1.5">
 					{#each examples as ex (ex)}
 						<button
 							type="button"
 							onclick={() => onSubmit(ex)}
-							class="border-border/50 bg-background/40 hover:bg-accent/40 mx-auto block w-full max-w-xs rounded-md border px-3 py-1.5 text-left text-xs transition-colors"
+							class="border-border/50 bg-background/40 pointer-fine:hover:bg-accent/40 mx-auto block w-full max-w-xs rounded-md border px-3 py-1.5 text-left text-xs text-pretty transition-colors"
 						>
 							{ex}
 						</button>
@@ -83,7 +83,9 @@
 		{/if}
 
 		{#if ai.error}
-			<div class="border-destructive/40 bg-destructive/10 text-destructive rounded-md border px-3 py-2 text-xs">
+			<div
+				class="border-destructive/40 bg-destructive/10 text-destructive rounded-md border px-3 py-2 text-xs text-pretty"
+			>
 				{ai.error}
 			</div>
 		{/if}
@@ -114,10 +116,11 @@
 				disabled={ai.inputBusy || input.trim().length === 0}
 				class={cn(
 					"inline-flex shrink-0 items-center justify-center rounded-md transition-colors",
-					"size-7",
+					"size-7 disabled:cursor-not-allowed",
+					ai.inputBusy && "cursor-wait",
 					ai.inputBusy || input.trim().length === 0
 						? "bg-muted/40 text-muted-foreground"
-						: "bg-foreground text-background hover:bg-foreground/90"
+						: "bg-foreground text-background pointer-fine:hover:bg-foreground/90"
 				)}
 				aria-label="Send"
 			>

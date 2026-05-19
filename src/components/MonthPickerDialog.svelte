@@ -55,19 +55,19 @@
 		<Dialog.Trigger
 			{disabled}
 			onclick={() => (pending = [])}
-			class="border-border hover:border-foreground/30 hover:bg-accent/30 h-auto min-h-20 w-full cursor-pointer rounded-lg border border-dashed transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+			class="border-border pointer-fine:hover:border-foreground/30 pointer-fine:hover:bg-accent/30 h-auto min-h-20 w-full cursor-pointer rounded-lg border border-dashed transition-colors disabled:cursor-not-allowed disabled:opacity-50"
 			aria-label="Add months"
 		>
 			<div class="flex flex-col items-center gap-2 py-3">
 				<Plus size={16} aria-hidden="true" />
-				<span class="text-sm font-medium">Add months</span>
+				<span class="text-sm font-medium whitespace-nowrap">Add months</span>
 			</div>
 		</Dialog.Trigger>
 	{:else}
 		<Dialog.Trigger
 			{disabled}
 			onclick={() => (pending = [])}
-			class="bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:ring-ring inline-flex h-9 w-full cursor-pointer items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+			class="bg-primary text-primary-foreground pointer-fine:hover:bg-primary/90 focus-visible:ring-ring inline-flex h-9 w-full cursor-pointer items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 			aria-label="Add months"
 		>
 			<Plus size={14} aria-hidden="true" />
@@ -80,8 +80,8 @@
 		showCloseButton={false}
 	>
 		<Dialog.Header class="border-border border-b px-4 py-3.5">
-			<Dialog.Title class="text-left text-sm font-semibold">Add months</Dialog.Title>
-			<Dialog.Description class="text-muted-foreground mt-0.5 text-left text-xs">
+			<Dialog.Title class="text-left text-sm font-semibold text-balance">Add months</Dialog.Title>
+			<Dialog.Description class="text-muted-foreground mt-0.5 text-left text-xs text-pretty">
 				Select months to schedule invoices for.
 			</Dialog.Description>
 		</Dialog.Header>
@@ -95,12 +95,12 @@
 					disabled={isScheduled}
 					onclick={() => toggleMonth(month)}
 					class={cn(
-						"relative flex h-10 items-center justify-center rounded-md border text-sm font-medium transition-colors",
+						"relative flex h-10 items-center justify-center rounded-md border text-sm font-medium whitespace-nowrap transition-colors",
 						isScheduled
 							? "border-border text-muted-foreground cursor-not-allowed line-through opacity-30"
 							: isSelected
 								? "border-brand bg-brand/10 text-brand cursor-pointer"
-								: "border-border hover:border-foreground/40 hover:bg-accent/40 cursor-pointer"
+								: "border-border pointer-fine:hover:border-foreground/40 pointer-fine:hover:bg-accent/40 cursor-pointer"
 					)}
 					aria-pressed={isSelected}
 					aria-disabled={isScheduled}
@@ -115,7 +115,7 @@
 
 		<div class="border-border flex items-center justify-between border-t px-4 py-3">
 			{#if pending.length > 0}
-				<span class="text-muted-foreground text-xs">{pending.length} selected</span>
+				<span class="text-muted-foreground text-xs whitespace-nowrap">{pending.length} selected</span>
 			{:else}
 				<span></span>
 			{/if}

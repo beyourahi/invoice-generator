@@ -8,6 +8,7 @@
 	import { session } from "$lib/stores/session.svelte";
 	import { ACTIVE_THEME_ID, getTheme } from "$lib/themes/registry";
 	import type { GeneratedInvoice } from "$lib/types";
+	import { cn } from "$lib/utils";
 	import Button from "$lib/components/ui/button.svelte";
 	import { Card, CardContent, CardHeader, CardTitle } from "$lib/components/ui/card";
 	import { Progress } from "$lib/components/ui/progress";
@@ -177,15 +178,17 @@
 	<CardHeader class="border-border border-b">
 		<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 			<div>
-				<CardTitle class="text-base font-semibold">Generation</CardTitle>
+				<CardTitle class="text-base font-semibold text-balance">Generation</CardTitle>
 				<div class="text-muted-foreground mt-1 flex flex-wrap items-center gap-1.5 text-xs tabular-nums">
-					<span>{session.clients.length} client{session.clients.length !== 1 ? "s" : ""}</span>
+					<span class="whitespace-nowrap">
+						{session.clients.length} client{session.clients.length !== 1 ? "s" : ""}
+					</span>
 					{#if generatableCount === totalCount}
 						<span aria-hidden="true">·</span>
-						<span>{totalCount} invoice{totalCount !== 1 ? "s" : ""}</span>
+						<span class="whitespace-nowrap">{totalCount} invoice{totalCount !== 1 ? "s" : ""}</span>
 					{:else}
 						<span
-							class="border-status-active-border bg-status-active-bg text-status-active-foreground status-transition inline-flex items-center gap-1 rounded-full border px-1.5 py-px text-[10px] font-medium tracking-wide uppercase"
+							class="border-status-active-border bg-status-active-bg text-status-active-foreground status-transition inline-flex items-center gap-1 rounded-full border px-1.5 py-px text-[10px] font-medium tracking-wide whitespace-nowrap uppercase"
 						>
 							<span
 								class="bg-status-active status-dot-pulse inline-block size-1.5 rounded-full"
@@ -194,7 +197,7 @@
 							{generatableCount} active
 						</span>
 						<span
-							class="border-status-inactive-border bg-status-inactive-bg text-status-inactive-foreground status-transition inline-flex items-center gap-1 rounded-full border px-1.5 py-px text-[10px] font-medium tracking-wide uppercase"
+							class="border-status-inactive-border bg-status-inactive-bg text-status-inactive-foreground status-transition inline-flex items-center gap-1 rounded-full border px-1.5 py-px text-[10px] font-medium tracking-wide whitespace-nowrap uppercase"
 						>
 							<span class="bg-status-inactive inline-block size-1.5 rounded-full" aria-hidden="true"
 							></span>
@@ -206,7 +209,10 @@
 			<div class="flex flex-wrap items-center gap-2">
 				{#if session.generationState === "done"}
 					<Button
-						class="bg-brand text-brand-foreground hover:bg-brand/90 w-full sm:w-auto"
+						class={cn(
+							"bg-brand text-brand-foreground pointer-fine:hover:bg-brand/90 w-full whitespace-nowrap sm:w-auto",
+							busyAll && "cursor-wait"
+						)}
 						onclick={downloadAll}
 						disabled={busyAll || busyClientId !== null || clientGroups.length === 0}
 						aria-label="Download all generated invoices"
@@ -221,7 +227,7 @@
 					</Button>
 					<Button
 						variant="outline"
-						class="w-full sm:w-auto"
+						class="w-full whitespace-nowrap sm:w-auto"
 						onclick={session.resetGeneration}
 						disabled={busyAll}
 					>
@@ -230,7 +236,7 @@
 					</Button>
 				{:else if session.generationState === "error"}
 					<Button
-						class="bg-brand text-brand-foreground hover:bg-brand/90 w-full sm:w-auto"
+						class="bg-brand text-brand-foreground pointer-fine:hover:bg-brand/90 w-full whitespace-nowrap sm:w-auto"
 						onclick={generateAll}
 					>
 						<RotateCcw size={14} aria-hidden="true" />
@@ -238,7 +244,10 @@
 					</Button>
 				{:else}
 					<Button
-						class="bg-brand text-brand-foreground hover:bg-brand/90 w-full sm:w-auto"
+						class={cn(
+							"bg-brand text-brand-foreground pointer-fine:hover:bg-brand/90 w-full whitespace-nowrap sm:w-auto",
+							session.generationState === "generating" && "cursor-wait"
+						)}
 						onclick={generateAll}
 						disabled={!canGenerate || session.generationState === "generating"}
 					>
@@ -258,8 +267,8 @@
 		{#if session.generationState === "generating"}
 			<div class="space-y-2" aria-live="polite">
 				<div class="text-muted-foreground flex justify-between text-xs tabular-nums">
-					<span>Rendering PDFs sequentially</span>
-					<span>{progress}%</span>
+					<span class="whitespace-nowrap">Rendering PDFs sequentially</span>
+					<span class="whitespace-nowrap">{progress}%</span>
 				</div>
 				<Progress value={progress} class="h-1.5" />
 			</div>
@@ -268,12 +277,12 @@
 		{#if session.generationState === "error" && session.generationError}
 			<div class="text-destructive flex items-center gap-2 text-xs" role="alert">
 				<AlertCircle size={13} class="shrink-0" aria-hidden="true" />
-				<span>{session.generationError}</span>
+				<span class="text-pretty">{session.generationError}</span>
 			</div>
 		{:else if session.clients.length > 0 && !session.allClientsValid && session.generationState === "idle"}
 			<div class="text-muted-foreground flex items-center gap-2 text-xs">
 				<TriangleAlert size={13} class="shrink-0" aria-hidden="true" />
-				<span>Every client needs a name and invoice prefix before generation.</span>
+				<span class="text-pretty">Every client needs a name and invoice prefix before generation.</span>
 			</div>
 		{:else if totalCount > 0 && generatableCount === 0 && session.generationState === "idle"}
 			<div
@@ -282,12 +291,14 @@
 			>
 				<TriangleAlert size={14} class="mt-px shrink-0" aria-hidden="true" />
 				<div class="space-y-0.5">
-					<p class="font-medium">Nothing to generate</p>
-					<p class="opacity-90">All clients or invoices are inactive. Toggle at least one to generate.</p>
+					<p class="font-medium text-balance">Nothing to generate</p>
+					<p class="text-pretty opacity-90">
+						All clients or invoices are inactive. Toggle at least one to generate.
+					</p>
 				</div>
 			</div>
 		{:else if session.generationState === "idle"}
-			<p class="text-muted-foreground text-xs">
+			<p class="text-muted-foreground text-xs text-pretty">
 				Add at least one valid client and invoice entry to generate PDFs.
 			</p>
 		{/if}
@@ -296,10 +307,16 @@
 			<div class="border-border overflow-x-auto rounded-lg border">
 				<Table.Root>
 					<Table.Header>
-						<Table.Row class="border-border hover:bg-transparent">
-							<Table.Head class="h-9 pl-3 text-[11px] tracking-wider uppercase">Client</Table.Head>
-							<Table.Head class="h-9 text-[11px] tracking-wider uppercase">Invoices</Table.Head>
-							<Table.Head class="hidden h-9 text-[11px] tracking-wider uppercase sm:table-cell">
+						<Table.Row class="border-border pointer-fine:hover:bg-transparent">
+							<Table.Head class="h-9 pl-3 text-[11px] tracking-wider whitespace-nowrap uppercase">
+								Client
+							</Table.Head>
+							<Table.Head class="h-9 text-[11px] tracking-wider whitespace-nowrap uppercase">
+								Invoices
+							</Table.Head>
+							<Table.Head
+								class="hidden h-9 text-[11px] tracking-wider whitespace-nowrap uppercase sm:table-cell"
+							>
 								Year
 							</Table.Head>
 							<Table.Head class="h-9 w-28 pr-3"></Table.Head>
@@ -309,7 +326,7 @@
 						{#each clientGroups as group (group.clientId)}
 							{@const isBusy = busyClientId === group.clientId}
 							{@const isSingle = group.invoices.length === 1}
-							<Table.Row class="border-border">
+							<Table.Row class="border-border pointer-fine:hover:bg-transparent">
 								<Table.Cell class="py-2 pl-3 text-xs font-medium">{group.clientName}</Table.Cell>
 								<Table.Cell class="text-muted-foreground py-2 text-xs tabular-nums">
 									{group.invoices.length}
@@ -322,7 +339,10 @@
 								<Table.Cell class="py-2 pr-3 text-right">
 									<Button
 										size="sm"
-										class="bg-brand text-brand-foreground hover:bg-brand/90 w-full sm:w-auto"
+										class={cn(
+											"bg-brand text-brand-foreground pointer-fine:hover:bg-brand/90 w-full whitespace-nowrap sm:w-auto",
+											isBusy && "cursor-wait"
+										)}
 										onclick={() => downloadGroup(group)}
 										disabled={isBusy || busyAll}
 										aria-label={isSingle

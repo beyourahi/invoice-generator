@@ -39,7 +39,7 @@
 		aria-label={label}
 		onclick={(e: MouseEvent) => e.stopPropagation()}
 		class={cn(
-			"text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-ring inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:opacity-50",
+			"text-muted-foreground pointer-fine:hover:bg-accent pointer-fine:hover:text-foreground focus-visible:ring-ring inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:opacity-50",
 			className
 		)}
 	>
@@ -51,7 +51,7 @@
 		showCloseButton={false}
 	>
 		<Dialog.Header class="border-border border-b px-4 py-3.5">
-			<Dialog.Title class="text-left text-sm font-semibold">{label}</Dialog.Title>
+			<Dialog.Title class="text-left text-sm font-semibold text-balance">{label}</Dialog.Title>
 		</Dialog.Header>
 
 		<div class="flex flex-col p-1.5">
@@ -63,17 +63,17 @@
 					onclick={e => handleAction(action, e)}
 					class={cn(
 						"flex min-h-12 w-full items-center gap-3 rounded-lg px-3 text-left transition-colors",
-						"hover:bg-accent hover:text-accent-foreground",
+						"pointer-fine:hover:bg-accent pointer-fine:hover:text-accent-foreground",
 						"focus:bg-accent focus:text-accent-foreground focus:outline-none",
 						"disabled:cursor-not-allowed disabled:opacity-40",
 						action.variant === "destructive" &&
-							"text-destructive hover:bg-destructive/10 hover:text-destructive"
+							"text-destructive pointer-fine:hover:bg-destructive/10 pointer-fine:hover:text-destructive"
 					)}
 				>
 					{#if Icon}
 						<Icon size={16} aria-hidden="true" />
 					{/if}
-					<span class="text-sm font-medium">{action.label}</span>
+					<span class="text-sm font-medium whitespace-nowrap">{action.label}</span>
 				</button>
 			{/each}
 		</div>

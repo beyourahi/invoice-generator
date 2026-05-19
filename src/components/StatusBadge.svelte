@@ -27,7 +27,7 @@
 
 <span
 	class={cn(
-		"status-transition inline-flex shrink-0 items-center rounded-full border font-medium",
+		"status-transition inline-flex shrink-0 items-center rounded-full border font-medium whitespace-nowrap",
 		sizing,
 		tone,
 		className

@@ -82,15 +82,15 @@
 
 				<div class="space-y-3">
 					<div class="flex items-center justify-between">
-						<h2 class="text-base font-semibold">Clients</h2>
-						<p class="text-muted-foreground text-xs tabular-nums">
+						<h2 class="text-base font-semibold text-balance">Clients</h2>
+						<p class="text-muted-foreground text-xs whitespace-nowrap tabular-nums">
 							{session.clients.length} total
 						</p>
 					</div>
 
 					{#if session.clients.length === 0}
 						<button
-							class="border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground grid min-h-36 w-full cursor-pointer place-items-center rounded-lg border border-dashed text-center transition-colors"
+							class="border-border text-muted-foreground pointer-fine:hover:border-foreground/30 pointer-fine:hover:text-foreground grid min-h-36 w-full cursor-pointer place-items-center rounded-lg border border-dashed text-center transition-colors"
 							onclick={session.addClient}
 							aria-label="Add client"
 						>
@@ -124,12 +124,12 @@
 					onclick={() => (previewOpen = !previewOpen)}
 					aria-expanded={previewOpen}
 					aria-controls="preview-panel"
-					class="border-border bg-card hover:bg-accent/40 flex w-full items-center justify-between gap-3 rounded-lg border px-4 py-3 text-left transition-colors lg:hidden"
+					class="border-border bg-card pointer-fine:hover:bg-accent/40 flex w-full items-center justify-between gap-3 rounded-lg border px-4 py-3 text-left transition-colors lg:hidden"
 				>
 					<span class="flex items-center gap-2">
 						<ScanLine size={15} class="text-muted-foreground" aria-hidden="true" />
-						<span class="text-sm font-semibold">Preview</span>
-						<span class="text-muted-foreground text-xs">First scheduled invoice</span>
+						<span class="text-sm font-semibold whitespace-nowrap">Preview</span>
+						<span class="text-muted-foreground text-xs whitespace-nowrap">First scheduled invoice</span>
 					</span>
 					<ChevronDown
 						size={16}

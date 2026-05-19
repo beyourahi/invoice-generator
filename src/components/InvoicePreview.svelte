@@ -43,14 +43,20 @@
 	<CardHeader class="border-border border-b">
 		<div class="flex items-center justify-between gap-3">
 			<div>
-				<CardTitle class="flex items-center gap-2 text-base font-semibold">
+				<CardTitle class="flex items-center gap-2 text-base font-semibold text-balance">
 					<ScanLine size={15} aria-hidden="true" />
-					Preview
+					<span class="whitespace-nowrap">Preview</span>
 				</CardTitle>
-				<CardDescription class="text-xs">First scheduled invoice for the selected client.</CardDescription>
+				<CardDescription class="text-xs text-pretty">
+					First scheduled invoice for the selected client.
+				</CardDescription>
 			</div>
 			{#if html}
-				<span class="bg-muted text-muted-foreground rounded-md px-2 py-1 font-mono text-[11px]">A4</span>
+				<span
+					class="bg-muted text-muted-foreground rounded-md px-2 py-1 font-mono text-[11px] whitespace-nowrap"
+				>
+					A4
+				</span>
 			{/if}
 		</div>
 	</CardHeader>
@@ -73,16 +79,16 @@
 					</div>
 					{#if emptyReason === "no-active"}
 						<StatusBadge status="inactive" size="sm" />
-						<p class="text-sm font-medium">No active invoice to preview</p>
-						<p class="max-w-56 text-xs">
+						<p class="text-sm font-medium text-balance">No active invoice to preview</p>
+						<p class="max-w-56 text-xs text-pretty">
 							The selected client has no active invoices. Activate at least one entry.
 						</p>
 					{:else if emptyReason === "no-entries"}
-						<p class="text-sm font-medium">No preview available</p>
-						<p class="max-w-56 text-xs">Add at least one invoice entry to this client.</p>
+						<p class="text-sm font-medium text-balance">No preview available</p>
+						<p class="max-w-56 text-xs text-pretty">Add at least one invoice entry to this client.</p>
 					{:else}
-						<p class="text-sm font-medium">No preview available</p>
-						<p class="max-w-56 text-xs">Select a client with at least one invoice entry.</p>
+						<p class="text-sm font-medium text-balance">No preview available</p>
+						<p class="max-w-56 text-xs text-pretty">Select a client with at least one invoice entry.</p>
 					{/if}
 				</div>
 			</div>

@@ -96,11 +96,11 @@
 				session.toggleClientExpanded(client.id);
 			}}
 			onkeydown={selectCard}
-			class="hover:bg-accent/40 flex cursor-pointer items-center gap-3 px-4 py-3 transition-colors"
+			class="pointer-fine:hover:bg-accent/40 flex cursor-pointer items-center gap-3 px-4 py-3 transition-colors"
 		>
 			<span
 				class={cn(
-					"status-transition text-muted-foreground w-6 shrink-0 font-mono text-[11px] tabular-nums",
+					"status-transition text-muted-foreground w-6 shrink-0 font-mono text-[11px] whitespace-nowrap tabular-nums",
 					!client.isActive && "opacity-70"
 				)}
 			>
@@ -121,11 +121,13 @@
 					!client.isActive && "opacity-70"
 				)}
 			>
-				<span class="bg-muted text-muted-foreground rounded-md px-1.5 py-0.5 font-mono text-[11px]">
+				<span
+					class="bg-muted text-muted-foreground rounded-md px-1.5 py-0.5 font-mono text-[11px] whitespace-nowrap"
+				>
 					{client.service.currency}
 				</span>
 				<span
-					class="bg-muted text-muted-foreground max-w-[140px] truncate rounded-md px-1.5 py-0.5 text-[11px]"
+					class="bg-muted text-muted-foreground max-w-[140px] truncate rounded-md px-1.5 py-0.5 text-[11px] whitespace-nowrap"
 				>
 					{paymentSummary}
 				</span>
@@ -146,7 +148,7 @@
 			<Button
 				variant="ghost"
 				size="icon-sm"
-				class="text-muted-foreground hover:bg-destructive/10 hover:text-destructive hidden h-9 w-9 shrink-0 sm:flex sm:h-7 sm:w-7"
+				class="text-muted-foreground pointer-fine:hover:bg-destructive/10 pointer-fine:hover:text-destructive hidden h-9 w-9 shrink-0 sm:flex sm:h-7 sm:w-7"
 				onclick={e => {
 					e.stopPropagation();
 					session.removeClient(client.id);
@@ -171,7 +173,7 @@
 			<Button
 				variant="ghost"
 				size="icon-sm"
-				class="text-muted-foreground hover:text-foreground h-9 w-9 shrink-0 sm:h-7 sm:w-7"
+				class="text-muted-foreground pointer-fine:hover:text-foreground h-9 w-9 shrink-0 sm:h-7 sm:w-7"
 				onclick={e => {
 					e.stopPropagation();
 					session.toggleClientExpanded(client.id);
@@ -323,7 +325,7 @@
 				<div class="flex items-center justify-between gap-3">
 					<SectionEyebrow icon={Wallet} label="Payment methods" />
 					{#if savedMethods.length > 0}
-						<p class="text-muted-foreground text-xs tabular-nums">
+						<p class="text-muted-foreground text-xs whitespace-nowrap tabular-nums">
 							{client.payment.methodIds.length} of {savedMethods.length} selected
 						</p>
 					{/if}
@@ -334,8 +336,8 @@
 						class="border-border text-muted-foreground grid min-h-20 w-full place-items-center rounded-lg border border-dashed text-center text-xs"
 					>
 						<div class="space-y-1 px-3">
-							<p class="font-medium">No payment methods configured</p>
-							<p>Add one in the sender panel to attach it to invoices.</p>
+							<p class="font-medium text-balance">No payment methods configured</p>
+							<p class="text-pretty">Add one in the sender panel to attach it to invoices.</p>
 						</div>
 					</div>
 				{:else}
@@ -347,10 +349,10 @@
 								type="button"
 								onclick={() => session.togglePaymentMethod(client.id, method.id)}
 								class={cn(
-									"group inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-colors",
+									"group inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs whitespace-nowrap transition-colors",
 									active
 										? "border-brand bg-brand/10 text-brand"
-										: "border-border text-muted-foreground hover:border-foreground/40 hover:text-foreground"
+										: "border-border text-muted-foreground pointer-fine:hover:border-foreground/40 pointer-fine:hover:text-foreground"
 								)}
 								aria-pressed={active}
 							>
@@ -359,10 +361,10 @@
 								{:else}
 									<Plus size={12} aria-hidden="true" />
 								{/if}
-								<span class="font-medium">{method.label || def.name}</span>
+								<span class="font-medium whitespace-nowrap">{method.label || def.name}</span>
 								<span
 									class={cn(
-										"font-mono text-[11px] uppercase",
+										"font-mono text-[11px] whitespace-nowrap uppercase",
 										active ? "text-brand/70" : "text-muted-foreground/70"
 									)}
 								>
@@ -380,7 +382,7 @@
 				<div class="flex items-center justify-between gap-3">
 					<SectionEyebrow icon={ReceiptText} label="Invoice schedule" />
 					{#if client.invoices.length > 0}
-						<p class="text-muted-foreground text-xs">{client.invoices.length} rows</p>
+						<p class="text-muted-foreground text-xs whitespace-nowrap">{client.invoices.length} rows</p>
 					{/if}
 				</div>
 
@@ -394,7 +396,7 @@
 					<div class="hidden sm:block">
 						<Table.Root>
 							<Table.Header>
-								<Table.Row class="border-border hover:bg-transparent">
+								<Table.Row class="border-border pointer-fine:hover:bg-transparent">
 									<Table.Head class="h-8 pl-0 text-[11px] tracking-wider uppercase">Month</Table.Head>
 									<Table.Head class="h-8 w-[72px] text-center text-[11px] tracking-wider uppercase">
 										Issue
@@ -427,8 +429,12 @@
 					</div>
 
 					<div class="text-muted-foreground flex items-center justify-between gap-3 text-xs">
-						<span>{client.invoices.length} invoice{client.invoices.length !== 1 ? "s" : ""}</span>
-						<span class="font-mono tabular-nums">{totalAmount} × {client.invoices.length}</span>
+						<span class="whitespace-nowrap">
+							{client.invoices.length} invoice{client.invoices.length !== 1 ? "s" : ""}
+						</span>
+						<span class="font-mono whitespace-nowrap tabular-nums">
+							{totalAmount} × {client.invoices.length}
+						</span>
 					</div>
 
 					<MonthPickerDialog

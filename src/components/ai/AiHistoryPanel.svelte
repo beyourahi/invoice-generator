@@ -43,8 +43,8 @@
 	<CollapsibleTrigger class="text-foreground flex w-full items-center justify-between gap-2 px-3 py-2 text-xs">
 		<span class="flex items-center gap-1.5">
 			<History class="size-3.5" aria-hidden="true" />
-			<span class="font-semibold">AI History</span>
-			<span class="text-muted-foreground tabular-nums">({ai.historyActions.length})</span>
+			<span class="font-semibold whitespace-nowrap">AI History</span>
+			<span class="text-muted-foreground whitespace-nowrap tabular-nums">({ai.historyActions.length})</span>
 		</span>
 		<ChevronDown
 			class={cn("size-3.5 transition-transform duration-200", ai.historyOpen && "rotate-180")}
@@ -63,7 +63,7 @@
 			</label>
 
 			{#if ai.visibleHistoryActions.length === 0}
-				<p class="text-muted-foreground py-4 text-center text-xs">No actions yet</p>
+				<p class="text-muted-foreground py-4 text-center text-xs text-balance">No actions yet</p>
 			{:else}
 				<ul class="max-h-72 space-y-1.5 overflow-y-auto pr-1">
 					{#each ai.visibleHistoryActions as action (action.id)}
@@ -95,7 +95,7 @@
 									<button
 										type="button"
 										onclick={() => onUndo(action.id)}
-										class="text-foreground/80 hover:text-foreground rounded p-1 transition-colors"
+										class="text-foreground/80 pointer-fine:hover:text-foreground rounded p-1 transition-colors"
 										aria-label="Undo"
 										title="Undo"
 									>
@@ -105,7 +105,7 @@
 								<button
 									type="button"
 									onclick={() => onDelete(action.id)}
-									class="text-muted-foreground hover:text-destructive rounded p-1 transition-colors"
+									class="text-muted-foreground pointer-fine:hover:text-destructive rounded p-1 transition-colors"
 									aria-label="Delete record"
 									title="Delete record"
 								>

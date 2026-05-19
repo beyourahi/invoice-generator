@@ -38,8 +38,8 @@
 <Dialog {open} {onOpenChange}>
 	<DialogContent class="max-w-md">
 		<DialogHeader>
-			<DialogTitle>AI Safety</DialogTitle>
-			<DialogDescription>
+			<DialogTitle class="text-balance">AI Safety</DialogTitle>
+			<DialogDescription class="text-pretty">
 				Toggle which anomaly checks force a confirmation dialog before auto-applying.
 			</DialogDescription>
 		</DialogHeader>
@@ -47,10 +47,10 @@
 			{#each toggles as t (t.key)}
 				<div class="flex items-start justify-between gap-3">
 					<div class="flex-1">
-						<Label for="ai-safety-{t.key}" class="text-sm font-medium">
+						<Label for="ai-safety-{t.key}" class="text-sm font-medium text-balance">
 							{t.label}
 						</Label>
-						<p class="text-muted-foreground text-xs">{t.hint}</p>
+						<p class="text-muted-foreground text-xs text-pretty">{t.hint}</p>
 					</div>
 					<Switch
 						id="ai-safety-{t.key}"

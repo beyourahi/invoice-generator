@@ -65,7 +65,10 @@
 
 {#if as === "row"}
 	<Table.Row
-		class={cn("status-transition border-0 hover:bg-transparent", inactive && "bg-status-inactive-bg opacity-80")}
+		class={cn(
+			"status-transition border-0 pointer-fine:hover:bg-transparent",
+			inactive && "bg-status-inactive-bg opacity-80"
+		)}
 	>
 		<Table.Cell
 			class={cn(
@@ -116,7 +119,7 @@
 			<Button
 				variant="ghost"
 				size="icon"
-				class="text-muted-foreground hover:bg-destructive/10 hover:text-destructive h-11 w-11 sm:h-9 sm:w-9"
+				class="text-muted-foreground pointer-fine:hover:bg-destructive/10 pointer-fine:hover:text-destructive h-11 w-11 sm:h-9 sm:w-9"
 				onclick={() => session.removeInvoiceEntry(clientId, entry.id)}
 				aria-label="Remove entry"
 			>
@@ -146,7 +149,7 @@
 			<Button
 				variant="ghost"
 				size="icon"
-				class="text-muted-foreground hover:bg-destructive/10 hover:text-destructive h-10 w-10 shrink-0"
+				class="text-muted-foreground pointer-fine:hover:bg-destructive/10 pointer-fine:hover:text-destructive h-10 w-10 shrink-0"
 				onclick={() => session.removeInvoiceEntry(clientId, entry.id)}
 				aria-label="Remove entry"
 			>

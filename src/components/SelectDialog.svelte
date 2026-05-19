@@ -95,7 +95,7 @@
 
 	<Dialog.Content class={contentClass} showCloseButton={false}>
 		<Dialog.Header class="border-border border-b px-4 py-3.5">
-			<Dialog.Title class="text-left text-sm font-semibold">{title}</Dialog.Title>
+			<Dialog.Title class="text-left text-sm font-semibold text-balance">{title}</Dialog.Title>
 		</Dialog.Header>
 
 		<div
@@ -118,22 +118,24 @@
 					onclick={() => handleSelect(option.value)}
 					class={cn(
 						"flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors",
-						"hover:bg-accent hover:text-accent-foreground",
+						"pointer-fine:hover:bg-accent pointer-fine:hover:text-accent-foreground",
 						"focus:bg-accent focus:text-accent-foreground focus:outline-none",
 						isSelected && "bg-accent/40",
 						columns > 1 && "justify-between"
 					)}
 				>
 					<div class="min-w-0 flex-1">
-						<span class="block text-sm leading-snug font-medium">{option.label}</span>
+						<span class="block text-sm leading-snug font-medium text-balance">{option.label}</span>
 						{#if option.description}
-							<span class="text-muted-foreground mt-0.5 block text-xs leading-snug">
+							<span class="text-muted-foreground mt-0.5 block text-xs leading-snug text-pretty">
 								{option.description}
 							</span>
 						{/if}
 					</div>
 					{#if option.badge}
-						<span class="text-muted-foreground/80 shrink-0 text-[11px] tracking-wider uppercase">
+						<span
+							class="text-muted-foreground/80 shrink-0 text-[11px] tracking-wider whitespace-nowrap uppercase"
+						>
 							{option.badge}
 						</span>
 					{:else if isSelected}

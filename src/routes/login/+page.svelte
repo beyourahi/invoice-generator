@@ -44,7 +44,7 @@
 
 	{#if error}
 		<div
-			class="bg-destructive/10 text-destructive max-w-sm rounded-lg px-4 py-2.5 text-center text-sm"
+			class="bg-destructive/10 text-destructive max-w-sm rounded-lg px-4 py-2.5 text-center text-sm text-pretty"
 			role="alert"
 		>
 			{error}
@@ -54,7 +54,7 @@
 	<button
 		onclick={handleGoogleLogin}
 		disabled={isLoading}
-		class="border-border bg-card text-foreground hover:bg-accent hover:text-accent-foreground focus-visible:ring-ring sleek group focus-visible:ring-offset-background flex cursor-pointer items-center justify-center gap-2.5 rounded-full border px-6 py-3 text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 sm:gap-3 sm:px-8 sm:py-3.5"
+		class={`border-border bg-card text-foreground pointer-fine:hover:bg-accent pointer-fine:hover:text-accent-foreground focus-visible:ring-ring sleek group focus-visible:ring-offset-background flex cursor-pointer items-center justify-center gap-2.5 rounded-full border px-6 py-3 text-sm font-medium whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 sm:gap-3 sm:px-8 sm:py-3.5 ${isLoading ? "cursor-wait" : ""}`}
 	>
 		{#if isLoading}
 			<div
@@ -84,5 +84,7 @@
 		<span>Continue with Google</span>
 	</button>
 
-	<p class="text-muted-foreground max-w-sm text-center text-sm">Sign in with your Google account to get started</p>
+	<p class="text-muted-foreground max-w-sm text-center text-sm text-pretty">
+		Sign in with your Google account to get started
+	</p>
 </div>

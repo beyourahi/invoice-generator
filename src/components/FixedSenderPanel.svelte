@@ -59,11 +59,11 @@
 
 <Card size="sm">
 	<CardHeader>
-		<CardTitle class="flex items-center gap-2 text-base font-semibold">
+		<CardTitle class="flex items-center gap-2 text-base font-semibold text-balance">
 			<UserRound size={15} aria-hidden="true" />
-			Your details
+			<span class="whitespace-nowrap">Your details</span>
 		</CardTitle>
-		<CardDescription class="text-xs">Stays on this device — autofills every invoice.</CardDescription>
+		<CardDescription class="text-xs text-pretty">Stays on this device — autofills every invoice.</CardDescription>
 	</CardHeader>
 	<CardContent class="space-y-5">
 		<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -117,7 +117,7 @@
 			<div class="flex items-center justify-between gap-3">
 				<SectionEyebrow icon={Wallet} label="Payment methods" />
 				{#if methods.length > 0}
-					<p class="text-muted-foreground text-xs tabular-nums">{methods.length} saved</p>
+					<p class="text-muted-foreground text-xs whitespace-nowrap tabular-nums">{methods.length} saved</p>
 				{/if}
 			</div>
 
@@ -126,8 +126,8 @@
 					class="border-border text-muted-foreground grid min-h-28 w-full place-items-center rounded-lg border border-dashed text-center"
 				>
 					<div class="space-y-1">
-						<p class="text-sm font-medium">No payment methods yet</p>
-						<p class="text-xs">Pick one below to attach it to your invoices.</p>
+						<p class="text-sm font-medium text-balance">No payment methods yet</p>
+						<p class="text-xs text-pretty">Pick one below to attach it to your invoices.</p>
 					</div>
 				</div>
 			{:else}

@@ -77,7 +77,7 @@
 				showCloseButton={false}
 			>
 				<Dialog.Header class="border-border border-b px-4 py-3.5">
-					<Dialog.Title class="text-left text-sm font-semibold">Signed in</Dialog.Title>
+					<Dialog.Title class="text-left text-sm font-semibold text-balance">Signed in</Dialog.Title>
 				</Dialog.Header>
 				<div class="flex items-center gap-3 px-4 py-4">
 					{@render avatarVisual("h-12 w-12", "h-6 w-6")}
@@ -92,7 +92,8 @@
 						onclick={handleLogout}
 						disabled={isLoggingOut}
 						class={cn(
-							"text-destructive hover:bg-destructive/10 hover:text-destructive focus:bg-destructive/10 focus:text-destructive flex min-h-12 w-full items-center gap-3 rounded-lg px-3 text-left transition-colors focus:outline-none disabled:cursor-not-allowed disabled:opacity-60"
+							"text-destructive pointer-fine:hover:bg-destructive/10 pointer-fine:hover:text-destructive focus:bg-destructive/10 focus:text-destructive flex min-h-12 w-full items-center gap-3 rounded-lg px-3 text-left transition-colors focus:outline-none disabled:cursor-not-allowed disabled:opacity-60",
+							isLoggingOut && "cursor-wait"
 						)}
 					>
 						{#if isLoggingOut}
@@ -103,7 +104,7 @@
 						{:else}
 							<LogOut size={16} aria-hidden="true" />
 						{/if}
-						<span class="text-sm font-medium">Sign out</span>
+						<span class="text-sm font-medium whitespace-nowrap">Sign out</span>
 					</button>
 				</div>
 			</Dialog.Content>
@@ -129,8 +130,10 @@
 				)}
 			>
 				<div class="flex flex-col justify-center">
-					<span class="text-foreground text-sm leading-tight font-medium">{currentUser.name}</span>
-					<span class="text-muted-foreground text-xs leading-tight">{user.email}</span>
+					<span class="text-foreground text-sm leading-tight font-medium whitespace-nowrap">
+						{currentUser.name}
+					</span>
+					<span class="text-muted-foreground text-xs leading-tight whitespace-nowrap">{user.email}</span>
 				</div>
 			</div>
 		</div>
@@ -146,7 +149,7 @@
 						"focus-visible:ring-destructive/50 focus:outline-none focus-visible:ring-2",
 						isLoggingOut
 							? "border-border bg-card cursor-wait"
-							: "border-destructive/40 bg-destructive/10 hover:border-destructive hover:bg-destructive active:scale-95"
+							: "border-destructive/40 bg-destructive/10 pointer-fine:hover:border-destructive pointer-fine:hover:bg-destructive active:scale-95"
 					)}
 				>
 					{#if isLoggingOut}
@@ -156,7 +159,7 @@
 						></div>
 					{:else}
 						<svg
-							class="text-destructive group-hover:text-destructive-foreground h-[1.125rem] w-[1.125rem] transition-colors"
+							class="text-destructive pointer-fine:group-hover:text-destructive-foreground h-[1.125rem] w-[1.125rem] transition-colors"
 							viewBox="0 0 24 24"
 							fill="none"
 							stroke="currentColor"

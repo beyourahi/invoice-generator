@@ -9,11 +9,11 @@
 	<div class="rounded-md border border-yellow-500/30 bg-yellow-500/10 p-3 text-xs text-yellow-300">
 		<div class="mb-1 flex items-center gap-1.5 font-semibold">
 			<AlertTriangle class="size-3.5" aria-hidden="true" />
-			Safety check
+			<span class="whitespace-nowrap">Safety check</span>
 		</div>
 		<ul class="space-y-1 pl-5 [list-style:disc]">
 			{#each anomalies as anomaly, i (i)}
-				<li class="opacity-90">{anomaly.reason}</li>
+				<li class="text-pretty opacity-90">{anomaly.reason}</li>
 			{/each}
 		</ul>
 	</div>

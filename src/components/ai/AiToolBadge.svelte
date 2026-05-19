@@ -68,7 +68,10 @@
 			type="button"
 			onclick={onUndo}
 			disabled={undoing}
-			class="text-foreground/80 hover:text-foreground border-border/70 bg-background/60 ml-auto inline-flex items-center gap-1 rounded border px-2 py-0.5 transition-colors disabled:opacity-50"
+			class={cn(
+				"text-foreground/80 pointer-fine:hover:text-foreground border-border/70 bg-background/60 ml-auto inline-flex items-center gap-1 rounded border px-2 py-0.5 transition-colors disabled:cursor-not-allowed disabled:opacity-50",
+				undoing && "cursor-wait"
+			)}
 		>
 			<Undo2 class="size-3" aria-hidden="true" />
 			Undo

@@ -33,7 +33,7 @@
 
 <DropdownMenu>
 	<DropdownMenuTrigger
-		class="text-foreground hover:bg-accent/50 inline-flex max-w-[14rem] items-center gap-1.5 truncate rounded-md px-2 py-1 text-xs transition-colors"
+		class="text-foreground pointer-fine:hover:bg-accent/50 inline-flex max-w-[14rem] items-center gap-1.5 truncate rounded-md px-2 py-1 text-xs transition-colors"
 	>
 		<span class="truncate font-medium">{activeTitle}</span>
 		<ChevronDown class="size-3 shrink-0 opacity-70" aria-hidden="true" />
@@ -53,7 +53,7 @@
 					<span class="flex-1 truncate text-xs">{conv.title}</span>
 					<button
 						type="button"
-						class="text-muted-foreground hover:text-foreground rounded p-0.5"
+						class="text-muted-foreground pointer-fine:hover:text-foreground rounded p-0.5"
 						onclick={e => {
 							e.stopPropagation();
 							onRename(conv.id, conv.title);
@@ -64,7 +64,7 @@
 					</button>
 					<button
 						type="button"
-						class="text-muted-foreground hover:text-destructive rounded p-0.5"
+						class="text-muted-foreground pointer-fine:hover:text-destructive rounded p-0.5"
 						onclick={e => {
 							e.stopPropagation();
 							onDelete(conv.id);

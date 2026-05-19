@@ -60,12 +60,12 @@
 		class="max-w-md"
 	>
 		<AlertDialogHeader>
-			<AlertDialogTitle class="flex items-center gap-2">
+			<AlertDialogTitle class="flex items-center gap-2 text-balance">
 				<ShieldCheck class="size-4 text-yellow-300" aria-hidden="true" />
 				{isBatch ? `Confirm ${ai.pendingConfirmations.length} operations` : "Confirm operation"}
 			</AlertDialogTitle>
 			{#if first}
-				<AlertDialogDescription>
+				<AlertDialogDescription class="text-pretty">
 					{#if !isBatch}
 						{first.humanLabel}.
 					{:else}
@@ -107,13 +107,17 @@
 						</li>
 					{/each}
 				</ul>
-				<p class="text-muted-foreground text-xs">
+				<p class="text-muted-foreground text-xs text-pretty">
 					{ai.pendingConfirmations.length - rejected.size} will run; {rejected.size} will be rejected.
 				</p>
 			{:else if first}
 				<div class="bg-muted/30 border-border/50 rounded-md border p-3 text-xs">
-					<div class="text-muted-foreground mb-1 font-mono text-[10px] tracking-wide uppercase">Tool</div>
-					<div class="font-medium">{first.toolName}</div>
+					<div
+						class="text-muted-foreground mb-1 font-mono text-[10px] tracking-wide whitespace-nowrap uppercase"
+					>
+						Tool
+					</div>
+					<div class="font-medium text-balance">{first.toolName}</div>
 					<pre
 						class="text-muted-foreground mt-2 max-h-32 overflow-auto font-mono text-[10px] leading-relaxed break-all whitespace-pre-wrap">{JSON.stringify(
 							first.args,

@@ -7,8 +7,8 @@
 <Sheet open={ai.mobileOpen} onOpenChange={(v: boolean) => ai.setMobileOpen(v)}>
 	<SheetContent side="bottom" class="h-[92vh] w-full p-3 sm:max-w-none">
 		<SheetHeader class="px-1 pt-1">
-			<SheetTitle>AI Copilot</SheetTitle>
-			<SheetDescription class="text-muted-foreground text-xs">
+			<SheetTitle class="text-balance">AI Copilot</SheetTitle>
+			<SheetDescription class="text-muted-foreground text-xs text-pretty">
 				Type what you want. The invoices follow.
 			</SheetDescription>
 		</SheetHeader>
