@@ -155,11 +155,7 @@ export const markUndoFailed = async (
 		.run();
 };
 
-export const deleteAction = async (
-	db: Database,
-	userId: string,
-	id: string
-): Promise<void> => {
+export const deleteAction = async (db: Database, userId: string, id: string): Promise<void> => {
 	await db
 		.delete(aiActions)
 		.where(and(eq(aiActions.id, id), eq(aiActions.userId, userId)))

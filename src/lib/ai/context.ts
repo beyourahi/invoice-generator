@@ -105,11 +105,13 @@ const renderSummary = (payload: Omit<ContextPayload, "summaryText" | "tokenMap">
 	const fromBits = [payload.from.name, payload.from.email].filter(Boolean).join(" · ");
 	lines.push(`Sender: ${fromBits || "(unset)"}`);
 	lines.push(
-		`Payment methods: ${payload.paymentMethods.length === 0
-			? "none"
-			: payload.paymentMethods
-				.map((m) => `${m.token}=${m.label}${m.last4 ? ` (…${m.last4})` : ""}`)
-				.join(", ")}`
+		`Payment methods: ${
+			payload.paymentMethods.length === 0
+				? "none"
+				: payload.paymentMethods
+						.map((m) => `${m.token}=${m.label}${m.last4 ? ` (…${m.last4})` : ""}`)
+						.join(", ")
+		}`
 	);
 	if (payload.clients.length === 0) {
 		lines.push("Clients: none");
@@ -118,17 +120,16 @@ const renderSummary = (payload: Omit<ContextPayload, "summaryText" | "tokenMap">
 		for (const c of payload.clients) {
 			const total = c.invoices.length;
 			const active = c.invoices.filter((i) => i.isActive).length;
-			const monthList = c.invoices
-				.map((i) => `${i.month}${i.isActive ? "" : "·off"}`)
-				.join(", ");
+			const monthList = c.invoices.map((i) => `${i.month}${i.isActive ? "" : "·off"}`).join(", ");
 			const amountLabel = formatAmount(c.amount, c.currency as Currency);
 			lines.push(
 				`  ${c.token} "${c.name || "(unnamed)"}" prefix=${c.invoicePrefix || "(none)"} year=${c.year} active=${c.isActive} amount=${amountLabel}/mo entries=${active}/${total}${total > 0 ? ` [${monthList}]` : ""}`
 			);
 			if (c.serviceDescription) {
-				const trimmed = c.serviceDescription.length > 80
-					? `${c.serviceDescription.slice(0, 77)}...`
-					: c.serviceDescription;
+				const trimmed =
+					c.serviceDescription.length > 80
+						? `${c.serviceDescription.slice(0, 77)}...`
+						: c.serviceDescription;
 				lines.push(`    description: ${trimmed}`);
 			}
 			if (c.paymentMethods.length > 0) {

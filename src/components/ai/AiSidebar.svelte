@@ -91,12 +91,14 @@
 
 	<form
 		class="border-border/40 border-t p-2"
-		onsubmit={(e) => {
+		onsubmit={e => {
 			e.preventDefault();
 			void onSubmit();
 		}}
 	>
-		<div class="border-border/50 bg-background/40 focus-within:border-border flex items-end gap-1.5 rounded-md border p-1.5 transition-colors">
+		<div
+			class="border-border/50 bg-background/40 focus-within:border-border flex items-end gap-1.5 rounded-md border p-1.5 transition-colors"
+		>
 			<textarea
 				bind:this={textarea}
 				bind:value={input}
@@ -104,7 +106,7 @@
 				placeholder="Type a request…"
 				rows="1"
 				disabled={ai.inputBusy}
-				class="text-foreground placeholder:text-muted-foreground/70 min-h-6 max-h-32 flex-1 resize-none bg-transparent px-2 py-1 text-sm outline-none disabled:opacity-60"
+				class="text-foreground placeholder:text-muted-foreground/70 max-h-32 min-h-6 flex-1 resize-none bg-transparent px-2 py-1 text-sm outline-none disabled:opacity-60"
 				aria-label="Type a request"
 			></textarea>
 			<button

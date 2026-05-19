@@ -212,18 +212,12 @@ const createAiStore = () => {
 		);
 	};
 
-	const updateToolCall = (
-		messageId: string,
-		toolCallId: string,
-		patch: Partial<AiToolCall>
-	) => {
+	const updateToolCall = (messageId: string, toolCallId: string, patch: Partial<AiToolCall>) => {
 		messages = messages.map((m) =>
 			m.id === messageId
 				? {
 						...m,
-						toolCalls: m.toolCalls.map((tc) =>
-							tc.id === toolCallId ? { ...tc, ...patch } : tc
-						)
+						toolCalls: m.toolCalls.map((tc) => (tc.id === toolCallId ? { ...tc, ...patch } : tc))
 					}
 				: m
 		);
@@ -282,9 +276,7 @@ const createAiStore = () => {
 		);
 		messages = messages.map((m) => ({
 			...m,
-			toolCalls: m.toolCalls.map((tc) =>
-				tc.actionId === id ? { ...tc, undone: true } : tc
-			)
+			toolCalls: m.toolCalls.map((tc) => (tc.actionId === id ? { ...tc, undone: true } : tc))
 		}));
 	};
 

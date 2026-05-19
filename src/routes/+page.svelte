@@ -165,18 +165,10 @@
 								</RightRailTabs>
 							</div>
 							<div class="lg:hidden">
-								<InvoicePreview
-									html={previewHtml}
-									loading={false}
-									emptyReason={previewEmptyReason}
-								/>
+								<InvoicePreview html={previewHtml} loading={false} emptyReason={previewEmptyReason} />
 							</div>
 						{:else}
-							<InvoicePreview
-								html={previewHtml}
-								loading={false}
-								emptyReason={previewEmptyReason}
-							/>
+							<InvoicePreview html={previewHtml} loading={false} emptyReason={previewEmptyReason} />
 						{/if}
 					</div>
 				</div>

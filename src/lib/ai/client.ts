@@ -36,7 +36,11 @@ const buildToolsPayload = (tools: ToolCatalogEntry[]) =>
 		parameters: t.parameters
 	}));
 
-const normalizeToolCall = (raw: { name?: string; arguments?: unknown; args?: unknown }): ParsedToolCall | null => {
+const normalizeToolCall = (raw: {
+	name?: string;
+	arguments?: unknown;
+	args?: unknown;
+}): ParsedToolCall | null => {
 	const name = typeof raw.name === "string" ? raw.name : null;
 	if (!name) return null;
 	const argsField = raw.arguments ?? raw.args;
@@ -76,9 +80,7 @@ const inferRaw = async (env: RunChatEnv, params: RunChatParams): Promise<RawChat
 
 	const text = typeof raw.response === "string" ? raw.response : "";
 	const toolCalls = Array.isArray(raw.tool_calls)
-		? raw.tool_calls
-				.map((c) => normalizeToolCall(c))
-				.filter((c): c is ParsedToolCall => c !== null)
+		? raw.tool_calls.map((c) => normalizeToolCall(c)).filter((c): c is ParsedToolCall => c !== null)
 		: [];
 
 	return {

@@ -60,25 +60,16 @@ export const FEW_SHOTS_V1: Array<{ role: "user" | "assistant"; content: string }
 	}
 ];
 
-export const buildSystemContext = (
-	context: ContextPayload,
-	tools: ToolCatalogEntry[]
-): string => {
+export const buildSystemContext = (context: ContextPayload, tools: ToolCatalogEntry[]): string => {
 	const toolList = tools
 		.map((t) => {
 			const params = JSON.stringify(t.parameters);
 			return `- ${t.name} [tier ${t.safetyTier}]: ${t.description}\n  args schema: ${params}`;
 		})
 		.join("\n");
-	return [
-		SYSTEM_PROMPT_V1,
-		"",
-		"CURRENT STATE:",
-		context.summaryText,
-		"",
-		"TOOLS:",
-		toolList
-	].join("\n");
+	return [SYSTEM_PROMPT_V1, "", "CURRENT STATE:", context.summaryText, "", "TOOLS:", toolList].join(
+		"\n"
+	);
 };
 
 export const titleFromMessage = (message: string, maxWords = 6): string => {

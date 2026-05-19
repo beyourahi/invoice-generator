@@ -1,11 +1,7 @@
 import { error } from "@sveltejs/kit";
 import type { RequestHandler } from "./$types";
 import { requireApiContext, ok } from "$lib/server/api";
-import {
-	getActionById,
-	markUndone,
-	markUndoFailed
-} from "$lib/server/repositories/ai-actions";
+import { getActionById, markUndone, markUndoFailed } from "$lib/server/repositories/ai-actions";
 import { applyInverse, UndoInvalidatedError } from "$lib/server/ai-undo";
 
 export const POST: RequestHandler = async (event) => {

@@ -189,9 +189,7 @@ export const inverseForMovePaymentMethod = (
 	args: { paymentMethodId, direction: (direction === 1 ? -1 : 1) as -1 | 1 }
 });
 
-export const inverseForSetSelectedClientId = (
-	previousId: string | null
-): InverseRecord => ({
+export const inverseForSetSelectedClientId = (previousId: string | null): InverseRecord => ({
 	tool: "setSelectedClientId",
 	args: { clientId: previousId }
 });

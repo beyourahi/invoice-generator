@@ -119,8 +119,14 @@ export const argSchemas = {
 		patch: z
 			.object({
 				month: monthEnum.optional(),
-				issueDay: z.string().regex(/^\d{0,2}$/).optional(),
-				dueDay: z.string().regex(/^\d{0,2}$/).optional(),
+				issueDay: z
+					.string()
+					.regex(/^\d{0,2}$/)
+					.optional(),
+				dueDay: z
+					.string()
+					.regex(/^\d{0,2}$/)
+					.optional(),
 				isActive: z.boolean().optional()
 			})
 			.refine((v) => Object.keys(v).length > 0, { message: "Empty patch" })
@@ -238,15 +244,12 @@ export const executors: {
 
 	async addInvoiceEntries(args) {
 		ensureClient(args.clientId);
-		const sorted = [...args.months].sort(
-			(a, b) => MONTHS.indexOf(a) - MONTHS.indexOf(b)
-		);
+		const sorted = [...args.months].sort((a, b) => MONTHS.indexOf(a) - MONTHS.indexOf(b));
 		const createdIds: string[] = [];
 		for (const month of sorted) {
-			const created = await api.post<InvoiceEntry>(
-				`/api/clients/${args.clientId}/entries`,
-				{ month }
-			);
+			const created = await api.post<InvoiceEntry>(`/api/clients/${args.clientId}/entries`, {
+				month
+			});
 			session.aiAppendEntry(args.clientId, created);
 			createdIds.push(created.id);
 		}
@@ -290,11 +293,7 @@ export const executors: {
 		const before = ensureClient(args.clientId);
 		await session.setClientActive(args.clientId, args.isActive);
 		return {
-			inverse: inverseForSetActive(
-				"setClientActive",
-				{ clientId: args.clientId },
-				before.isActive
-			),
+			inverse: inverseForSetActive("setClientActive", { clientId: args.clientId }, before.isActive),
 			summary: `Marked client ${before.name || args.clientId} ${args.isActive ? "active" : "inactive"}.`
 		};
 	},
@@ -355,11 +354,7 @@ export const executors: {
 		const previous = method.values[args.field] ?? "";
 		fixed.updatePaymentMethodValue(args.paymentMethodId, args.field, args.value);
 		return {
-			inverse: inverseForUpdatePaymentMethodValue(
-				args.paymentMethodId,
-				args.field,
-				previous
-			),
+			inverse: inverseForUpdatePaymentMethodValue(args.paymentMethodId, args.field, previous),
 			summary: `Updated payment method value (${args.field}).`
 		};
 	},
@@ -442,4 +437,3 @@ export const executors: {
 		};
 	}
 };
-

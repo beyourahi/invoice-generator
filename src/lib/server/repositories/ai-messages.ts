@@ -99,10 +99,7 @@ export const listMessages = async (
 	return rows.map(toRow);
 };
 
-export const getMessage = async (
-	db: Database,
-	id: string
-): Promise<AiMessageRow | null> => {
+export const getMessage = async (db: Database, id: string): Promise<AiMessageRow | null> => {
 	const row = await db.select().from(aiMessages).where(eq(aiMessages.id, id)).get();
 	return row ? toRow(row) : null;
 };

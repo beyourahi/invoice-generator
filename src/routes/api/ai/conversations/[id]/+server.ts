@@ -2,10 +2,7 @@ import { error } from "@sveltejs/kit";
 import { z } from "zod";
 import type { RequestHandler } from "./$types";
 import { requireApiContext, parseJson, ok } from "$lib/server/api";
-import {
-	deleteConversation,
-	renameConversation
-} from "$lib/server/repositories/ai-conversations";
+import { deleteConversation, renameConversation } from "$lib/server/repositories/ai-conversations";
 
 const renameSchema = z.object({
 	title: z.string().min(1).max(120)

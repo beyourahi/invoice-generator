@@ -34,7 +34,8 @@ interface InverseShape {
 
 const asString = (v: unknown): string | undefined => (typeof v === "string" ? v : undefined);
 
-const asStringArray = (v: unknown): string[] => (Array.isArray(v) ? v.filter((x) => typeof x === "string") : []);
+const asStringArray = (v: unknown): string[] =>
+	Array.isArray(v) ? v.filter((x) => typeof x === "string") : [];
 
 const ensureClientExists = async (db: Database, userId: string, clientId: string) => {
 	const row = await db
@@ -76,10 +77,8 @@ const insertClientFromSnapshot = async (
 			email: asString(snapshot.email) ?? "",
 			address: Array.isArray(snapshot.address) ? (snapshot.address as string[]) : [""],
 			serviceDescription: asString(snapshot.serviceDescription) ?? "",
-			serviceAmount:
-				typeof snapshot.serviceAmount === "number" ? snapshot.serviceAmount : 0,
-			serviceCurrency:
-				(asString(snapshot.serviceCurrency) as Currency) ?? ("BDT" as Currency),
+			serviceAmount: typeof snapshot.serviceAmount === "number" ? snapshot.serviceAmount : 0,
+			serviceCurrency: (asString(snapshot.serviceCurrency) as Currency) ?? ("BDT" as Currency),
 			year: typeof snapshot.year === "number" ? snapshot.year : new Date().getFullYear(),
 			expanded: true,
 			isActive: typeof snapshot.isActive === "boolean" ? snapshot.isActive : true,
@@ -94,7 +93,9 @@ const insertClientFromSnapshot = async (
 		await setClientPaymentMethods(db, userId, id, paymentMethodIds);
 	}
 
-	const invoices = Array.isArray(snapshot.invoices) ? (snapshot.invoices as Array<Record<string, unknown>>) : [];
+	const invoices = Array.isArray(snapshot.invoices)
+		? (snapshot.invoices as Array<Record<string, unknown>>)
+		: [];
 	for (const e of invoices) {
 		const eid = crypto.randomUUID();
 		await db
@@ -191,7 +192,11 @@ const movePaymentMethodByDelta = async (
 	if (target < 0 || target >= all.length) return;
 	const swapped = [...all];
 	[swapped[idx], swapped[target]] = [swapped[target], swapped[idx]];
-	await reorderPaymentMethods(db, userId, swapped.map((m) => m.id));
+	await reorderPaymentMethods(
+		db,
+		userId,
+		swapped.map((m) => m.id)
+	);
 };
 
 export const applyInverse = async (

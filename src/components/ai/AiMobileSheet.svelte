@@ -1,11 +1,5 @@
 <script lang="ts">
-	import {
-		Sheet,
-		SheetContent,
-		SheetDescription,
-		SheetHeader,
-		SheetTitle
-	} from "$lib/components/ui/sheet";
+	import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "$lib/components/ui/sheet";
 	import AiSidebar from "./AiSidebar.svelte";
 	import { ai } from "$lib/stores/ai.svelte";
 </script>

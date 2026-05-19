@@ -6,7 +6,7 @@
 </script>
 
 {#if anomalies.length > 0}
-	<div class="border-yellow-500/30 bg-yellow-500/10 text-yellow-300 rounded-md border p-3 text-xs">
+	<div class="rounded-md border border-yellow-500/30 bg-yellow-500/10 p-3 text-xs text-yellow-300">
 		<div class="mb-1 flex items-center gap-1.5 font-semibold">
 			<AlertTriangle class="size-3.5" aria-hidden="true" />
 			Safety check

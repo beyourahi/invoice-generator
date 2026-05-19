@@ -53,10 +53,10 @@
 	};
 </script>
 
-<AlertDialog open={open}>
+<AlertDialog {open}>
 	<AlertDialogContent
-		onEscapeKeydown={(e) => e.preventDefault()}
-		onInteractOutside={(e) => e.preventDefault()}
+		onEscapeKeydown={e => e.preventDefault()}
+		onInteractOutside={e => e.preventDefault()}
 		class="max-w-md"
 	>
 		<AlertDialogHeader>
@@ -79,7 +79,7 @@
 			{#if isBatch}
 				<ul class="border-border/60 max-h-72 space-y-2 overflow-y-auto rounded-md border p-2">
 					{#each ai.pendingConfirmations as req (req.toolCallId)}
-						<li class="border-border/40 rounded-md border bg-card/40 p-2 text-xs">
+						<li class="border-border/40 bg-card/40 rounded-md border p-2 text-xs">
 							<div class="flex items-start gap-2">
 								<input
 									type="checkbox"
@@ -89,7 +89,11 @@
 									aria-label="Reject {req.humanLabel}"
 								/>
 								<div class="flex flex-1 flex-col gap-1">
-									<span class={rejected.has(req.toolCallId) ? "text-muted-foreground line-through" : "text-foreground"}>
+									<span
+										class={rejected.has(req.toolCallId)
+											? "text-muted-foreground line-through"
+											: "text-foreground"}
+									>
 										{req.humanLabel}
 									</span>
 									<span class="text-muted-foreground font-mono text-[10px]">
@@ -107,12 +111,15 @@
 					{ai.pendingConfirmations.length - rejected.size} will run; {rejected.size} will be rejected.
 				</p>
 			{:else if first}
-				<div class="bg-muted/30 rounded-md border border-border/50 p-3 text-xs">
-					<div class="text-muted-foreground mb-1 font-mono text-[10px] uppercase tracking-wide">
-						Tool
-					</div>
+				<div class="bg-muted/30 border-border/50 rounded-md border p-3 text-xs">
+					<div class="text-muted-foreground mb-1 font-mono text-[10px] tracking-wide uppercase">Tool</div>
 					<div class="font-medium">{first.toolName}</div>
-					<pre class="mt-2 max-h-32 overflow-auto whitespace-pre-wrap break-all font-mono text-[10px] leading-relaxed text-muted-foreground">{JSON.stringify(first.args, null, 2)}</pre>
+					<pre
+						class="text-muted-foreground mt-2 max-h-32 overflow-auto font-mono text-[10px] leading-relaxed break-all whitespace-pre-wrap">{JSON.stringify(
+							first.args,
+							null,
+							2
+						)}</pre>
 				</div>
 				{#if first.anomalies.length > 0}
 					<AiAnomalyWarning anomalies={first.anomalies} />

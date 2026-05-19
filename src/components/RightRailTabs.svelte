@@ -7,12 +7,8 @@
 	let { preview, sidebar }: { preview: Snippet; sidebar: Snippet } = $props();
 </script>
 
-<Tabs
-	value={ai.activeTab}
-	onValueChange={(v) => ai.setActiveTab(v as "preview" | "ai")}
-	class="w-full"
->
-	<TabsList class="bg-card/40 mb-3 grid w-full grid-cols-2 border-border/60">
+<Tabs value={ai.activeTab} onValueChange={v => ai.setActiveTab(v as "preview" | "ai")} class="w-full">
+	<TabsList class="bg-card/40 border-border/60 mb-3 grid w-full grid-cols-2">
 		<TabsTrigger value="preview" class="gap-1.5">
 			<ScanLine class="size-3.5" aria-hidden="true" />
 			Preview

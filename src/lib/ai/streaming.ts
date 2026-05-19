@@ -41,9 +41,7 @@ export const streamFrames = async function* (
 	}
 };
 
-export const sseStream = (
-	produce: (push: (frame: Frame) => void) => Promise<void>
-): Response => {
+export const sseStream = (produce: (push: (frame: Frame) => void) => Promise<void>): Response => {
 	const encoder = new TextEncoder();
 	const stream = new ReadableStream<Uint8Array>({
 		async start(controller) {

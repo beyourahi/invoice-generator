@@ -1,9 +1,5 @@
 <script lang="ts">
-	import {
-		Collapsible,
-		CollapsibleContent,
-		CollapsibleTrigger
-	} from "$lib/components/ui/collapsible";
+	import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "$lib/components/ui/collapsible";
 	import { ai } from "$lib/stores/ai.svelte";
 	import { triggerUndo, deleteAction } from "$lib/ai/chat-client";
 	import { ChevronDown, History, Trash2, Undo2 } from "@lucide/svelte";
@@ -44,9 +40,7 @@
 	onOpenChange={(open: boolean) => ai.setHistoryOpen(open)}
 	class="border-border/50 bg-card/30 rounded-md border"
 >
-	<CollapsibleTrigger
-		class="text-foreground flex w-full items-center justify-between gap-2 px-3 py-2 text-xs"
-	>
+	<CollapsibleTrigger class="text-foreground flex w-full items-center justify-between gap-2 px-3 py-2 text-xs">
 		<span class="flex items-center gap-1.5">
 			<History class="size-3.5" aria-hidden="true" />
 			<span class="font-semibold">AI History</span>
@@ -63,7 +57,7 @@
 				<input
 					type="checkbox"
 					checked={ai.showUndone}
-					onchange={(e) => ai.setShowUndone((e.currentTarget as HTMLInputElement).checked)}
+					onchange={e => ai.setShowUndone((e.currentTarget as HTMLInputElement).checked)}
 				/>
 				Show undone
 			</label>
@@ -75,25 +69,25 @@
 					{#each ai.visibleHistoryActions as action (action.id)}
 						<li
 							class={cn(
-								"border-border/40 flex items-start gap-2 rounded-md border bg-background/30 px-2 py-1.5 text-xs",
+								"border-border/40 bg-background/30 flex items-start gap-2 rounded-md border px-2 py-1.5 text-xs",
 								statusColor(action.status, action.applied)
 							)}
 						>
 							<div class="flex-1 space-y-0.5">
 								<div class="flex items-center gap-1.5">
 									<span class="font-mono text-[10px]">{action.toolName}</span>
-									<span class="text-muted-foreground text-[10px] uppercase tracking-wide">
+									<span class="text-muted-foreground text-[10px] tracking-wide uppercase">
 										{action.status}
 									</span>
 									{#if action.anomalyTriggered}
-										<span class="text-yellow-300 text-[10px]">⚠</span>
+										<span class="text-[10px] text-yellow-300">⚠</span>
 									{/if}
 								</div>
 								<div class="text-muted-foreground text-[10px] tabular-nums">
 									{formatTime(action.createdAt)}
 								</div>
 								{#if action.error}
-									<div class="text-destructive break-all text-[10px]">{action.error}</div>
+									<div class="text-destructive text-[10px] break-all">{action.error}</div>
 								{/if}
 							</div>
 							<div class="flex shrink-0 items-center gap-1">

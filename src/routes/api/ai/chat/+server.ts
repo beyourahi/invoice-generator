@@ -17,7 +17,12 @@ import {
 import { checkAndIncrementQuota } from "$lib/server/ai-quota";
 import { logChatTurn } from "$lib/server/log";
 import { projectAppState } from "$lib/ai/context";
-import { buildSystemContext, titleFromMessage, PROMPT_VERSION, FEW_SHOTS_V1 } from "$lib/ai/prompts";
+import {
+	buildSystemContext,
+	titleFromMessage,
+	PROMPT_VERSION,
+	FEW_SHOTS_V1
+} from "$lib/ai/prompts";
 import { runChatFrames } from "$lib/ai/client";
 import { sseStream } from "$lib/ai/streaming";
 import { TOOLS_CATALOG } from "$lib/ai/tools-catalog";
@@ -27,7 +32,9 @@ const bodySchema = z.object({
 	message: z.string().min(1).max(8000)
 });
 
-const toHistory = (rows: AiMessageRow[]): Array<{ role: "user" | "assistant" | "system"; content: string }> =>
+const toHistory = (
+	rows: AiMessageRow[]
+): Array<{ role: "user" | "assistant" | "system"; content: string }> =>
 	rows
 		.filter((m) => m.role === "user" || m.role === "assistant")
 		.map((m) => ({ role: m.role as "user" | "assistant", content: m.content }));

@@ -1,10 +1,7 @@
 import { z } from "zod";
 import type { RequestHandler } from "./$types";
 import { requireApiContext, parseJson, ok } from "$lib/server/api";
-import {
-	createConversation,
-	listConversations
-} from "$lib/server/repositories/ai-conversations";
+import { createConversation, listConversations } from "$lib/server/repositories/ai-conversations";
 import { titleFromMessage } from "$lib/ai/prompts";
 
 export const GET: RequestHandler = async (event) => {
@@ -22,7 +19,10 @@ export const GET: RequestHandler = async (event) => {
 
 export const POST: RequestHandler = async (event) => {
 	const { db, userId } = requireApiContext(event);
-	const body = await parseJson(event, z.object({ title: z.string().min(1).max(120).optional() }).default({}));
+	const body = await parseJson(
+		event,
+		z.object({ title: z.string().min(1).max(120).optional() }).default({})
+	);
 	const title = body.title ?? titleFromMessage("New conversation");
 	const row = await createConversation(db, userId, title);
 	return ok({

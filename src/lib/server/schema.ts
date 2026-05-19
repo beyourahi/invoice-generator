@@ -234,7 +234,9 @@ export const aiMessages = sqliteTable(
 			.notNull()
 			.$defaultFn(() => new Date())
 	},
-	(table) => [index("ai_messages_conversation_created_idx").on(table.conversationId, table.createdAt)]
+	(table) => [
+		index("ai_messages_conversation_created_idx").on(table.conversationId, table.createdAt)
+	]
 );
 
 export const aiActions = sqliteTable(

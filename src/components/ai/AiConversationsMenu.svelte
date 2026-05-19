@@ -15,9 +15,7 @@
 	} from "$lib/ai/chat-client";
 	import { ChevronDown, MessageSquarePlus, Pencil, Trash2 } from "@lucide/svelte";
 
-	const activeTitle = $derived(
-		ai.conversations.find((c) => c.id === ai.activeConversationId)?.title ?? "New chat"
-	);
+	const activeTitle = $derived(ai.conversations.find(c => c.id === ai.activeConversationId)?.title ?? "New chat");
 
 	const onRename = async (id: string, currentTitle: string) => {
 		const next = prompt("Rename conversation", currentTitle);
@@ -56,7 +54,7 @@
 					<button
 						type="button"
 						class="text-muted-foreground hover:text-foreground rounded p-0.5"
-						onclick={(e) => {
+						onclick={e => {
 							e.stopPropagation();
 							onRename(conv.id, conv.title);
 						}}
@@ -67,7 +65,7 @@
 					<button
 						type="button"
 						class="text-muted-foreground hover:text-destructive rounded p-0.5"
-						onclick={(e) => {
+						onclick={e => {
 							e.stopPropagation();
 							onDelete(conv.id);
 						}}

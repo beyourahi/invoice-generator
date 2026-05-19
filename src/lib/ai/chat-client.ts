@@ -78,8 +78,7 @@ export const sendMessage = async (message: string, options: SendOptions = {}): P
 				/* ignore */
 			}
 			const msg =
-				(payload as { message?: string } | null)?.message ??
-				`Request failed (${response.status})`;
+				(payload as { message?: string } | null)?.message ?? `Request failed (${response.status})`;
 			ai.appendAssistantDelta(assistantId, msg);
 			ai.finalizeAssistantMessage(assistantId);
 			ai.setError(msg);

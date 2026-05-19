@@ -96,22 +96,24 @@ const detectVolumeSurge = (toolName: string, args: ToolArgs): AnomalyResult | nu
 	return null;
 };
 
-const detectMissingPaymentMethods = (
-	toolName: string,
-	args: ToolArgs
-): AnomalyResult | null => {
+const detectMissingPaymentMethods = (toolName: string, args: ToolArgs): AnomalyResult | null => {
 	if (toolName !== "createClient") return null;
 	const ids = args.data?.paymentMethodIds ?? args.data?.methodIds ?? [];
 	if (ids.length === 0) {
 		return {
 			key: "MissingPaymentMethods",
-			reason: "New client has no payment methods selected — invoices will render without payment instructions."
+			reason:
+				"New client has no payment methods selected — invoices will render without payment instructions."
 		};
 	}
 	return null;
 };
 
-const detectStalePeriod = (toolName: string, args: ToolArgs, appState: AppState): AnomalyResult | null => {
+const detectStalePeriod = (
+	toolName: string,
+	args: ToolArgs,
+	appState: AppState
+): AnomalyResult | null => {
 	if (toolName !== "addInvoiceEntries") return null;
 	const months = args.months ?? [];
 	if (months.length === 0) return null;

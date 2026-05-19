@@ -1,9 +1,7 @@
 import { error } from "@sveltejs/kit";
 import type { RequestHandler } from "./$types";
 import { requireApiContext, ok } from "$lib/server/api";
-import {
-	getConversation
-} from "$lib/server/repositories/ai-conversations";
+import { getConversation } from "$lib/server/repositories/ai-conversations";
 import { listMessages } from "$lib/server/repositories/ai-messages";
 
 export const GET: RequestHandler = async (event) => {
