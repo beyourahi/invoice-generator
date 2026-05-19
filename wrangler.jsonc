@@ -17,8 +17,20 @@
 			"migrations_dir": "migrations"
 		}
 	],
+	"ai": {
+		"binding": "AI"
+	},
+	"kv_namespaces": [
+		{
+			"binding": "AI_QUOTA_KV",
+			"id": "REPLACE_WITH_KV_ID_FROM_WRANGLER_CREATE",
+			"preview_id": "REPLACE_WITH_PREVIEW_ID_FROM_WRANGLER_CREATE"
+		}
+	],
 	"vars": {
-		"BETTER_AUTH_URL": "https://invoice-generator.beyourahi.workers.dev"
+		"BETTER_AUTH_URL": "https://invoice-generator.beyourahi.workers.dev",
+		"AI_GATEWAY_SLUG": "invoice-generator-ai",
+		"AI_COPILOT_ENABLED": "true"
 	},
 	"observability": {
 		"enabled": true

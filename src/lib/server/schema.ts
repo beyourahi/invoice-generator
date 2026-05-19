@@ -195,13 +195,92 @@ export const invoiceEntries = sqliteTable(
 	]
 );
 
+export const aiConversations = sqliteTable(
+	"ai_conversations",
+	{
+		id: text("id").primaryKey(),
+		userId: text("user_id")
+			.notNull()
+			.references(() => users.id, { onDelete: "cascade" }),
+		title: text("title").notNull(),
+		createdAt: integer("created_at", { mode: "timestamp" })
+			.notNull()
+			.$defaultFn(() => new Date()),
+		updatedAt: integer("updated_at", { mode: "timestamp" })
+			.notNull()
+			.$defaultFn(() => new Date())
+	},
+	(table) => [index("ai_conversations_user_updated_idx").on(table.userId, table.updatedAt)]
+);
+
+export const aiMessages = sqliteTable(
+	"ai_messages",
+	{
+		id: text("id").primaryKey(),
+		conversationId: text("conversation_id")
+			.notNull()
+			.references(() => aiConversations.id, { onDelete: "cascade" }),
+		role: text("role").$type<"user" | "assistant" | "tool" | "system">().notNull(),
+		content: text("content").notNull(),
+		toolCalls: text("tool_calls", { mode: "json" }).$type<
+			Array<{ id: string; name: string; args: unknown }>
+		>(),
+		toolResults: text("tool_results", { mode: "json" }).$type<
+			Array<{ id: string; status: string; error?: string }>
+		>(),
+		inputTokens: integer("input_tokens"),
+		outputTokens: integer("output_tokens"),
+		createdAt: integer("created_at", { mode: "timestamp" })
+			.notNull()
+			.$defaultFn(() => new Date())
+	},
+	(table) => [index("ai_messages_conversation_created_idx").on(table.conversationId, table.createdAt)]
+);
+
+export const aiActions = sqliteTable(
+	"ai_actions",
+	{
+		id: text("id").primaryKey(),
+		userId: text("user_id")
+			.notNull()
+			.references(() => users.id, { onDelete: "cascade" }),
+		conversationId: text("conversation_id").references(() => aiConversations.id, {
+			onDelete: "set null"
+		}),
+		messageId: text("message_id").references(() => aiMessages.id, { onDelete: "set null" }),
+		toolName: text("tool_name").notNull(),
+		inputs: text("inputs", { mode: "json" }).$type<unknown>().notNull(),
+		inverse: text("inverse", { mode: "json" })
+			.$type<{ tool: string; args: unknown; snapshot?: unknown }>()
+			.notNull(),
+		safetyTier: text("safety_tier").$type<"A" | "B">().notNull(),
+		requiredConfirmation: integer("required_confirmation", { mode: "boolean" }).notNull(),
+		anomalyTriggered: text("anomaly_triggered"),
+		applied: integer("applied", { mode: "boolean" }).notNull(),
+		status: text("status")
+			.$type<"applied" | "rejected" | "failed" | "undone" | "undo_failed">()
+			.notNull(),
+		error: text("error"),
+		createdAt: integer("created_at", { mode: "timestamp" })
+			.notNull()
+			.$defaultFn(() => new Date()),
+		undoneAt: integer("undone_at", { mode: "timestamp" })
+	},
+	(table) => [
+		index("ai_actions_user_created_idx").on(table.userId, table.createdAt),
+		index("ai_actions_user_status_idx").on(table.userId, table.status)
+	]
+);
+
 export const usersRelations = relations(users, ({ one, many }) => ({
 	fixedSettings: one(fixedSettings, {
 		fields: [users.id],
 		references: [fixedSettings.userId]
 	}),
 	paymentMethods: many(paymentMethods),
-	clients: many(clients)
+	clients: many(clients),
+	aiConversations: many(aiConversations),
+	aiActions: many(aiActions)
 }));
 
 export const fixedSettingsRelations = relations(fixedSettings, ({ one }) => ({
@@ -232,4 +311,26 @@ export const clientPaymentMethodsRelations = relations(clientPaymentMethods, ({ 
 
 export const invoiceEntriesRelations = relations(invoiceEntries, ({ one }) => ({
 	client: one(clients, { fields: [invoiceEntries.clientId], references: [clients.id] })
+}));
+
+export const aiConversationsRelations = relations(aiConversations, ({ one, many }) => ({
+	user: one(users, { fields: [aiConversations.userId], references: [users.id] }),
+	messages: many(aiMessages),
+	actions: many(aiActions)
+}));
+
+export const aiMessagesRelations = relations(aiMessages, ({ one }) => ({
+	conversation: one(aiConversations, {
+		fields: [aiMessages.conversationId],
+		references: [aiConversations.id]
+	})
+}));
+
+export const aiActionsRelations = relations(aiActions, ({ one }) => ({
+	user: one(users, { fields: [aiActions.userId], references: [users.id] }),
+	conversation: one(aiConversations, {
+		fields: [aiActions.conversationId],
+		references: [aiConversations.id]
+	}),
+	message: one(aiMessages, { fields: [aiActions.messageId], references: [aiMessages.id] })
 }));

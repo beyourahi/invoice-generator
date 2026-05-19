@@ -19,6 +19,10 @@ declare global {
 				BETTER_AUTH_URL: string;
 				GOOGLE_CLIENT_ID: string;
 				GOOGLE_CLIENT_SECRET: string;
+				AI: Ai;
+				AI_QUOTA_KV?: KVNamespace;
+				AI_GATEWAY_SLUG?: string;
+				AI_COPILOT_ENABLED?: string;
 			};
 			cf: CfProperties;
 			ctx: ExecutionContext;
