@@ -17,19 +17,17 @@
 				{APP_CONFIG.author.name}
 			</span>
 		</a>
-		{#each APP_CONFIG.siblings as sibling (sibling.url)}
-			<span class="mx-2 opacity-50">·</span>
-			<a
-				href={sibling.url}
-				target="_blank"
-				rel="noopener noreferrer"
-				class="group hover:text-foreground transition-colors duration-200"
-			>
-				Also check out
-				<span class="underline-offset-4 group-hover:underline">
-					{sibling.name.toLowerCase()}
-				</span>
-			</a>
-		{/each}
+		<span class="mx-2 opacity-50">·</span>
+		<a
+			href="https://dropoutstudio.co/tools"
+			target="_blank"
+			rel="noopener noreferrer"
+			class="group hover:text-foreground transition-colors duration-200"
+		>
+			Check out
+			<span class="underline-offset-4 group-hover:underline">
+				other tools
+			</span>
+		</a>
 	</p>
 </footer>
