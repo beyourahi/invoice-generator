@@ -269,6 +269,29 @@ const createSessionStore = () => {
 		generationError = null;
 	};
 
+	const aiInjectClient = (client: Client) => {
+		const exists = clients.some((c) => c.id === client.id);
+		clients = exists ? clients.map((c) => (c.id === client.id ? client : c)) : [...clients, client];
+		expandedClients = { ...expandedClients, [client.id]: true };
+	};
+
+	const aiAppendEntry = (clientId: string, entry: InvoiceEntry) => {
+		clients = clients.map((c) =>
+			c.id === clientId ? { ...c, invoices: [...c.invoices, entry] } : c
+		);
+	};
+
+	const aiApplyPaymentOrder = (clientId: string, methodIds: string[]) => {
+		clients = clients.map((c) =>
+			c.id === clientId ? { ...c, payment: { methodIds: [...methodIds] } } : c
+		);
+	};
+
+	const aiRestoreClient = (snapshot: Client) => {
+		clients = [...clients, snapshot];
+		expandedClients = { ...expandedClients, [snapshot.id]: true };
+	};
+
 	const totalInvoiceCount = $derived(clients.reduce((sum, c) => sum + c.invoices.length, 0));
 	const generatableInvoiceCount = $derived(countGeneratableInvoices(clients));
 	const allClientsValid = $derived(
@@ -320,7 +343,11 @@ const createSessionStore = () => {
 		setGenerating,
 		setGenerated,
 		setError,
-		resetGeneration
+		resetGeneration,
+		aiInjectClient,
+		aiAppendEntry,
+		aiApplyPaymentOrder,
+		aiRestoreClient
 	};
 };
 

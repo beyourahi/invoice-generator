@@ -75,6 +75,16 @@ const createFixedStore = () => {
 		void sync(() => api.put<void>("/api/payment-methods", { orderedIds: next.map((m) => m.id) }));
 	};
 
+	const aiInjectPaymentMethod = (method: SavedPaymentMethod) => {
+		const exists = state.paymentMethods.some((m) => m.id === method.id);
+		state = {
+			...state,
+			paymentMethods: exists
+				? state.paymentMethods.map((m) => (m.id === method.id ? method : m))
+				: [...state.paymentMethods, method]
+		};
+	};
+
 	return {
 		get value() {
 			return state;
@@ -85,7 +95,8 @@ const createFixedStore = () => {
 		removePaymentMethod,
 		updatePaymentMethodLabel,
 		updatePaymentMethodValue,
-		movePaymentMethod
+		movePaymentMethod,
+		aiInjectPaymentMethod
 	};
 };
 

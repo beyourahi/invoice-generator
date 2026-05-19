@@ -32,6 +32,7 @@ declare global {
 			user: Locals["user"];
 			session: Locals["session"];
 			currentUser: CurrentUser | null;
+			aiEnabled?: boolean;
 		}
 
 		interface Error {

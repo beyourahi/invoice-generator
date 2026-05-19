@@ -3,6 +3,7 @@
 	import { firstGeneratableInvoice } from "$lib/invoice/active";
 	import { fixed } from "$lib/stores/fixed.svelte";
 	import { session } from "$lib/stores/session.svelte";
+	import { ai } from "$lib/stores/ai.svelte";
 	import { getTheme, ACTIVE_THEME_ID } from "$lib/themes/registry";
 	import { Separator } from "$lib/components/ui/separator";
 	import AddClientButton from "$src/components/AddClientButton.svelte";
@@ -10,6 +11,11 @@
 	import FixedSenderPanel from "$src/components/FixedSenderPanel.svelte";
 	import GenerationPanel from "$src/components/GenerationPanel.svelte";
 	import InvoicePreview from "$src/components/InvoicePreview.svelte";
+	import RightRailTabs from "$src/components/RightRailTabs.svelte";
+	import AiSidebar from "$src/components/ai/AiSidebar.svelte";
+	import AiConfirmDialog from "$src/components/ai/AiConfirmDialog.svelte";
+	import AiMobileFab from "$src/components/ai/AiMobileFab.svelte";
+	import AiMobileSheet from "$src/components/ai/AiMobileSheet.svelte";
 	import Heading from "$lib/components/ui/heading/heading.svelte";
 	import { page } from "$app/state";
 	import User from "$src/components/User.svelte";
@@ -27,6 +33,10 @@
 			selectedClientId: data.appState.selectedClientId,
 			expandedClients: data.appState.expandedClients
 		});
+		ai.hydrate(data.ai);
+		if (data.ai.enabled && data.appState.clients.length === 0) {
+			ai.setActiveTab("ai");
+		}
 	});
 
 	let ToasterComponent = $state<Component | null>(null);
@@ -139,7 +149,35 @@
 					)}
 				>
 					<div class="min-h-0 min-w-0 overflow-hidden lg:overflow-visible">
-						<InvoicePreview html={previewHtml} loading={false} emptyReason={previewEmptyReason} />
+						{#if ai.enabled}
+							<div class="hidden lg:block">
+								<RightRailTabs>
+									{#snippet preview()}
+										<InvoicePreview
+											html={previewHtml}
+											loading={false}
+											emptyReason={previewEmptyReason}
+										/>
+									{/snippet}
+									{#snippet sidebar()}
+										<AiSidebar />
+									{/snippet}
+								</RightRailTabs>
+							</div>
+							<div class="lg:hidden">
+								<InvoicePreview
+									html={previewHtml}
+									loading={false}
+									emptyReason={previewEmptyReason}
+								/>
+							</div>
+						{:else}
+							<InvoicePreview
+								html={previewHtml}
+								loading={false}
+								emptyReason={previewEmptyReason}
+							/>
+						{/if}
 					</div>
 				</div>
 			</section>
@@ -149,3 +187,9 @@
 		<GenerationPanel />
 	</div>
 </main>
+
+{#if ai.enabled}
+	<AiMobileFab />
+	<AiMobileSheet />
+	<AiConfirmDialog />
+{/if}
