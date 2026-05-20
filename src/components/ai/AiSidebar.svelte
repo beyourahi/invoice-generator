@@ -67,6 +67,11 @@
 		void lastContent;
 		tick().then(scrollToBottom);
 	});
+
+	$effect(() => {
+		if (ai.inputFocusNonce === 0) return;
+		tick().then(() => textarea?.focus());
+	});
 </script>
 
 <section

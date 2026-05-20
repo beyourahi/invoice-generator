@@ -253,14 +253,24 @@ export const deleteAction = async (actionId: string): Promise<void> => {
 
 export const createNewConversation = async (): Promise<void> => {
 	try {
-		const response = await fetch("/api/ai/conversations", { method: "POST" });
-		if (!response.ok) return;
+		const response = await fetch("/api/ai/conversations", {
+			method: "POST",
+			headers: { "content-type": "application/json" },
+			body: JSON.stringify({})
+		});
+		if (!response.ok) {
+			fireToast({ type: "error", message: "Could not start a new chat" });
+			return;
+		}
 		const conv = (await response.json()) as { id: string; title: string; updatedAt: string };
 		ai.upsertConversation(conv);
 		ai.setActiveConversation(conv.id);
 		ai.clearMessages();
+		ai.setError(null);
+		ai.requestInputFocus();
 	} catch (err) {
 		console.error("[ai] failed to create conversation", err);
+		fireToast({ type: "error", message: "Could not start a new chat" });
 	}
 };
 
