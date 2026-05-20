@@ -241,16 +241,16 @@ export const TOOLS_CATALOG: ToolCatalogEntry[] = [
 		}
 	},
 	{
-		name: "movePaymentMethod",
-		description: "Move a payment method up (-1) or down (+1) in the global order.",
+		name: "reorderPaymentMethods",
+		description:
+			"Reorder the global list of payment methods. Pass every payment method ID in the desired order.",
 		safetyTier: "A",
 		parameters: {
 			type: "object",
 			properties: {
-				paymentMethodId: { type: "string" },
-				direction: { type: "number", enum: [-1, 1] }
+				orderedIds: { type: "array", items: { type: "string" } }
 			},
-			required: ["paymentMethodId", "direction"]
+			required: ["orderedIds"]
 		}
 	},
 	{
@@ -288,8 +288,20 @@ export const TOOLS_CATALOG: ToolCatalogEntry[] = [
 			properties: { clientId: { type: ["string", "null"] } },
 			required: ["clientId"]
 		}
+	},
+	{
+		name: "getAppStateSummary",
+		description:
+			"Return a concise recap of the current clients, invoices, and payment methods. Read-only — use only when the user explicitly asks for a summary; routine questions are answered directly from CURRENT STATE.",
+		safetyTier: "A",
+		parameters: {
+			type: "object",
+			properties: {}
+		}
 	}
 ];
+
+export const READ_ONLY_TOOLS = new Set(["getAppStateSummary"]);
 
 export const TIER_MAP: Record<string, SafetyTier> = Object.fromEntries(
 	TOOLS_CATALOG.map((t) => [t.name, t.safetyTier])

@@ -181,12 +181,9 @@ export const inverseForRemovePaymentMethod = (
 	snapshot
 });
 
-export const inverseForMovePaymentMethod = (
-	paymentMethodId: string,
-	direction: -1 | 1
-): InverseRecord => ({
-	tool: "movePaymentMethod",
-	args: { paymentMethodId, direction: (direction === 1 ? -1 : 1) as -1 | 1 }
+export const inverseForReorderPaymentMethods = (previousOrder: string[]): InverseRecord => ({
+	tool: "reorderPaymentMethods",
+	args: { orderedIds: previousOrder }
 });
 
 export const inverseForSetSelectedClientId = (previousId: string | null): InverseRecord => ({

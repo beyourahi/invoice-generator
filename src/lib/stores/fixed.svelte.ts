@@ -85,6 +85,19 @@ const createFixedStore = () => {
 		};
 	};
 
+	const aiApplyPaymentOrder = (orderedIds: string[]) => {
+		const byId = new Map(state.paymentMethods.map((m) => [m.id, m]));
+		const next: SavedPaymentMethod[] = [];
+		for (const id of orderedIds) {
+			const method = byId.get(id);
+			if (method) next.push(method);
+		}
+		for (const method of state.paymentMethods) {
+			if (!orderedIds.includes(method.id)) next.push(method);
+		}
+		state = { ...state, paymentMethods: next };
+	};
+
 	return {
 		get value() {
 			return state;
@@ -96,7 +109,8 @@ const createFixedStore = () => {
 		updatePaymentMethodLabel,
 		updatePaymentMethodValue,
 		movePaymentMethod,
-		aiInjectPaymentMethod
+		aiInjectPaymentMethod,
+		aiApplyPaymentOrder
 	};
 };
 

@@ -16,11 +16,11 @@ import {
 	inverseForAddPaymentMethod,
 	inverseForCreateClient,
 	inverseForDeleteClient,
-	inverseForMovePaymentMethod,
 	inverseForPolishText,
 	inverseForRemoveInvoiceEntry,
 	inverseForRemovePaymentMethod,
 	inverseForReorderClientPaymentMethods,
+	inverseForReorderPaymentMethods,
 	inverseForSetActive,
 	inverseForSetSelectedClientId,
 	inverseForTogglePaymentMethod,
@@ -166,9 +166,8 @@ export const argSchemas = {
 		label: z.string().min(1).max(120)
 	}),
 	removePaymentMethod: z.object({ paymentMethodId: z.string().min(1) }),
-	movePaymentMethod: z.object({
-		paymentMethodId: z.string().min(1),
-		direction: z.union([z.literal(-1), z.literal(1)])
+	reorderPaymentMethods: z.object({
+		orderedIds: z.array(z.string()).max(32)
 	}),
 	polishText: z.object({
 		target: z.enum(POLISH_TARGETS),
@@ -176,7 +175,8 @@ export const argSchemas = {
 		paymentMethodId: z.string().optional(),
 		proposedText: z.string().min(1).max(4000)
 	}),
-	setSelectedClientId: z.object({ clientId: z.string().nullable() })
+	setSelectedClientId: z.object({ clientId: z.string().nullable() }),
+	getAppStateSummary: z.object({}).default({})
 } as const;
 
 export type ArgsOf<K extends keyof typeof argSchemas> = z.infer<(typeof argSchemas)[K]>;
@@ -383,11 +383,13 @@ export const executors: {
 		};
 	},
 
-	async movePaymentMethod(args) {
-		fixed.movePaymentMethod(args.paymentMethodId, args.direction);
+	async reorderPaymentMethods(args) {
+		const before = fixed.value.paymentMethods.map((m) => m.id);
+		await api.put<void>("/api/payment-methods", { orderedIds: args.orderedIds });
+		fixed.aiApplyPaymentOrder(args.orderedIds);
 		return {
-			inverse: inverseForMovePaymentMethod(args.paymentMethodId, args.direction),
-			summary: `Moved payment method ${args.direction === 1 ? "down" : "up"}.`
+			inverse: inverseForReorderPaymentMethods(before),
+			summary: `Reordered payment methods.`
 		};
 	},
 
@@ -434,6 +436,22 @@ export const executors: {
 		return {
 			inverse: inverseForSetSelectedClientId(previous),
 			summary: args.clientId ? `Selected client ${args.clientId}.` : `Cleared selection.`
+		};
+	},
+
+	async getAppStateSummary() {
+		const lines = session.clients.map((c) => {
+			const active = c.invoices.filter((e) => e.isActive).length;
+			return `${c.name || "(unnamed)"}: ${active}/${c.invoices.length} active invoices`;
+		});
+		const methodCount = fixed.value.paymentMethods.length;
+		const summary =
+			lines.length === 0
+				? `No clients yet. ${methodCount} payment method${methodCount === 1 ? "" : "s"} configured.`
+				: `${lines.length} client${lines.length === 1 ? "" : "s"} — ${lines.join("; ")}. ${methodCount} payment method${methodCount === 1 ? "" : "s"} configured.`;
+		return {
+			inverse: { tool: "noop", args: {} },
+			summary
 		};
 	}
 };

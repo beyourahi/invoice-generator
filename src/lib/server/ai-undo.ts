@@ -179,26 +179,6 @@ const currentClientMethodIds = async (db: Database, clientId: string): Promise<s
 	return rows.map((r) => r.paymentMethodId);
 };
 
-const movePaymentMethodByDelta = async (
-	db: Database,
-	userId: string,
-	methodId: string,
-	direction: number
-): Promise<void> => {
-	const all = await listMethodsByUser(db, userId);
-	const idx = all.findIndex((m) => m.id === methodId);
-	if (idx < 0) throw new UndoInvalidatedError("Payment method no longer exists.");
-	const target = idx + (direction > 0 ? 1 : -1);
-	if (target < 0 || target >= all.length) return;
-	const swapped = [...all];
-	[swapped[idx], swapped[target]] = [swapped[target], swapped[idx]];
-	await reorderPaymentMethods(
-		db,
-		userId,
-		swapped.map((m) => m.id)
-	);
-};
-
 export const applyInverse = async (
 	db: Database,
 	userId: string,
@@ -372,12 +352,10 @@ export const applyInverse = async (
 			return;
 		}
 
-		case "movePaymentMethod": {
-			const paymentMethodId = asString(args.paymentMethodId);
-			const direction = typeof args.direction === "number" ? args.direction : 0;
-			if (!paymentMethodId || (direction !== 1 && direction !== -1))
-				throw new UndoInvalidatedError("Bad args");
-			await movePaymentMethodByDelta(db, userId, paymentMethodId, direction);
+		case "reorderPaymentMethods": {
+			const orderedIds = asStringArray(args.orderedIds);
+			if (orderedIds.length === 0) throw new UndoInvalidatedError("Bad args");
+			await reorderPaymentMethods(db, userId, orderedIds);
 			return;
 		}
 

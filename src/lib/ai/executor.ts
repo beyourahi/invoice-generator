@@ -4,7 +4,7 @@ import { session } from "$lib/stores/session.svelte";
 import { fixed } from "$lib/stores/fixed.svelte";
 import { argSchemas, executors, type ArgsOf } from "./tools";
 import { detectAnomalies } from "./safety";
-import { resolvedTier, TIER_MAP } from "./tools-catalog";
+import { resolvedTier, TIER_MAP, READ_ONLY_TOOLS } from "./tools-catalog";
 import type {
 	AnomalyResult,
 	AnomalySettings,
@@ -162,6 +162,37 @@ export const executeToolCall = async (
 	}
 
 	const args = parsed.data as ArgsOf<typeof call.name>;
+
+	if (READ_ONLY_TOOLS.has(call.name)) {
+		try {
+			const executor = executors[call.name];
+			const result = await executor(args as never);
+			ctx.onResult({
+				t: "tool_result",
+				id: call.id,
+				status: "applied",
+				summary: result.summary
+			});
+			return {
+				toolCallId: call.id,
+				toolName: call.name,
+				status: "applied",
+				actionId: null,
+				error: null
+			};
+		} catch (err) {
+			const message = err instanceof Error ? err.message : "Tool execution failed";
+			ctx.onResult({ t: "tool_result", id: call.id, status: "failed", error: message });
+			return {
+				toolCallId: call.id,
+				toolName: call.name,
+				status: "failed",
+				actionId: null,
+				error: message
+			};
+		}
+	}
+
 	const baseTier: SafetyTier = resolvedTier(call.name, args);
 	const anomalies = detectAnomalies(call.name, args, snapshotAppState(), ctx.anomalySettings);
 	if (anomalies.length > 0) {
@@ -234,6 +265,7 @@ export const executeToolCall = async (
 			t: "tool_result",
 			id: call.id,
 			status: "applied",
+			summary: result.summary,
 			actionId: actionId ?? undefined
 		});
 		return {

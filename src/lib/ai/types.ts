@@ -66,6 +66,7 @@ export type Frame =
 			id: string;
 			status: "applied" | "rejected" | "failed" | "pending_confirmation";
 			error?: string;
+			summary?: string;
 			actionId?: string;
 	  }
 	| { t: "anomaly"; toolCallId: string; reasons: string[] }
