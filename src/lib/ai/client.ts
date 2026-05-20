@@ -23,37 +23,27 @@ export interface RawChatResult {
 	outputTokens: number;
 }
 
+interface StreamToolCallDelta {
+	id?: string | null;
+	index?: number;
+	function?: { name?: string | null; arguments?: string };
+}
+
 interface StreamChunk {
 	response?: string;
-	tool_calls?: Array<{ name?: string; arguments?: unknown; args?: unknown }>;
+	tool_calls?: StreamToolCallDelta[];
 	usage?: { prompt_tokens?: number; completion_tokens?: number };
 }
 
 const buildToolsPayload = (tools: ToolCatalogEntry[]) =>
 	tools.map((t) => ({
-		name: t.name,
-		description: t.description,
-		parameters: t.parameters
-	}));
-
-const normalizeToolCall = (raw: {
-	name?: string;
-	arguments?: unknown;
-	args?: unknown;
-}): ParsedToolCall | null => {
-	const name = typeof raw.name === "string" ? raw.name : null;
-	if (!name) return null;
-	const argsField = raw.arguments ?? raw.args;
-	let parsed: unknown = argsField;
-	if (typeof argsField === "string") {
-		try {
-			parsed = JSON.parse(argsField);
-		} catch {
-			parsed = {};
+		type: "function",
+		function: {
+			name: t.name,
+			description: t.description,
+			parameters: t.parameters
 		}
-	}
-	return { id: crypto.randomUUID(), name, args: parsed ?? {} };
-};
+	}));
 
 const buildGatewayOptions = (env: RunChatEnv, cacheKey?: string) => {
 	if (!env.AI_GATEWAY_SLUG || env.AI_GATEWAY_SLUG.length === 0) return undefined;
@@ -84,6 +74,7 @@ export const runChatFrames = async function* (
 	}
 
 	const result: RawChatResult = { text: "", toolCalls: [], inputTokens: 0, outputTokens: 0 };
+	const toolAccum = new Map<number, { id: string; name: string; argsText: string }>();
 
 	let stream: ReadableStream<Uint8Array>;
 	try {
@@ -127,9 +118,18 @@ export const runChatFrames = async function* (
 					yield { t: "text", delta: chunk.response };
 				}
 				if (Array.isArray(chunk.tool_calls)) {
-					for (const raw of chunk.tool_calls) {
-						const call = normalizeToolCall(raw);
-						if (call) result.toolCalls.push(call);
+					for (const delta of chunk.tool_calls) {
+						const idx = typeof delta.index === "number" ? delta.index : 0;
+						let entry = toolAccum.get(idx);
+						if (!entry) {
+							entry = { id: crypto.randomUUID(), name: "", argsText: "" };
+							toolAccum.set(idx, entry);
+						}
+						const fn = delta.function;
+						if (fn) {
+							if (typeof fn.name === "string" && fn.name.length > 0) entry.name = fn.name;
+							if (typeof fn.arguments === "string") entry.argsText += fn.arguments;
+						}
 					}
 				}
 				if (chunk.usage) {
@@ -148,7 +148,18 @@ export const runChatFrames = async function* (
 		reader.releaseLock();
 	}
 
-	for (const call of result.toolCalls) {
+	for (const entry of toolAccum.values()) {
+		if (entry.name.length === 0) continue;
+		let args: unknown = {};
+		if (entry.argsText.trim().length > 0) {
+			try {
+				args = JSON.parse(entry.argsText);
+			} catch {
+				args = {};
+			}
+		}
+		const call: ParsedToolCall = { id: entry.id, name: entry.name, args };
+		result.toolCalls.push(call);
 		yield { t: "tool_call", id: call.id, name: call.name, args: call.args };
 	}
 

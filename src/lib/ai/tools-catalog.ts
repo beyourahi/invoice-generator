@@ -27,7 +27,7 @@ export const TOOLS_CATALOG: ToolCatalogEntry[] = [
 			type: "object",
 			properties: {
 				templateId: {
-					type: ["string", "null"],
+					type: "string",
 					description: "Optional ID of an existing client to copy fields from."
 				}
 			}
@@ -285,7 +285,7 @@ export const TOOLS_CATALOG: ToolCatalogEntry[] = [
 		safetyTier: "A",
 		parameters: {
 			type: "object",
-			properties: { clientId: { type: ["string", "null"] } },
+			properties: { clientId: { type: "string" } },
 			required: ["clientId"]
 		}
 	},
