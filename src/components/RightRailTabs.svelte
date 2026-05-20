@@ -7,7 +7,7 @@
 	let { preview, sidebar }: { preview: Snippet; sidebar: Snippet } = $props();
 
 	const triggerClass =
-		"gap-1.5 rounded-lg text-sm font-medium transition-all data-[state=active]:bg-foreground data-[state=active]:text-background data-[state=active]:font-semibold data-[state=active]:shadow-sm data-[state=active]:shadow-black/20";
+		"gap-1.5 rounded-lg text-sm font-medium transition-all data-[state=active]:bg-foreground dark:data-[state=active]:text-background dark:data-[state=active]:hover:text-background data-[state=active]:font-semibold data-[state=active]:shadow-sm data-[state=active]:shadow-black/20 data-[state=active]:hover:shadow-md data-[state=active]:hover:shadow-black/30";
 </script>
 
 <Tabs value={ai.activeTab} onValueChange={v => ai.setActiveTab(v as "preview" | "ai")} class="w-full">
