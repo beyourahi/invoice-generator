@@ -279,7 +279,10 @@ export const switchConversation = async (id: string): Promise<void> => {
 	ai.setActiveConversation(id);
 	try {
 		const response = await fetch(`/api/ai/messages?conversationId=${encodeURIComponent(id)}`);
-		if (!response.ok) return;
+		if (!response.ok) {
+			fireToast({ type: "error", message: "Could not load that conversation" });
+			return;
+		}
 		const raw = (await response.json()) as RawAssistantMessage[];
 		ai.replaceMessages(
 			raw.map((m) => ({
@@ -305,6 +308,7 @@ export const switchConversation = async (id: string): Promise<void> => {
 		);
 	} catch (err) {
 		console.error("[ai] failed to load messages", err);
+		fireToast({ type: "error", message: "Could not load that conversation" });
 	}
 };
 
@@ -323,21 +327,29 @@ export const renameConversation = async (id: string, title: string): Promise<voi
 				title: trimmed,
 				updatedAt: new Date().toISOString()
 			});
+		} else {
+			fireToast({ type: "error", message: "Could not rename that conversation" });
 		}
 	} catch (err) {
 		console.error("[ai] failed to rename", err);
+		fireToast({ type: "error", message: "Could not rename that conversation" });
 	}
 };
 
 export const deleteConversation = async (id: string): Promise<void> => {
 	try {
-		await fetch(`/api/ai/conversations/${id}`, { method: "DELETE" });
+		const response = await fetch(`/api/ai/conversations/${id}`, { method: "DELETE" });
+		if (!response.ok) {
+			fireToast({ type: "error", message: "Could not delete that conversation" });
+			return;
+		}
 		ai.removeConversation(id);
 		if (ai.activeConversationId === id) {
 			ai.clearMessages();
 		}
 	} catch (err) {
 		console.error("[ai] failed to delete conversation", err);
+		fireToast({ type: "error", message: "Could not delete that conversation" });
 	}
 };
 
