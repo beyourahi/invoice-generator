@@ -86,6 +86,7 @@ export interface Client {
 	year: number;
 	isActive: boolean;
 	invoices: InvoiceEntry[];
+	createdAt?: string;
 }
 
 export interface FixedFrom {

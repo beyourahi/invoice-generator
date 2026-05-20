@@ -29,8 +29,7 @@
 	{#each nodes as node, i (i)}
 		{#if node.type === "text"}{node.value}{:else if node.type === "bold"}<strong
 				class="text-foreground font-semibold">{node.value}</strong
-			>{:else if node.type === "italic"}<em class="italic">{node.value}</em
-			>{:else if node.type === "code"}<code
+			>{:else if node.type === "italic"}<em class="italic">{node.value}</em>{:else if node.type === "code"}<code
 				class="bg-muted/80 text-foreground rounded px-1 py-0.5 font-mono text-[0.85em]">{node.value}</code
 			>{:else if node.type === "link"}<a
 				href={node.href}

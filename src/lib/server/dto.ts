@@ -51,7 +51,8 @@ export const toClient = (row: ClientRow, entries: EntryRow[], methodIds: string[
 	payment: { methodIds },
 	year: row.year,
 	isActive: row.isActive,
-	invoices: entries.map(toInvoiceEntry)
+	invoices: entries.map(toInvoiceEntry),
+	createdAt: row.createdAt.toISOString()
 });
 
 export const toFixed = (row: FixedRow | undefined, methods: SavedPaymentMethod[]): Fixed => ({

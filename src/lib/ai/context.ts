@@ -13,6 +13,7 @@ export interface ContextClient {
 	currency: string;
 	amount: number;
 	serviceDescription: string;
+	createdAt: string;
 	paymentMethods: string[];
 	invoices: ContextInvoice[];
 }
@@ -95,6 +96,7 @@ const projectClient = (
 		currency: client.service.currency,
 		amount: client.service.amount,
 		serviceDescription: client.service.description,
+		createdAt: client.createdAt ? new Date(client.createdAt).toISOString().slice(0, 10) : "",
 		paymentMethods: client.payment.methodIds,
 		invoices
 	};
@@ -123,7 +125,7 @@ const renderSummary = (payload: Omit<ContextPayload, "summaryText" | "tokenMap">
 			const monthList = c.invoices.map((i) => `${i.month}${i.isActive ? "" : "·off"}`).join(", ");
 			const amountLabel = formatAmount(c.amount, c.currency as Currency);
 			lines.push(
-				`  ${c.token} "${c.name || "(unnamed)"}" prefix=${c.invoicePrefix || "(none)"} year=${c.year} active=${c.isActive} amount=${amountLabel}/mo entries=${active}/${total}${total > 0 ? ` [${monthList}]` : ""}`
+				`  ${c.token} "${c.name || "(unnamed)"}" prefix=${c.invoicePrefix || "(none)"} year=${c.year} active=${c.isActive} amount=${amountLabel}/mo entries=${active}/${total}${c.createdAt ? ` created=${c.createdAt}` : ""}${total > 0 ? ` [${monthList}]` : ""}`
 			);
 			if (c.serviceDescription) {
 				const trimmed =
