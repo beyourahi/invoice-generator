@@ -129,7 +129,7 @@ export const sendMessage = async (message: string, options: SendOptions = {}): P
 				});
 			} else if (frame.t === "end") {
 				if (!assignedConversationId) {
-					assignedConversationId = frame.turnId;
+					assignedConversationId = frame.conversationId;
 					ai.setActiveConversation(assignedConversationId);
 					options.onConversationCreated?.(assignedConversationId);
 				}

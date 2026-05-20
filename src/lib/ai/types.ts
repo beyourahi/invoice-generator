@@ -76,7 +76,13 @@ export type Frame =
 			actionId?: string;
 	  }
 	| { t: "anomaly"; toolCallId: string; reasons: string[] }
-	| { t: "end"; turnId: string; inputTokens: number; outputTokens: number }
+	| {
+			t: "end";
+			turnId: string;
+			conversationId: string;
+			inputTokens: number;
+			outputTokens: number;
+	  }
 	| { t: "error"; message: string };
 
 export interface ChatRequestBody {

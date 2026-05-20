@@ -257,6 +257,12 @@ export const POST: RequestHandler = async (event) => {
 			error: errored ?? undefined
 		});
 
-		push({ t: "end", turnId, inputTokens, outputTokens });
+		push({
+			t: "end",
+			turnId,
+			conversationId: activeConversationId,
+			inputTokens,
+			outputTokens
+		});
 	});
 };
