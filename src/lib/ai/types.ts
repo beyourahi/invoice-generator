@@ -36,6 +36,12 @@ export interface InverseRecord {
 	snapshot?: unknown;
 }
 
+export interface ConfirmationDiffRow {
+	label: string;
+	current: string;
+	proposed: string;
+}
+
 export interface ToolCatalogEntry {
 	name: string;
 	description: string;

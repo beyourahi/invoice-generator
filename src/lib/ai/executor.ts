@@ -9,17 +9,22 @@ import { resolvedTier, TIER_MAP, READ_ONLY_TOOLS } from "./tools-catalog";
 import type {
 	AnomalyResult,
 	AnomalySettings,
+	ConfirmationDiffRow,
 	Frame,
 	InverseRecord,
 	ParsedToolCall,
 	SafetyTier
 } from "./types";
+import type { Client } from "$lib/types";
+
+export type { ConfirmationDiffRow } from "./types";
 
 export interface ExecutionContext {
 	conversationId: string | null;
 	messageId: string | null;
 	anomalySettings: AnomalySettings;
 	requestConfirmation: (req: ConfirmationRequest) => Promise<boolean>;
+	requestPolishApproval: (req: PolishApprovalRequest) => Promise<boolean>;
 	onResult: (result: ExecutionFrame) => void;
 }
 
@@ -30,6 +35,15 @@ export interface ConfirmationRequest {
 	tier: SafetyTier;
 	anomalies: AnomalyResult[];
 	humanLabel: string;
+	diff: ConfirmationDiffRow[];
+	inverseSummary: string;
+}
+
+export interface PolishApprovalRequest {
+	toolCallId: string;
+	target: string;
+	oldText: string;
+	newText: string;
 }
 
 export type ExecutionFrame = Frame & { t: "tool_result" | "anomaly" };
@@ -82,6 +96,132 @@ const humanLabelFor = (toolName: string, args: unknown): string => {
 		}
 		default:
 			return toolName;
+	}
+};
+
+const displayValue = (value: unknown): string => {
+	if (value === undefined || value === null || value === "") return "—";
+	if (Array.isArray(value)) return value.length > 0 ? value.join(", ") : "—";
+	if (typeof value === "object") return JSON.stringify(value);
+	return String(value);
+};
+
+const currentClientField = (client: Client | undefined, key: string): unknown => {
+	if (!client) return undefined;
+	switch (key) {
+		case "name":
+			return client.name;
+		case "invoicePrefix":
+			return client.invoicePrefix;
+		case "phone":
+			return client.phone;
+		case "email":
+			return client.email;
+		case "address":
+			return client.address;
+		case "serviceDescription":
+			return client.service.description;
+		case "serviceAmount":
+			return client.service.amount;
+		case "serviceCurrency":
+			return client.service.currency;
+		case "year":
+			return client.year;
+		case "isActive":
+			return client.isActive;
+		default:
+			return undefined;
+	}
+};
+
+const buildConfirmationDetail = (
+	toolName: string,
+	args: unknown
+): { diff: ConfirmationDiffRow[]; inverseSummary: string } => {
+	const a = (args ?? {}) as Record<string, unknown>;
+	const diff: ConfirmationDiffRow[] = [];
+	switch (toolName) {
+		case "updateClient": {
+			const client = session.clients.find((x) => x.id === a.clientId);
+			const patch = (a.patch as Record<string, unknown>) ?? {};
+			for (const [key, value] of Object.entries(patch)) {
+				diff.push({
+					label: key,
+					current: displayValue(currentClientField(client, key)),
+					proposed: displayValue(value)
+				});
+			}
+			return { diff, inverseSummary: "Undo restores the client's previous values." };
+		}
+		case "updateInvoiceEntry": {
+			const client = session.clients.find((x) => x.id === a.clientId);
+			const entry = client?.invoices.find((x) => x.id === a.entryId) as
+				| Record<string, unknown>
+				| undefined;
+			const patch = (a.patch as Record<string, unknown>) ?? {};
+			for (const [key, value] of Object.entries(patch)) {
+				diff.push({
+					label: key,
+					current: displayValue(entry?.[key]),
+					proposed: displayValue(value)
+				});
+			}
+			return { diff, inverseSummary: "Undo restores the invoice entry's previous values." };
+		}
+		case "updatePaymentMethodValue": {
+			const method = fixed.value.paymentMethods.find((x) => x.id === a.paymentMethodId);
+			const field = String(a.field ?? "");
+			diff.push({
+				label: field,
+				current: displayValue(method?.values?.[field]),
+				proposed: displayValue(a.value)
+			});
+			return { diff, inverseSummary: "Undo restores the previous value." };
+		}
+		case "updateFixedField": {
+			const field = String(a.field ?? "") as "name" | "phone" | "email" | "address";
+			diff.push({
+				label: field,
+				current: displayValue(fixed.value.from[field]),
+				proposed: displayValue(a.value)
+			});
+			return { diff, inverseSummary: "Undo restores the previous sender value." };
+		}
+		case "deleteClient":
+			return { diff, inverseSummary: "Undo recreates the client and all of its invoices." };
+		case "removeInvoiceEntry":
+			return { diff, inverseSummary: "Undo restores the deleted invoice entry." };
+		case "removePaymentMethod":
+			return { diff, inverseSummary: "Undo restores the payment method and its links." };
+		case "addInvoiceEntries":
+			return { diff, inverseSummary: "Undo removes the entries that were added." };
+		default:
+			return { diff, inverseSummary: "Undo reverts this change." };
+	}
+};
+
+const currentPolishText = (target: string, clientId?: string, paymentMethodId?: string): string => {
+	switch (target) {
+		case "clientServiceDescription": {
+			const client = clientId ? session.clients.find((x) => x.id === clientId) : undefined;
+			return client?.service.description ?? "";
+		}
+		case "paymentMethodLabel": {
+			const method = paymentMethodId
+				? fixed.value.paymentMethods.find((x) => x.id === paymentMethodId)
+				: undefined;
+			return method?.label ?? "";
+		}
+		case "fromName":
+			return fixed.value.from.name;
+		case "fromPhone":
+			return fixed.value.from.phone;
+		case "fromEmail":
+			return fixed.value.from.email;
+		case "fromAddress":
+			return fixed.value.from.address;
+		default:
+			return "";
 	}
 };
 
@@ -194,6 +334,108 @@ export const executeToolCall = async (
 		}
 	}
 
+	if (call.name === "polishText") {
+		const polishArgs = args as ArgsOf<"polishText">;
+		ctx.onResult({ t: "tool_result", id: call.id, status: "pending_confirmation" });
+		const approved = await ctx.requestPolishApproval({
+			toolCallId: call.id,
+			target: polishArgs.target,
+			oldText: currentPolishText(
+				polishArgs.target,
+				polishArgs.clientId,
+				polishArgs.paymentMethodId
+			),
+			newText: polishArgs.proposedText
+		});
+		if (!approved) {
+			const actionId = await recordAction({
+				conversationId: ctx.conversationId,
+				messageId: ctx.messageId,
+				toolName: call.name,
+				inputs: args,
+				inverse: { tool: "noop", args: {} },
+				safetyTier: "A",
+				requiredConfirmation: true,
+				anomalies: [],
+				applied: false,
+				status: "rejected",
+				error: null
+			});
+			ctx.onResult({
+				t: "tool_result",
+				id: call.id,
+				status: "rejected",
+				actionId: actionId ?? undefined
+			});
+			return {
+				toolCallId: call.id,
+				toolName: call.name,
+				status: "rejected",
+				actionId,
+				error: null
+			};
+		}
+		try {
+			const result = await executors.polishText(polishArgs);
+			const actionId = await recordAction({
+				conversationId: ctx.conversationId,
+				messageId: ctx.messageId,
+				toolName: call.name,
+				inputs: args,
+				inverse: result.inverse,
+				safetyTier: "A",
+				requiredConfirmation: true,
+				anomalies: [],
+				applied: true,
+				status: "applied",
+				error: null
+			});
+			ctx.onResult({
+				t: "tool_result",
+				id: call.id,
+				status: "applied",
+				summary: result.summary,
+				actionId: actionId ?? undefined
+			});
+			return {
+				toolCallId: call.id,
+				toolName: call.name,
+				status: "applied",
+				actionId,
+				error: null
+			};
+		} catch (err) {
+			const message = err instanceof Error ? err.message : "Tool execution failed";
+			const actionId = await recordAction({
+				conversationId: ctx.conversationId,
+				messageId: ctx.messageId,
+				toolName: call.name,
+				inputs: args,
+				inverse: { tool: "noop", args: {} },
+				safetyTier: "A",
+				requiredConfirmation: true,
+				anomalies: [],
+				applied: false,
+				status: "failed",
+				error: message
+			});
+			ctx.onResult({
+				t: "tool_result",
+				id: call.id,
+				status: "failed",
+				error: message,
+				actionId: actionId ?? undefined
+			});
+			return {
+				toolCallId: call.id,
+				toolName: call.name,
+				status: "failed",
+				actionId,
+				error: message
+			};
+		}
+	}
+
 	const baseTier: SafetyTier = resolvedTier(call.name, args);
 	const anomalies = detectAnomalies(call.name, args, snapshotAppState(), ctx.anomalySettings);
 	if (anomalies.length > 0) {
@@ -208,13 +450,16 @@ export const executeToolCall = async (
 
 	if (requiredConfirmation) {
 		ctx.onResult({ t: "tool_result", id: call.id, status: "pending_confirmation" });
+		const detail = buildConfirmationDetail(call.name, args);
 		const approved = await ctx.requestConfirmation({
 			toolCallId: call.id,
 			toolName: call.name,
 			args,
 			tier: effectiveTier,
 			anomalies,
-			humanLabel: humanLabelFor(call.name, args)
+			humanLabel: humanLabelFor(call.name, args),
+			diff: detail.diff,
+			inverseSummary: detail.inverseSummary
 		});
 		if (!approved) {
 			const actionId = await recordAction({

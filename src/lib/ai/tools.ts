@@ -2,7 +2,13 @@ import { api } from "$lib/api/client";
 import { session } from "$lib/stores/session.svelte";
 import { fixed } from "$lib/stores/fixed.svelte";
 import { MONTHS } from "$lib/invoice/months";
-import type { Client, Currency, InvoiceEntry, PaymentMethodKind, SavedPaymentMethod } from "$lib/types";
+import type {
+	Client,
+	Currency,
+	InvoiceEntry,
+	PaymentMethodKind,
+	SavedPaymentMethod
+} from "$lib/types";
 import {
 	inverseForAddInvoiceEntries,
 	inverseForAddPaymentMethod,

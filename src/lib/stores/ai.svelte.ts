@@ -1,5 +1,11 @@
 import { api, sync } from "$lib/api/client";
-import type { AnomalyResult, AnomalySettings, ParsedToolCall, SafetyTier } from "$lib/ai/types";
+import type {
+	AnomalyResult,
+	AnomalySettings,
+	ConfirmationDiffRow,
+	ParsedToolCall,
+	SafetyTier
+} from "$lib/ai/types";
 import { DEFAULT_ANOMALY_SETTINGS } from "$lib/ai/types";
 
 const ANOMALY_STORAGE_KEY = "invoice-gen:ai-anomaly-settings";
@@ -27,6 +33,12 @@ const persistAnomalySettings = (settings: AnomalySettings): void => {
 
 export type AiMessageRole = "user" | "assistant" | "tool" | "system";
 
+export interface AiPolishProposal {
+	oldText: string;
+	newText: string;
+	target: string;
+}
+
 export interface AiToolCall {
 	id: string;
 	name: string;
@@ -36,6 +48,7 @@ export interface AiToolCall {
 	error: string | null;
 	anomalies: AnomalyResult[];
 	undone: boolean;
+	polish?: AiPolishProposal;
 }
 
 export interface AiMessage {
@@ -77,6 +90,13 @@ export interface PendingConfirmation {
 	tier: SafetyTier;
 	anomalies: AnomalyResult[];
 	humanLabel: string;
+	diff: ConfirmationDiffRow[];
+	inverseSummary: string;
+	resolve: (approved: boolean) => void;
+}
+
+export interface PendingPolish {
+	toolCallId: string;
 	resolve: (approved: boolean) => void;
 }
 
@@ -95,6 +115,7 @@ const createAiStore = () => {
 	let conversations = $state<AiConversation[]>([]);
 	let messages = $state<AiMessage[]>([]);
 	let pendingConfirmations = $state<PendingConfirmation[]>([]);
+	let pendingPolish = $state<PendingPolish[]>([]);
 	let historyOpen = $state(false);
 	let historyActions = $state<AiHistoryAction[]>([]);
 	let showUndone = $state(false);
@@ -231,6 +252,14 @@ const createAiStore = () => {
 		pendingConfirmations = pendingConfirmations.filter((c) => c.toolCallId !== toolCallId);
 	};
 
+	const enqueuePolish = (req: PendingPolish) => {
+		pendingPolish = [...pendingPolish, req];
+	};
+
+	const dequeuePolish = (toolCallId: string) => {
+		pendingPolish = pendingPolish.filter((p) => p.toolCallId !== toolCallId);
+	};
+
 	const setActiveConversation = (id: string | null) => {
 		activeConversationId = id;
 	};
@@ -322,6 +351,9 @@ const createAiStore = () => {
 		get pendingConfirmations() {
 			return pendingConfirmations;
 		},
+		get pendingPolish() {
+			return pendingPolish;
+		},
 		get historyOpen() {
 			return historyOpen;
 		},
@@ -369,6 +401,8 @@ const createAiStore = () => {
 		updateToolCall,
 		enqueueConfirmation,
 		dequeueConfirmation,
+		enqueuePolish,
+		dequeuePolish,
 		setActiveConversation,
 		upsertConversation,
 		replaceConversations,

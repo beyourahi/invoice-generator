@@ -12,7 +12,7 @@
 	import { ai } from "$lib/stores/ai.svelte";
 	import { respondToConfirmation, respondToAllConfirmations } from "$lib/ai/chat-client";
 	import AiAnomalyWarning from "./AiAnomalyWarning.svelte";
-	import { ShieldCheck } from "@lucide/svelte";
+	import { ShieldCheck, Undo2 } from "@lucide/svelte";
 
 	const open = $derived(ai.pendingConfirmations.length > 0);
 	const first = $derived(ai.pendingConfirmations[0]);
@@ -102,6 +102,9 @@
 									{#if req.anomalies.length > 0}
 										<AiAnomalyWarning anomalies={req.anomalies} />
 									{/if}
+									<span class="text-muted-foreground/70 text-[10px] text-pretty">
+										{req.inverseSummary}
+									</span>
 								</div>
 							</div>
 						</li>
@@ -111,23 +114,47 @@
 					{ai.pendingConfirmations.length - rejected.size} will run; {rejected.size} will be rejected.
 				</p>
 			{:else if first}
-				<div class="bg-muted/30 border-border/50 rounded-md border p-3 text-xs">
-					<div
-						class="text-muted-foreground mb-1 font-mono text-[10px] tracking-wide whitespace-nowrap uppercase"
-					>
-						Tool
+				{#if first.diff.length > 0}
+					<div class="border-border/50 bg-muted/20 space-y-2.5 rounded-md border p-3">
+						{#each first.diff as row (row.label)}
+							<div class="space-y-1">
+								<div class="text-muted-foreground font-mono text-[10px] tracking-wide uppercase">
+									{row.label}
+								</div>
+								<div class="flex items-start gap-2 text-xs">
+									<span class="text-destructive/70 shrink-0 font-mono select-none">−</span>
+									<span class="text-muted-foreground min-w-0 break-words line-through">
+										{row.current}
+									</span>
+								</div>
+								<div class="flex items-start gap-2 text-xs">
+									<span class="shrink-0 font-mono text-[var(--status-active-foreground)] select-none">
+										+
+									</span>
+									<span class="text-foreground min-w-0 font-medium break-words">
+										{row.proposed}
+									</span>
+								</div>
+							</div>
+						{/each}
 					</div>
-					<div class="font-medium text-balance">{first.toolName}</div>
-					<pre
-						class="text-muted-foreground mt-2 max-h-32 overflow-auto font-mono text-[10px] leading-relaxed break-all whitespace-pre-wrap">{JSON.stringify(
-							first.args,
-							null,
-							2
-						)}</pre>
-				</div>
+				{:else}
+					<div class="bg-muted/30 border-border/50 rounded-md border p-3 text-xs">
+						<div
+							class="text-muted-foreground mb-1 font-mono text-[10px] tracking-wide whitespace-nowrap uppercase"
+						>
+							Operation
+						</div>
+						<div class="font-medium text-balance">{first.humanLabel}</div>
+					</div>
+				{/if}
 				{#if first.anomalies.length > 0}
 					<AiAnomalyWarning anomalies={first.anomalies} />
 				{/if}
+				<p class="text-muted-foreground flex items-start gap-1.5 text-[11px] text-pretty">
+					<Undo2 class="mt-px size-3 shrink-0" aria-hidden="true" />
+					<span>{first.inverseSummary}</span>
+				</p>
 			{/if}
 		</div>
 

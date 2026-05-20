@@ -1,7 +1,12 @@
 import { ai } from "$lib/stores/ai.svelte";
-import { executeToolCall, type ExecutionFrame } from "./executor";
+import {
+	executeToolCall,
+	type ConfirmationRequest,
+	type ExecutionFrame,
+	type PolishApprovalRequest
+} from "./executor";
 import { streamFrames, type Frame } from "./streaming";
-import type { AnomalyResult, AnomalySettings, ParsedToolCall, SafetyTier } from "./types";
+import type { AnomalySettings, ParsedToolCall } from "./types";
 
 interface SendOptions {
 	signal?: AbortSignal;
@@ -17,28 +22,40 @@ interface RawAssistantMessage {
 	createdAt: string;
 }
 
-const requestConfirmation = (
-	toolCallId: string,
-	toolName: string,
-	args: unknown,
-	tier: SafetyTier,
-	anomalies: AnomalyResult[],
-	humanLabel: string
-): Promise<boolean> =>
+const requestConfirmation = (req: ConfirmationRequest): Promise<boolean> =>
 	new Promise((resolve) => {
 		ai.enqueueConfirmation({
-			toolCallId,
-			toolName,
-			args,
-			tier,
-			anomalies,
-			humanLabel,
+			toolCallId: req.toolCallId,
+			toolName: req.toolName,
+			args: req.args,
+			tier: req.tier,
+			anomalies: req.anomalies,
+			humanLabel: req.humanLabel,
+			diff: req.diff,
+			inverseSummary: req.inverseSummary,
 			resolve: (approved: boolean) => {
-				ai.dequeueConfirmation(toolCallId);
+				ai.dequeueConfirmation(req.toolCallId);
 				resolve(approved);
 			}
 		});
 	});
+
+const requestPolishApproval =
+	(assistantId: string) =>
+	(req: PolishApprovalRequest): Promise<boolean> =>
+		new Promise((resolve) => {
+			ai.updateToolCall(assistantId, req.toolCallId, {
+				status: "pending_confirmation",
+				polish: { oldText: req.oldText, newText: req.newText, target: req.target }
+			});
+			ai.enqueuePolish({
+				toolCallId: req.toolCallId,
+				resolve: (approved: boolean) => {
+					ai.dequeuePolish(req.toolCallId);
+					resolve(approved);
+				}
+			});
+		});
 
 const fetchUpdatedAppState = async (): Promise<void> => {
 	try {
@@ -155,15 +172,8 @@ export const sendMessage = async (message: string, options: SendOptions = {}): P
 			conversationId: assignedConversationId,
 			messageId: null,
 			anomalySettings: settings,
-			requestConfirmation: (req) =>
-				requestConfirmation(
-					req.toolCallId,
-					req.toolName,
-					req.args,
-					req.tier,
-					req.anomalies,
-					req.humanLabel
-				),
+			requestConfirmation,
+			requestPolishApproval: requestPolishApproval(assistantId),
 			onResult
 		});
 		if (outcome.status === "applied") {
@@ -193,6 +203,7 @@ const fireToast = async (input: {
 		const { toast } = await import("svelte-sonner");
 		if (input.type === "success") {
 			toast.success(input.message, {
+				duration: 10000,
 				action: input.actionId
 					? { label: "Undo", onClick: () => triggerUndo(input.actionId!) }
 					: undefined
@@ -322,6 +333,11 @@ export const deleteConversation = async (id: string): Promise<void> => {
 
 export const respondToConfirmation = (toolCallId: string, approved: boolean): void => {
 	const req = ai.pendingConfirmations.find((c) => c.toolCallId === toolCallId);
+	if (req) req.resolve(approved);
+};
+
+export const respondToPolish = (toolCallId: string, approved: boolean): void => {
+	const req = ai.pendingPolish.find((p) => p.toolCallId === toolCallId);
 	if (req) req.resolve(approved);
 };
 

@@ -1,10 +1,12 @@
 <script lang="ts">
 	import type { AiToolCall } from "$lib/stores/ai.svelte";
-	import { triggerUndo } from "$lib/ai/chat-client";
-	import { CheckCircle2, CircleX, Loader2, ShieldAlert, Undo2 } from "@lucide/svelte";
+	import { triggerUndo, respondToPolish } from "$lib/ai/chat-client";
+	import { Check, CheckCircle2, CircleX, Loader2, ShieldAlert, Undo2, Wand2, X } from "@lucide/svelte";
 	import { cn } from "$lib/utils";
 
 	let { call }: { call: AiToolCall } = $props();
+
+	const isPolishProposal = $derived(!!call.polish && call.status === "pending_confirmation");
 
 	const statusLabel = $derived.by(() => {
 		switch (call.status) {
@@ -46,42 +48,92 @@
 		await triggerUndo(call.actionId);
 		undoing = false;
 	};
+
+	const onApplyPolish = () => respondToPolish(call.id, true);
+	const onRejectPolish = () => respondToPolish(call.id, false);
 </script>
 
-<div
-	class={cn(
-		"ai-enter flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border px-2.5 py-2 text-xs",
-		statusClasses
-	)}
->
-	<span class="flex size-4 shrink-0 items-center justify-center">
-		{#if call.status === "pending" || call.status === "pending_confirmation"}
-			<Loader2 class="size-3.5 animate-spin" aria-hidden="true" />
-		{:else if call.status === "applied" && !call.undone}
-			<CheckCircle2 class="size-3.5" aria-hidden="true" />
-		{:else if call.status === "failed"}
-			<CircleX class="size-3.5" aria-hidden="true" />
-		{:else}
-			<ShieldAlert class="size-3.5" aria-hidden="true" />
+{#if isPolishProposal && call.polish}
+	<div class="ai-enter border-border/70 bg-card text-card-foreground space-y-2.5 rounded-lg border p-3 text-xs">
+		<div class="text-muted-foreground flex items-center gap-1.5 font-medium">
+			<Wand2 class="size-3.5" aria-hidden="true" />
+			<span>Suggested rewrite</span>
+		</div>
+		<div class="space-y-1.5">
+			<div class="border-border/50 bg-destructive/5 rounded-md border px-2.5 py-1.5">
+				<div class="text-muted-foreground/70 mb-0.5 text-[10px] font-medium tracking-wide uppercase">
+					Current
+				</div>
+				<p class="text-muted-foreground break-words whitespace-pre-wrap">
+					{call.polish.oldText || "(empty)"}
+				</p>
+			</div>
+			<div
+				class="rounded-md border border-[var(--status-active-border)] bg-[var(--status-active-bg)] px-2.5 py-1.5"
+			>
+				<div
+					class="mb-0.5 text-[10px] font-medium tracking-wide text-[var(--status-active-foreground)] uppercase"
+				>
+					Proposed
+				</div>
+				<p class="text-foreground break-words whitespace-pre-wrap">{call.polish.newText}</p>
+			</div>
+		</div>
+		<div class="flex items-center justify-end gap-2">
+			<button
+				type="button"
+				onclick={onRejectPolish}
+				class="text-foreground/80 pointer-fine:hover:text-foreground pointer-fine:hover:bg-background border-border/70 bg-background/60 inline-flex items-center gap-1 rounded-md border px-2.5 py-1.5 font-medium transition-colors"
+			>
+				<X class="size-3" aria-hidden="true" />
+				Reject
+			</button>
+			<button
+				type="button"
+				onclick={onApplyPolish}
+				class="bg-foreground text-background pointer-fine:hover:bg-foreground/90 inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 font-medium transition-colors"
+			>
+				<Check class="size-3" aria-hidden="true" />
+				Apply
+			</button>
+		</div>
+	</div>
+{:else}
+	<div
+		class={cn(
+			"ai-enter flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border px-2.5 py-2 text-xs",
+			statusClasses
+		)}
+	>
+		<span class="flex size-4 shrink-0 items-center justify-center">
+			{#if call.status === "pending" || call.status === "pending_confirmation"}
+				<Loader2 class="size-3.5 animate-spin" aria-hidden="true" />
+			{:else if call.status === "applied" && !call.undone}
+				<CheckCircle2 class="size-3.5" aria-hidden="true" />
+			{:else if call.status === "failed"}
+				<CircleX class="size-3.5" aria-hidden="true" />
+			{:else}
+				<ShieldAlert class="size-3.5" aria-hidden="true" />
+			{/if}
+		</span>
+		<span class="font-medium break-all">{call.name}</span>
+		<span class="text-muted-foreground/80 tabular-nums">· {statusLabel}</span>
+		{#if call.error}
+			<span class="text-destructive/80 w-full break-all">{call.error}</span>
 		{/if}
-	</span>
-	<span class="font-medium break-all">{call.name}</span>
-	<span class="text-muted-foreground/80 tabular-nums">· {statusLabel}</span>
-	{#if call.error}
-		<span class="text-destructive/80 w-full break-all">{call.error}</span>
-	{/if}
-	{#if canUndo}
-		<button
-			type="button"
-			onclick={onUndo}
-			disabled={undoing}
-			class={cn(
-				"text-foreground/80 pointer-fine:hover:text-foreground pointer-fine:hover:bg-background border-border/70 bg-background/60 ml-auto inline-flex items-center gap-1 rounded-md border px-2 py-1 font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50",
-				undoing && "cursor-wait"
-			)}
-		>
-			<Undo2 class="size-3" aria-hidden="true" />
-			Undo
-		</button>
-	{/if}
-</div>
+		{#if canUndo}
+			<button
+				type="button"
+				onclick={onUndo}
+				disabled={undoing}
+				class={cn(
+					"text-foreground/80 pointer-fine:hover:text-foreground pointer-fine:hover:bg-background border-border/70 bg-background/60 ml-auto inline-flex items-center gap-1 rounded-md border px-2 py-1 font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50",
+					undoing && "cursor-wait"
+				)}
+			>
+				<Undo2 class="size-3" aria-hidden="true" />
+				Undo
+			</button>
+		{/if}
+	</div>
+{/if}
