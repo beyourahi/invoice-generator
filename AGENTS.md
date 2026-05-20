@@ -45,7 +45,7 @@ Each worktree shares the same repository. Agents commit directly to their worktr
 
 **Outputs**: Updated architecture spec in `CLAUDE.md`, data contracts (TypeScript interfaces), and a decomposition of sub-tasks for Implementation Agents.
 
-**Scope**: Read-only on all files. Writes only to `CLAUDE.md` or creates `agent_docs/` reference files.
+**Scope**: Read-only on all files. Writes only to `CLAUDE.md`.
 
 **Rules**:
 

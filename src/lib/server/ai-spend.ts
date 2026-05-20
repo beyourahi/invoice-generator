@@ -1,8 +1,8 @@
 const MONTH_SECONDS = 31 * 86400;
 const DEFAULT_MONTHLY_CAP_USD = 1.0;
 
-const USD_PER_INPUT_TOKEN = 0.29 / 1_000_000;
-const USD_PER_OUTPUT_TOKEN = 2.25 / 1_000_000;
+const USD_PER_INPUT_TOKEN = 0.27 / 1_000_000;
+const USD_PER_OUTPUT_TOKEN = 0.85 / 1_000_000;
 
 const monthKey = (userId: string): string => {
 	const now = new Date();

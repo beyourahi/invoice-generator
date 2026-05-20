@@ -47,7 +47,7 @@ A SvelteKit app that generates batches of PDF invoices. Users configure a fixed 
 | UI Components   | shadcn-svelte                                      |
 | Authentication  | Better Auth (Google OAuth only)                    |
 | Database        | Cloudflare D1 (SQLite via Drizzle ORM)             |
-| AI              | Cloudflare Workers AI (Llama 3.3 70B) + AI Gateway |
+| AI              | Cloudflare Workers AI (Llama 4 Scout) + AI Gateway |
 | Validation      | Zod                                                |
 | PDF Rendering   | html2canvas + jsPDF                                |
 | ZIP Packaging   | fflate (`zipSync`, `level: 0`)                     |
@@ -135,7 +135,7 @@ The server layer handles authentication, data persistence, and AI Copilot infere
 
 - **`src/routes/api/clients/+server.ts`** and **`[id]/+server.ts`** — CRUD for clients. `POST` accepts optional `templateId` to copy from an existing client.
 
-- **`src/routes/api/clients/[id]/entries/+server.ts`** and **`[id]/+server.ts`** — CRUD for invoice entries per client.
+- **`src/routes/api/clients/[id]/entries/+server.ts`** and **`[entryId]/+server.ts`** — CRUD for invoice entries per client.
 
 - **`src/routes/api/clients/[id]/payment-methods/+server.ts`** — `PUT` updates the ordered list of payment method IDs for a client.
 
@@ -233,7 +233,7 @@ An optional natural-language assistant for managing clients, invoices, and payme
 
 - **`$lib/ai/`** — Client-side AI layer:
   - `types.ts` — shared types: `Frame`, tool-call shapes, `InverseRecord`, `AnomalyResult`, `SafetyTier`.
-  - `client.ts` — `runChatFrames()` calls the Workers AI binding (`@cf/meta/llama-3.3-70b-instruct-fp8-fast`, temperature 0.2), optionally routed through AI Gateway via `AI_GATEWAY_SLUG`.
+  - `client.ts` — `runChatFrames()` calls the Workers AI binding (`@cf/meta/llama-4-scout-17b-16e-instruct`, temperature 0.2), optionally routed through AI Gateway via `AI_GATEWAY_SLUG`.
   - `streaming.ts` — SSE frame encode/decode (`encodeFrame`, `decodeFrame`, `streamFrames`, `sseStream`).
   - `context.ts` — `projectAppState(appState)` serializes current state into a tokenized (`cli_1`, `ent_1`, `pm_1`) prompt context.
   - `prompts.ts` — system prompt builder (`buildSystemContext`); prompt version `v1`.

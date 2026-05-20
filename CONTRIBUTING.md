@@ -109,7 +109,6 @@ rm -rf node_modules/ .wrangler/ .svelte-kit/ && bun install
 
 ```
 invoice-generator/
-├── docs/                        # In-repo technical references (AI Copilot PRD)
 ├── migrations/                  # D1 SQL migration files
 ├── src/
 │   ├── app.css                  # Tailwind v4 CSS-first config + global styles
@@ -154,7 +153,8 @@ invoice-generator/
 │   │   │   ├── api.ts           # requireApiContext() + request helpers
 │   │   │   ├── dto.ts           # Row-to-domain mappers + AppState
 │   │   │   ├── validation.ts    # Shared Zod request schemas
-│   │   │   ├── ai-quota.ts      # Per-user AI quota (KV-backed)
+│   │   │   ├── ai-quota.ts      # Per-user AI daily turn quota (KV-backed)
+│   │   │   ├── ai-spend.ts      # Per-user AI monthly spend cap (KV-backed)
 │   │   │   ├── ai-undo.ts       # Server-side action reversal
 │   │   │   ├── log.ts           # Structured AI logging
 │   │   │   └── repositories/    # D1 data access (clients, payment methods, AI, ...)
@@ -543,10 +543,6 @@ Priority test targets are the pure functions: `resolver.ts` (token substitution)
 ### Code Comments
 
 Ship zero comments by default. The only acceptable comment is one that explains a non-obvious _why_: a subtle invariant, a workaround for a specific upstream bug, or a hidden external constraint. Never describe _what_ the code does — that belongs in the names and structure of the code itself.
-
-### docs/
-
-For extended technical references (product specs, theme development guides, PDF rendering edge cases), add markdown files to the `docs/` directory at the project root. Do not bloat `CLAUDE.md` with deep reference material.
 
 ---
 

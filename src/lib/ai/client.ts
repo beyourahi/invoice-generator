@@ -1,6 +1,6 @@
 import type { Frame, ParsedToolCall, ToolCatalogEntry } from "./types";
 
-export const MODEL_ID = "@cf/meta/llama-3.3-70b-instruct-fp8-fast" as const;
+export const MODEL_ID = "@cf/meta/llama-4-scout-17b-16e-instruct" as const;
 
 export interface RunChatEnv {
 	AI: Ai;
