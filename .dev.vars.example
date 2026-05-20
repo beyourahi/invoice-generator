@@ -1,0 +1,12 @@
+# Worker runtime secrets — loaded by `wrangler dev` (used by `bun run preview`).
+# Copy this file to `.dev.vars` and fill in the values. Never commit `.dev.vars`.
+
+# Session signing secret — generate with: openssl rand -base64 32
+BETTER_AUTH_SECRET=
+
+# Base URL the Worker is served from. Locally this is the Wrangler dev server.
+BETTER_AUTH_URL=http://localhost:8787
+
+# Google OAuth 2.0 client credentials — https://console.cloud.google.com
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
