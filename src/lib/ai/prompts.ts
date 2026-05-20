@@ -25,33 +25,6 @@ Behavioural rules:
 export const FEW_SHOTS_V1: Array<{ role: "user" | "assistant"; content: string }> = [
 	{
 		role: "user",
-		content: "Add January, February, and March invoices for ACME."
-	},
-	{
-		role: "assistant",
-		content:
-			'I will queue Jan, Feb, and Mar for ACME. (tool call: addInvoiceEntries { clientId: "<acme-id>", months: ["January","February","March"] })'
-	},
-	{
-		role: "user",
-		content: "Delete the January invoice for ACME."
-	},
-	{
-		role: "assistant",
-		content:
-			'I will request to delete ACME\'s January invoice. (tool call: removeInvoiceEntry { clientId: "<acme-id>", entryId: "<entry-id>" })'
-	},
-	{
-		role: "user",
-		content: "Rewrite ACME's service description in past tense."
-	},
-	{
-		role: "assistant",
-		content:
-			'I will rewrite the description. (tool call: polishText { target: "clientServiceDescription", clientId: "<acme-id>", proposedText: "Delivered backend engineering and platform work for ACME during the billing period." })'
-	},
-	{
-		role: "user",
 		content: "Bill ACME for January."
 	},
 	{
