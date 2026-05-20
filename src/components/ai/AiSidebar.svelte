@@ -164,9 +164,29 @@
 				</div>
 			</div>
 		{:else}
-			{#each ai.messages as msg (msg.id)}
-				<AiMessage message={msg} />
-			{/each}
+			<svelte:boundary>
+				{#each ai.messages as msg (msg.id)}
+					<AiMessage message={msg} />
+				{/each}
+
+				{#snippet failed(error, reset)}
+					<div class="ai-enter flex flex-col items-center gap-2 py-6 text-center" role="alert">
+						<p class="text-sm font-medium text-red-400/90">The copilot hit a display error.</p>
+						<p class="text-muted-foreground max-w-xs text-xs text-pretty">
+							{error instanceof Error
+								? error.message
+								: "Something went wrong rendering this conversation."}
+						</p>
+						<button
+							type="button"
+							onclick={reset}
+							class="border-border bg-card text-foreground pointer-fine:hover:bg-muted mt-1 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors"
+						>
+							Retry
+						</button>
+					</div>
+				{/snippet}
+			</svelte:boundary>
 		{/if}
 
 		{#if ai.error}
