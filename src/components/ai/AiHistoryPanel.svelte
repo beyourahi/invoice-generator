@@ -200,7 +200,12 @@
 	</CollapsibleContent>
 </Collapsible>
 
-<AlertDialog open={pendingDelete !== null}>
+<AlertDialog
+	open={pendingDelete !== null}
+	onOpenChange={(open: boolean) => {
+		if (!open) pendingDelete = null;
+	}}
+>
 	<AlertDialogContent class="max-w-md">
 		<AlertDialogHeader>
 			<AlertDialogTitle class="text-balance">
