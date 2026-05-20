@@ -29,31 +29,32 @@ All commits go directly to `main`. No feature branches. Worktrees allow parallel
 
 ## Project Overview
 
-A SvelteKit app that generates batches of PDF invoices. Users configure a fixed sender identity and payment methods, add multiple clients (each with service details and a list of invoice months), then trigger bulk generation. Each invoice is rendered as HTML, captured via `html2canvas`, and exported to a jsPDF Blob. Multiple PDFs can be downloaded via the File System Access API (directory picker) or, if unavailable, as sequential individual downloads. A ZIP fallback is also available.
+A SvelteKit app that generates batches of PDF invoices. Users configure a fixed sender identity and payment methods, add multiple clients (each with service details and a list of invoice months), then trigger bulk generation. Each invoice is rendered as HTML, captured via `html2canvas`, and exported to a jsPDF Blob. Multiple PDFs can be downloaded via the File System Access API (directory picker) or, if unavailable, as sequential individual downloads. A ZIP fallback is also available. An optional AI Copilot lets users drive the same client and invoice operations through natural-language commands.
 
-**Stack**: SvelteKit 2 + Svelte 5 runes, Tailwind CSS v4, shadcn-svelte, Cloudflare Workers, Better Auth (Google OAuth), Cloudflare D1, Drizzle ORM, Bun.
+**Stack**: SvelteKit 2 + Svelte 5 runes, Tailwind CSS v4, shadcn-svelte, Cloudflare Workers, Better Auth (Google OAuth), Cloudflare D1, Drizzle ORM, Cloudflare Workers AI, Bun.
 
-**Auth-gated**: Google OAuth via Better Auth. Any authenticated user can access the app. Unauthenticated users are redirected to `/login`. All user data (sender info, payment methods, clients, invoice entries) is persisted server-side in D1 and loaded on page load. The PDF generation pipeline itself is entirely client-side.
+**Auth-gated**: Google OAuth via Better Auth. Any authenticated user can access the app. Unauthenticated users are redirected to `/login`. All user data (sender info, payment methods, clients, invoice entries, AI Copilot conversations) is persisted server-side in D1 and loaded on page load. The PDF generation pipeline itself is entirely client-side.
 
 ---
 
 ## Tech Stack
 
-| Layer           | Technology                                       |
-| --------------- | ------------------------------------------------ |
-| Framework       | SvelteKit 2.x (Svelte 5 with runes)              |
-| Language        | TypeScript (strict mode)                         |
-| Styling         | Tailwind CSS v4 (CSS-first config, OKLCH colors) |
-| UI Components   | shadcn-svelte                                    |
-| Authentication  | Better Auth (Google OAuth only)                  |
-| Database        | Cloudflare D1 (SQLite via Drizzle ORM)           |
-| Validation      | Zod                                              |
-| PDF Rendering   | html2canvas + jsPDF                              |
-| ZIP Packaging   | fflate (`zipSync`, `level: 0`)                   |
-| Animations      | None (shadcn Progress + Lucide Loader2 spinner)  |
-| Deployment      | Cloudflare Workers                               |
-| Package Manager | Bun                                              |
-| Linting         | ESLint 9 flat config + Prettier                  |
+| Layer           | Technology                                         |
+| --------------- | -------------------------------------------------- |
+| Framework       | SvelteKit 2.x (Svelte 5 with runes)                |
+| Language        | TypeScript (strict mode)                           |
+| Styling         | Tailwind CSS v4 (CSS-first config, OKLCH colors)   |
+| UI Components   | shadcn-svelte                                      |
+| Authentication  | Better Auth (Google OAuth only)                    |
+| Database        | Cloudflare D1 (SQLite via Drizzle ORM)             |
+| AI              | Cloudflare Workers AI (Llama 3.3 70B) + AI Gateway |
+| Validation      | Zod                                                |
+| PDF Rendering   | html2canvas + jsPDF                                |
+| ZIP Packaging   | fflate (`zipSync`, `level: 0`)                     |
+| Animations      | None (shadcn Progress + Lucide Loader2 spinner)    |
+| Deployment      | Cloudflare Workers                                 |
+| Package Manager | Bun                                                |
+| Linting         | ESLint 9 flat config + Prettier                    |
 
 ---
 
@@ -92,11 +93,11 @@ Route files use `$src/components/...`; library files use `$lib/...`. Never use r
 
 ### Auth Layer
 
-The server layer handles only authentication and data persistence — the PDF pipeline remains entirely client-side.
+The server layer handles authentication, data persistence, and AI Copilot inference — the PDF pipeline remains entirely client-side.
 
 - **`$lib/server/auth.ts`** — `createAuth(d1, env)` factory. Returns a Better Auth instance configured with Google OAuth, Drizzle adapter (D1/SQLite), 7-day session expiry, 5-minute cookie cache, and database rate limiting. `env` must include `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`.
 
-- **`$lib/server/schema.ts`** — Drizzle schema for all tables: Better Auth tables (`users`, `sessions`, `accounts`, `verifications`, `rateLimits`) and app tables (`fixedSettings`, `paymentMethods`, `clients`, `clientPaymentMethods`, `invoiceEntries`). Snake_case column names required by the Drizzle adapter.
+- **`$lib/server/schema.ts`** — Drizzle schema for all tables: Better Auth tables (`users`, `sessions`, `accounts`, `verifications`, `rateLimits`), app tables (`fixedSettings`, `paymentMethods`, `clients`, `clientPaymentMethods`, `invoiceEntries`), and AI Copilot tables (`aiConversations`, `aiMessages`, `aiActions`). Snake_case column names required by the Drizzle adapter.
 
 - **`$lib/server/db.ts`** — `getDatabase(d1)` factory returning a Drizzle instance. Exports `Database` type and `schema`.
 
@@ -104,7 +105,7 @@ The server layer handles only authentication and data persistence — the PDF pi
 
 - **`$lib/server/dto.ts`** — Pure row-to-domain mappers: `toSavedPaymentMethod`, `toInvoiceEntry`, `toClient`, `toFixed`. Also exports `AppState` interface: `{ fixed, clients, selectedClientId, expandedClients }`.
 
-- **`$lib/server/repositories/`** — Four repository files: `fixed.ts`, `clients.ts`, `payment-methods.ts`, `state.ts`. `state.ts` exports `loadAppState(db, userId)` → `AppState` used in `+page.server.ts`.
+- **`$lib/server/repositories/`** — Seven repository files: `fixed.ts`, `clients.ts`, `payment-methods.ts`, `state.ts`, `ai-conversations.ts`, `ai-messages.ts`, `ai-actions.ts`. `state.ts` exports `loadAppState(db, userId)` → `AppState` used in `+page.server.ts`.
 
 - **`$lib/server/validation.ts`** — Shared Zod schemas for API request bodies.
 
@@ -118,9 +119,9 @@ The server layer handles only authentication and data persistence — the PDF pi
 
 - **`src/hooks.client.ts`** — Client-side `handleError` with UUID correlation.
 
-- **`src/routes/+layout.server.ts`** — Passes `user`, `session`, `currentUser` from `locals` into `PageData`.
+- **`src/routes/+layout.server.ts`** — Passes `user`, `session`, `currentUser` from `locals`, plus the `aiEnabled` flag (derived from the `AI_COPILOT_ENABLED` var), into `PageData`.
 
-- **`src/routes/+page.server.ts`** — Redirects to `/login` if unauthenticated. Loads full `AppState` from D1 via `loadAppState` and returns it alongside `user` and `currentUser`.
+- **`src/routes/+page.server.ts`** — Redirects to `/login` if unauthenticated. Loads full `AppState` from D1 via `loadAppState` and the AI Copilot hydration payload (conversations, messages, actions, anomaly settings), returning them alongside `user` and `currentUser`.
 
 - **`src/routes/login/+page.svelte`** — Google sign-in button. Redirects to `/` after successful OAuth.
 
@@ -138,6 +139,8 @@ The server layer handles only authentication and data persistence — the PDF pi
 
 - **`src/routes/api/clients/[id]/payment-methods/+server.ts`** — `PUT` updates the ordered list of payment method IDs for a client.
 
+- **`src/routes/api/ai/`** — AI Copilot endpoints: `chat/+server.ts` (SSE streaming turn), `conversations/+server.ts` and `[id]/+server.ts` (conversation CRUD), `messages/+server.ts` (message list), `actions/+server.ts` and `[id]/+server.ts` (action history), `undo/[id]/+server.ts` (reverse an applied action). See the AI Copilot section.
+
 **Authorization flow**: Google OAuth → any authenticated user gains full access. All data is scoped to `userId`.
 
 ### API Client
@@ -146,11 +149,13 @@ The server layer handles only authentication and data persistence — the PDF pi
 
 ### Store Design
 
-Both stores use the **factory function + `$state` closure** pattern, exported as singletons. Mutations call the API client to persist changes server-side.
+All three stores use the **factory function + `$state` closure** pattern, exported as singletons. Mutations call the API client to persist changes server-side.
 
 - **`$lib/stores/session.svelte.ts`** — Per-session state: `clients`, `selectedClientId`, `expandedClients`, `generatedInvoices`, `generationState`, `generationError`. Client mutations: `addClient`, `removeClient`, `updateClient(id, patch)`, `togglePaymentMethod`, `ensurePaymentMethodSelected`, `purgePaymentMethodFromClients`, `addInvoiceEntry`, `addInvoiceEntries(clientId, months[])`, `removeInvoiceEntry`, `updateInvoiceEntry`. Activation toggles: `setClientActive(id, isActive)`, `setInvoiceActive(clientId, entryId, isActive)` — both capture previous state and roll back on API failure so stale `isActive` flags cannot leak into the generation queue. Selection/expansion: `setSelectedClientId`, `setClientExpanded`, `toggleClientExpanded`, `isClientExpanded`. Generation lifecycle: `setGenerating`, `setGenerated`, `setError`, `resetGeneration`. Three `$derived` values: `totalInvoiceCount`, `generatableInvoiceCount` (count after active filter), and `allClientsValid` (checks every client has non-empty `name` and `invoicePrefix`). Has a `hydrate(initial)` method called once in `+page.svelte` via `untrack` to seed from server data.
 
 - **`$lib/stores/fixed.svelte.ts`** — Sender/bank data synced to D1. Exposes `value` getter, `hydrate(initial)`, `updateFrom(field, value)`, `addPaymentMethod(kind)`, `removePaymentMethod(id)`, `updatePaymentMethodLabel`, `updatePaymentMethodValue`, `movePaymentMethod`. All mutations call the API. Text mutations are debounced via `debounceSync`. Has a `hydrate(initial)` method called once in `+page.svelte` via `untrack`.
+
+- **`$lib/stores/ai.svelte.ts`** — AI Copilot state: conversations, messages, streaming status, the Tier-B confirmation queue, undo history, anomaly settings (persisted to `localStorage`), and mobile/tab UI state. Has a `hydrate(payload)` method called once in `+page.svelte` via `untrack`. Detailed in the AI Copilot section.
 
 The factory pattern is required because Svelte 5 `$state` reactivity is scoped to its declaration.
 
@@ -178,9 +183,9 @@ Currencies: `BDT` and `USD`. `$lib/format/currency.ts` exports `formatAmount` an
 
 ### Theme System
 
-**`$lib/themes/registry.ts`** maps `ThemeId` → `Theme`. A `Theme` contains: `html` (full document template), `css` (minified stylesheet injected into `{CSS}`), `paymentMethodFields` (partial template for field-style methods), `paymentMethodLink` (partial template for link-style methods), and `paymentField` (partial template for a single field row). Only one theme exists: `default`. `ACTIVE_THEME_ID` is the hardcoded active theme.
+**`$lib/themes/registry.ts`** maps `ThemeId` → `Theme`. A `Theme` contains: `html` (full document template), `css` (minified stylesheet injected into `{CSS}`), `paymentMethodFields` (partial template for field-style methods), `paymentMethodLink` (partial template for link-style methods), and `paymentField` (partial template for a single field row). Theme definitions live in their own files (`$lib/themes/default.ts`); `registry.ts` imports and registers them. Only one theme exists: `default`. `ACTIVE_THEME_ID` is the hardcoded active theme.
 
-To add a theme: implement the full `Theme` interface, register in `themes` in `registry.ts`, and update `ThemeId`.
+To add a theme: create a new file in `$lib/themes/` implementing the full `Theme` interface, register it in `themes` in `registry.ts`, and update `ThemeId`.
 
 ### UI Layout
 
@@ -189,7 +194,7 @@ To add a theme: implement the full `Theme` interface, register in `themes` in `r
 - **`User`** (`src/components/User.svelte`) — top-right avatar. Desktop: hover tooltip; mobile: tap opens a `Dialog`. Both surface the sign-out action.
 - **`Heading`** (`$lib/components/ui/heading/heading.svelte`) — shared heading above the grid.
 - **Left column** — `FixedSenderPanel` + `ClientCard` list + `AddClientButton`.
-- **Right column** (sticky on desktop, collapsible on mobile) — `InvoicePreview` (live scaled iframe of the selected/first client's first generatable invoice).
+- **Right column** (sticky on desktop, collapsible on mobile) — `RightRailTabs`, a Preview/AI tab switcher wrapping `InvoicePreview` (live scaled iframe of the selected/first client's first generatable invoice) and `AiSidebar` (AI Copilot chat).
 - **Below grid** (full-width) — `GenerationPanel`.
 
 `GenerationPanel` owns the generate loop: iterates the queue from `getGeneratableInvoices(session.clients)` (active-only), calls `buildInvoiceHtml` + `generatePdf` sequentially, tracks progress with `$state<number>` (0–100) bound to a shadcn `Progress`. On completion renders a `Table` of results with per-client download (directory picker or sequential) and ZIP buttons. Uses `svelte-sonner` toasts for success/error feedback.
@@ -220,13 +225,39 @@ To add a theme: implement the full `Theme` interface, register in `themes` in `r
 
 ### Server-side Data Hydration
 
-`+page.server.ts` loads full `AppState` (fixed settings + payment methods + clients + invoice entries + selected/expanded state) from D1 via `loadAppState(db, userId)`. `+page.svelte` calls `fixed.hydrate(data.appState.fixed)` and `session.hydrate(...)` inside `untrack()` to seed both stores without triggering reactive side effects.
+`+page.server.ts` loads full `AppState` (fixed settings + payment methods + clients + invoice entries + selected/expanded state) from D1 via `loadAppState(db, userId)`. `+page.svelte` calls `fixed.hydrate(data.appState.fixed)`, `session.hydrate(...)`, and `ai.hydrate(data.ai)` inside `untrack()` to seed the stores without triggering reactive side effects.
+
+### AI Copilot
+
+An optional natural-language assistant for managing clients, invoices, and payment methods. The server runs model inference; tool execution happens client-side against the same REST API as the manual UI. Gated by the `AI_COPILOT_ENABLED` var (set to `"false"` to disable).
+
+- **`$lib/ai/`** — Client-side AI layer:
+  - `types.ts` — shared types: `Frame`, tool-call shapes, `InverseRecord`, `AnomalyResult`, `SafetyTier`.
+  - `client.ts` — `runChatFrames()` calls the Workers AI binding (`@cf/meta/llama-3.3-70b-instruct-fp8-fast`, temperature 0.2), optionally routed through AI Gateway via `AI_GATEWAY_SLUG`.
+  - `streaming.ts` — SSE frame encode/decode (`encodeFrame`, `decodeFrame`, `streamFrames`, `sseStream`).
+  - `context.ts` — `projectAppState(appState)` serializes current state into a tokenized (`cli_1`, `ent_1`, `pm_1`) prompt context.
+  - `prompts.ts` — system prompt builder (`buildSystemContext`); prompt version `v1`.
+  - `tools-catalog.ts` — `TOOLS_CATALOG`: 18 tools, each tagged Tier A (auto-apply) or Tier B (destructive/money-mutating — requires confirmation).
+  - `tools.ts` — per-tool Zod arg schemas and executors; executors call the REST API and return `{ inverse, summary }`.
+  - `executor.ts` — `executeToolCall()`: validates args, resolves the safety tier, runs anomaly detection, requests confirmation for Tier B, records the action, executes.
+  - `safety.ts` — `detectAnomalies()`: five non-blocking detectors (amount outlier, volume surge, missing payment methods, stale period, currency mismatch).
+  - `inverse.ts` — builds an `InverseRecord` (reverse tool call + optional snapshot) for every executed tool, enabling undo.
+  - `chat-client.ts` — `sendMessage`, `triggerUndo`, conversation CRUD, confirmation responses.
+- **`$lib/server/`** — AI server layer:
+  - `ai-quota.ts` — `checkAndIncrementQuota(kv, userId)`: per-user daily turn limit (default 200) tracked in `AI_QUOTA_KV`; disabled when the KV binding is absent.
+  - `ai-undo.ts` — `applyInverse(db, userId, inverse)`: server-side reversal of an action; throws `UndoInvalidatedError` if the target no longer exists.
+  - `log.ts` — `logChatTurn` / `logToolExecution`: structured stdout logging with hashed user IDs.
+  - `repositories/ai-conversations.ts`, `ai-messages.ts`, `ai-actions.ts` — D1 persistence for the three AI tables.
+- **`$lib/stores/ai.svelte.ts`** — the `ai` store (see Store Design).
+- **`src/components/ai/`** — `AiSidebar`, `AiMessage`, `AiToolBadge`, `AiConfirmDialog`, `AiAnomalyWarning`, `AiSettingsDialog`, `AiHistoryPanel`, `AiConversationsMenu`, `AiMobileFab`, `AiMobileSheet`.
+
+**Data flow**: user message → `POST /api/ai/chat` (loads context, runs the model, streams frames) → client parses frames and runs each tool via `executeToolCall` → Tier B tools wait for `AiConfirmDialog` approval → applied actions are recorded and reversible via `POST /api/ai/undo/[id]`.
 
 ---
 
 ## Development Principles
 
-- **PDF pipeline is client-side only** — `builder.ts`, `generator.ts`, `zip.ts`, `sequential-download.ts`, and all stores run in the browser. Server files handle only auth and data persistence.
+- **PDF pipeline is client-side only** — `builder.ts`, `generator.ts`, `zip.ts`, `sequential-download.ts`, and all stores run in the browser. Server files handle auth, data persistence, and AI Copilot inference.
 - **Prefer existing abstractions** — check `$lib/` before creating new utilities.
 - **No duplication** — use `resolver.ts` for token substitution; use `api` client for all fetch calls.
 - **Minimal scope** — no animation library. Use shadcn `Progress`, `Skeleton`, and Lucide `Loader2`. Don't add GSAP or other animation libraries.
@@ -399,8 +430,11 @@ Auth state and all user data require D1 + secrets (see below). Without D1, auth 
 
 Configured in `wrangler.jsonc`:
 
-- **Assets**: static SvelteKit output
+- **ASSETS**: static SvelteKit output
 - **DB**: D1 database binding (required for auth and data at runtime)
+- **AI**: Workers AI binding (required for the AI Copilot)
+- **AI_QUOTA_KV**: KV namespace for AI Copilot per-user daily quota (optional — quota is disabled if absent)
+- **vars**: `BETTER_AUTH_URL`, `AI_GATEWAY_SLUG` (AI Gateway route), `AI_COPILOT_ENABLED` (feature flag)
 - **Compatibility**: `nodejs_compat` flag
 - Run `bun run cf-typegen` after any `wrangler.jsonc` changes
 
@@ -426,7 +460,7 @@ bun run db:migrate        # Remote (production)
 bun run db:migrate:local  # Local (Wrangler preview)
 ```
 
-Three migrations exist: `0001_better_auth_tables.sql` (Better Auth tables), `0002_daffy_synch.sql` (app tables: clients, invoice_entries, payment_methods, etc.), and `0003_cute_vision.sql` (additive `is_active` columns on `clients` and `invoice_entries` with `DEFAULT true NOT NULL`).
+Four migrations exist: `0001_better_auth_tables.sql` (Better Auth tables), `0002_daffy_synch.sql` (app tables: clients, invoice_entries, payment_methods, etc.), `0003_cute_vision.sql` (additive `is_active` columns on `clients` and `invoice_entries` with `DEFAULT true NOT NULL`), and `0004_marvelous_puck.sql` (AI Copilot tables: `ai_conversations`, `ai_messages`, `ai_actions`).
 
 ### Clean Rebuild
 
@@ -483,6 +517,10 @@ When encountering unfamiliar patterns, check in this order:
 15. **Generation queue must come from `active.ts`** — never iterate `session.clients → client.invoices` directly for generation. Use `getGeneratableInvoices()` / `firstGeneratableInvoice()` / `countGeneratableInvoices()` from `$lib/invoice/active.ts`. The active filter is a strict AND gate (`client.isActive AND entry.isActive`); deactivating a client cascades to its entries via UI disable + tooltip.
 
 16. **Active toggles use optimistic updates with rollback** — `setClientActive` and `setInvoiceActive` capture the previous `isActive` value, mutate locally, then call the API. On failure they restore the prior state. Do not add a separate "saving" flag; the rollback path is the contract.
+
+17. **AI Copilot is gated by `AI_COPILOT_ENABLED`** — setting the var to `"false"` disables the feature in `+layout.server.ts` and `+page.server.ts`. The `AI` binding is required when enabled; `AI_QUOTA_KV` is optional (quota is skipped if absent).
+
+18. **Every AI tool must produce an inverse** — each executor in `$lib/ai/tools.ts` returns an `InverseRecord` so the action can be reversed via `applyInverse`. When adding or changing a tool, update its inverse in `$lib/ai/inverse.ts` in lockstep, or undo will silently break.
 
 ---
 
