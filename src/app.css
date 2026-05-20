@@ -164,7 +164,7 @@
 @keyframes ai-in-up {
 	from {
 		opacity: 0;
-		transform: translateY(9px);
+		transform: translateY(8px);
 	}
 	to {
 		opacity: 1;
@@ -175,7 +175,7 @@
 @keyframes ai-in-right {
 	from {
 		opacity: 0;
-		transform: translateX(11px);
+		transform: translateX(8px);
 	}
 	to {
 		opacity: 1;
@@ -187,12 +187,12 @@
 @keyframes ai-wave {
 	0%,
 	100% {
-		transform: scaleY(0.3);
-		opacity: 0.35;
+		transform: scaleY(0.35);
+		opacity: 0.3;
 	}
 	50% {
 		transform: scaleY(1);
-		opacity: 0.95;
+		opacity: 0.85;
 	}
 }
 
@@ -209,79 +209,291 @@
 	}
 }
 
-/* Welcome mark — slow looping wave */
-@keyframes ai-mark-wave {
-	0% {
-		transform: scaleY(0.45);
-	}
-	16% {
-		transform: scaleY(1);
-	}
-	44%,
-	100% {
-		transform: scaleY(0.45);
-	}
-}
-
-/* Mobile FAB halo */
-@keyframes ai-ring {
-	0% {
-		transform: scale(1);
-		opacity: 0.5;
-	}
-	100% {
-		transform: scale(2);
-		opacity: 0;
-	}
-}
-
 .ai-enter {
-	animation: ai-in-up 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
+	animation: ai-in-up 0.25s ease-out both;
 }
 
 .ai-enter-right {
-	animation: ai-in-right 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
+	animation: ai-in-right 0.25s ease-out both;
 }
 
 .ai-rise {
-	animation: ai-in-up 0.44s cubic-bezier(0.22, 1, 0.36, 1) both;
+	animation: ai-in-up 0.4s ease-out both;
 }
 
 .ai-wave-bar {
 	transform-origin: bottom;
-	animation: ai-wave 1.05s ease-in-out infinite;
+	animation: ai-wave 1.1s ease-in-out infinite;
 }
 
 .ai-dot {
 	animation: ai-dot 1.1s ease-in-out infinite;
 }
 
-.ai-mark-bar {
-	transform-origin: bottom;
-	animation: ai-mark-wave 1.9s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-}
-
-.ai-ring {
-	animation: ai-ring 2.8s ease-out infinite;
-}
-
 /* Thin scrollbar for the message stream */
 .ai-scroll {
 	scrollbar-width: thin;
-	scrollbar-color: var(--border) transparent;
+	scrollbar-color: oklch(from var(--muted-foreground) l c h / 0.4) transparent;
 }
 
 .ai-scroll::-webkit-scrollbar {
-	width: 6px;
+	width: 4px;
+	background: transparent;
 }
 
 .ai-scroll::-webkit-scrollbar-thumb {
-	background: var(--border);
-	border-radius: 9999px;
+	background: oklch(from var(--muted-foreground) l c h / 0.4);
+	border-radius: 4px;
 }
 
 .ai-scroll::-webkit-scrollbar-thumb:hover {
-	background: var(--muted-foreground);
+	background: oklch(from var(--muted-foreground) l c h / 0.6);
+}
+
+.ai-scroll::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+/* ── Identity mark — the dancing 4-box launcher (dropout-studio parity) ── */
+
+@keyframes launcher-box-a {
+	0% {
+		transform: translate(0, 0);
+	}
+	7% {
+		transform: translate(7px, -4px);
+	}
+	14% {
+		transform: translate(14px, 0);
+	}
+	21% {
+		transform: translate(14px, 3px);
+	}
+	29% {
+		transform: translate(14px, 14px);
+	}
+	36% {
+		transform: translate(7px, 10px);
+	}
+	43% {
+		transform: translate(0, 14px);
+	}
+	50% {
+		transform: translate(0, 3px);
+	}
+	57%,
+	100% {
+		transform: translate(0, 0);
+	}
+}
+
+@keyframes launcher-box-b {
+	0% {
+		transform: translate(0, 0);
+	}
+	7% {
+		transform: translate(0, 3px);
+	}
+	14% {
+		transform: translate(0, 14px);
+	}
+	21% {
+		transform: translate(-7px, 10px);
+	}
+	29% {
+		transform: translate(-14px, 14px);
+	}
+	36% {
+		transform: translate(-14px, 3px);
+	}
+	43% {
+		transform: translate(-14px, 0);
+	}
+	50% {
+		transform: translate(-7px, -4px);
+	}
+	57%,
+	100% {
+		transform: translate(0, 0);
+	}
+}
+
+@keyframes launcher-box-c {
+	0% {
+		transform: translate(0, 0);
+	}
+	7% {
+		transform: translate(0, -11px);
+	}
+	14% {
+		transform: translate(0, -14px);
+	}
+	21% {
+		transform: translate(7px, -18px);
+	}
+	29% {
+		transform: translate(14px, -14px);
+	}
+	36% {
+		transform: translate(14px, -11px);
+	}
+	43% {
+		transform: translate(14px, 0);
+	}
+	50% {
+		transform: translate(7px, -4px);
+	}
+	57%,
+	100% {
+		transform: translate(0, 0);
+	}
+}
+
+@keyframes launcher-box-d {
+	0% {
+		transform: translate(0, 0);
+	}
+	7% {
+		transform: translate(-7px, -4px);
+	}
+	14% {
+		transform: translate(-14px, 0);
+	}
+	21% {
+		transform: translate(-14px, -11px);
+	}
+	29% {
+		transform: translate(-14px, -14px);
+	}
+	36% {
+		transform: translate(-7px, -18px);
+	}
+	43% {
+		transform: translate(0, -14px);
+	}
+	50% {
+		transform: translate(0, -11px);
+	}
+	57%,
+	100% {
+		transform: translate(0, 0);
+	}
+}
+
+.launcher-icon {
+	--launcher-gap: 4px;
+	--launcher-cycle: 3.5s;
+	--launcher-stagger: 100ms;
+	--launcher-radius: 2.5px;
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	grid-template-rows: 1fr 1fr;
+	gap: var(--launcher-gap);
+}
+
+.launcher-icon > div {
+	background: oklch(from var(--foreground) l c h / 0.8);
+	border-radius: var(--launcher-radius);
+	will-change: transform;
+}
+
+.launcher-idle > .launcher-box-a {
+	animation: launcher-box-a var(--launcher-cycle) cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.launcher-idle > .launcher-box-b {
+	animation: launcher-box-b var(--launcher-cycle) cubic-bezier(0.4, 0, 0.2, 1) infinite;
+	animation-delay: var(--launcher-stagger);
+}
+
+.launcher-idle > .launcher-box-c {
+	animation: launcher-box-c var(--launcher-cycle) cubic-bezier(0.4, 0, 0.2, 1) infinite;
+	animation-delay: calc(var(--launcher-stagger) * 2);
+}
+
+.launcher-idle > .launcher-box-d {
+	animation: launcher-box-d var(--launcher-cycle) cubic-bezier(0.4, 0, 0.2, 1) infinite;
+	animation-delay: calc(var(--launcher-stagger) * 3);
+}
+
+@media (hover: hover) and (pointer: fine) {
+	.group:hover .launcher-idle {
+		--launcher-cycle: 2.8s;
+	}
+}
+
+@keyframes launcher-wave {
+	0% {
+		transform: translateY(0) scale(1);
+	}
+	8% {
+		transform: translateY(-8px) scale(1.15);
+	}
+	16% {
+		transform: translateY(1px) scale(0.95);
+	}
+	22%,
+	100% {
+		transform: translateY(0) scale(1);
+	}
+}
+
+.launcher-icon-row {
+	--launcher-box-row: 24px;
+	--launcher-gap-row: 6px;
+	--launcher-cycle-row: 1.8s;
+	--launcher-stagger-row: 80ms;
+	--launcher-radius-row: 6px;
+	display: grid;
+	grid-template-columns: repeat(4, var(--launcher-box-row));
+	grid-template-rows: var(--launcher-box-row);
+	gap: var(--launcher-gap-row);
+}
+
+.launcher-icon-row > div {
+	background: oklch(from var(--foreground) l c h / 0.8);
+	border-radius: var(--launcher-radius-row);
+	will-change: transform;
+}
+
+.launcher-idle-row > div:nth-child(1) {
+	animation: launcher-wave var(--launcher-cycle-row) cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.launcher-idle-row > div:nth-child(2) {
+	animation: launcher-wave var(--launcher-cycle-row) cubic-bezier(0.4, 0, 0.2, 1) infinite;
+	animation-delay: var(--launcher-stagger-row);
+}
+
+.launcher-idle-row > div:nth-child(3) {
+	animation: launcher-wave var(--launcher-cycle-row) cubic-bezier(0.4, 0, 0.2, 1) infinite;
+	animation-delay: calc(var(--launcher-stagger-row) * 2);
+}
+
+.launcher-idle-row > div:nth-child(4) {
+	animation: launcher-wave var(--launcher-cycle-row) cubic-bezier(0.4, 0, 0.2, 1) infinite;
+	animation-delay: calc(var(--launcher-stagger-row) * 3);
+}
+
+/* Mobile launcher ripple rings */
+@keyframes chat-btn-ripple {
+	0% {
+		transform: scale(1);
+		opacity: 0.35;
+	}
+	100% {
+		transform: scale(2.2);
+		opacity: 0;
+	}
+}
+
+.chat-btn-ripple-ring {
+	position: absolute;
+	inset: 0;
+	border-radius: 9999px;
+	border: 1.5px solid oklch(from var(--muted-foreground) l c h / 0.4);
+	pointer-events: none;
+	animation: chat-btn-ripple 3s ease-out infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -289,11 +501,12 @@
 	.ai-enter-right,
 	.ai-rise,
 	.ai-dot,
-	.ai-ring {
+	.chat-btn-ripple-ring,
+	.launcher-idle > div,
+	.launcher-idle-row > div {
 		animation: none;
 	}
-	.ai-wave-bar,
-	.ai-mark-bar {
+	.ai-wave-bar {
 		animation: none;
 		transform: scaleY(0.7);
 		opacity: 0.6;

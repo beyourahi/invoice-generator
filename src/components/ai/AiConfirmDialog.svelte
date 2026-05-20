@@ -61,7 +61,7 @@
 	>
 		<AlertDialogHeader>
 			<AlertDialogTitle class="flex items-center gap-2 text-balance">
-				<ShieldCheck class="size-4 text-yellow-300" aria-hidden="true" />
+				<ShieldCheck class="size-4 text-amber-300" aria-hidden="true" />
 				{isBatch ? `Confirm ${ai.pendingConfirmations.length} operations` : "Confirm operation"}
 			</AlertDialogTitle>
 			{#if first}

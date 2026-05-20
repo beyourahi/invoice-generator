@@ -74,7 +74,7 @@
 
 	{#if selected.size > 0}
 		<div
-			class="border-border/50 bg-muted/30 flex items-center justify-between gap-2 rounded-md border px-2.5 py-1.5 text-xs"
+			class="border-border bg-card flex items-center justify-between gap-2 rounded-md border px-2.5 py-1.5 text-xs"
 		>
 			<span class="text-muted-foreground tabular-nums">{selected.size} selected</span>
 			<div class="flex items-center gap-1.5">
@@ -102,9 +102,7 @@
 	{:else}
 		<ul class="ai-scroll max-h-72 space-y-1.5 overflow-y-auto pr-1">
 			{#each ai.visibleHistoryActions as action (action.id)}
-				<li
-					class="border-border/50 bg-background/40 flex items-start gap-2 rounded-lg border px-2.5 py-2 text-xs"
-				>
+				<li class="border-border/50 bg-card flex items-start gap-2 rounded-lg border px-2.5 py-2 text-xs">
 					<input
 						type="checkbox"
 						class="mt-0.5 shrink-0"
@@ -123,15 +121,15 @@
 								{action.toolName}
 							</span>
 							<span
-								class="bg-muted/70 text-muted-foreground rounded px-1.5 py-px text-[9px] font-medium tracking-wide uppercase"
+								class="bg-muted text-muted-foreground rounded px-1.5 py-px text-[9px] font-medium tracking-wide uppercase"
 							>
 								{action.status}
 							</span>
 							{#if action.anomalyTriggered}
-								<span class="text-[10px] text-yellow-300" title="Safety check triggered">⚠</span>
+								<span class="text-[10px] text-amber-300" title="Safety check triggered">⚠</span>
 							{/if}
 						</div>
-						<div class="text-muted-foreground/70 text-[10px] tabular-nums">
+						<div class="text-muted-foreground text-[10px] tabular-nums">
 							{formatTime(action.createdAt)}
 						</div>
 						{#if action.error}
@@ -143,7 +141,7 @@
 							<button
 								type="button"
 								onclick={() => onUndo(action.id)}
-								class="text-muted-foreground pointer-fine:hover:text-foreground pointer-fine:hover:bg-accent/60 rounded-md p-1.5 transition-colors"
+								class="text-muted-foreground pointer-fine:hover:text-foreground pointer-fine:hover:bg-muted rounded-md p-1.5 transition-colors"
 								aria-label="Undo {action.toolName}"
 								title="Undo"
 							>

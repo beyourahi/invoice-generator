@@ -5,15 +5,16 @@
 </script>
 
 <Sheet open={ai.mobileOpen} onOpenChange={(v: boolean) => ai.setMobileOpen(v)}>
-	<SheetContent side="bottom" class="flex h-[92vh] w-full flex-col gap-0 p-3 sm:max-w-none">
-		<SheetHeader class="mb-3 gap-0.5 px-1 pt-0.5">
-			<SheetTitle class="text-base text-balance">AI Copilot</SheetTitle>
-			<SheetDescription class="text-muted-foreground text-xs text-pretty">
-				Type what you want. The invoices follow.
-			</SheetDescription>
+	<SheetContent
+		side="bottom"
+		class="bg-background flex h-[100dvh]! max-h-[100dvh]! w-full flex-col gap-0 border-0! p-0 sm:max-w-none"
+	>
+		<SheetHeader class="sr-only">
+			<SheetTitle>AI Copilot</SheetTitle>
+			<SheetDescription>Type what you want. The invoices follow.</SheetDescription>
 		</SheetHeader>
 		<div class="min-h-0 flex-1">
-			<AiSidebar />
+			<AiSidebar bare />
 		</div>
 	</SheetContent>
 </Sheet>

@@ -37,7 +37,7 @@
 	<button
 		type="button"
 		onclick={onNew}
-		class="border-border/60 bg-background/50 text-foreground pointer-fine:hover:border-foreground/25 pointer-fine:hover:bg-accent/50 flex w-full items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium transition-colors"
+		class="border-border/50 bg-card text-foreground pointer-fine:hover:border-border pointer-fine:hover:bg-muted flex w-full items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium transition-colors"
 	>
 		<MessageSquarePlus class="size-3.5 shrink-0" aria-hidden="true" />
 		New chat
@@ -52,9 +52,7 @@
 				<li
 					class={cn(
 						"flex items-center gap-1 rounded-lg border px-2 py-1.5 transition-colors",
-						active
-							? "border-foreground/25 bg-accent/50"
-							: "border-border/50 bg-background/40 pointer-fine:hover:bg-accent/30"
+						active ? "border-border bg-muted" : "border-border/50 bg-card pointer-fine:hover:bg-muted"
 					)}
 				>
 					<button
@@ -64,12 +62,12 @@
 						aria-current={active ? "true" : undefined}
 					>
 						{#if active}
-							<span class="bg-status-active size-1.5 shrink-0 rounded-full" aria-hidden="true"></span>
+							<span class="bg-foreground size-1.5 shrink-0 rounded-full" aria-hidden="true"></span>
 						{/if}
 						<span
 							class={cn(
 								"truncate text-xs",
-								active ? "text-foreground font-medium" : "text-foreground/85"
+								active ? "text-foreground font-medium" : "text-muted-foreground"
 							)}
 						>
 							{conv.title}
@@ -77,7 +75,7 @@
 					</button>
 					<button
 						type="button"
-						class="text-muted-foreground pointer-fine:hover:text-foreground pointer-fine:hover:bg-accent/60 rounded-md p-1 transition-colors"
+						class="text-muted-foreground pointer-fine:hover:text-foreground pointer-fine:hover:bg-muted rounded-md p-1 transition-colors"
 						onclick={() => onRename(conv.id, conv.title)}
 						aria-label="Rename conversation {conv.title}"
 						title="Rename"

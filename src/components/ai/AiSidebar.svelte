@@ -4,18 +4,11 @@
 	import AiMessage from "./AiMessage.svelte";
 	import AiHistoryPanel from "./AiHistoryPanel.svelte";
 	import AiConversationsPanel from "./AiConversationsPanel.svelte";
-	import {
-		ArrowRight,
-		ArrowUp,
-		CalendarPlus,
-		EyeOff,
-		History,
-		MessagesSquare,
-		Sparkles,
-		Wand2
-	} from "@lucide/svelte";
+	import { ArrowUp, CalendarPlus, EyeOff, History, MessagesSquare, Wand2 } from "@lucide/svelte";
 	import { tick } from "svelte";
 	import { cn } from "$lib/utils";
+
+	let { bare = false }: { bare?: boolean } = $props();
 
 	let input = $state("");
 	let scrollContainer: HTMLDivElement | null = $state(null);
@@ -27,14 +20,7 @@
 		{ icon: EyeOff, text: "Mark the most recent invoice inactive" }
 	];
 
-	const markBars = [0, 1, 2, 3];
 	const dots = [0, 1, 2];
-
-	const status = $derived.by(() => {
-		if (ai.error) return { tone: "error", label: "Error" } as const;
-		if (ai.streaming) return { tone: "thinking", label: "Thinking…" } as const;
-		return { tone: "ready", label: "Ready" } as const;
-	});
 
 	const lastContent = $derived(ai.messages.at(-1)?.content ?? "");
 
@@ -84,33 +70,14 @@
 </script>
 
 <section
-	class="border-border/60 bg-card/30 flex h-full min-h-[28rem] flex-col overflow-hidden rounded-xl border shadow-sm lg:h-[calc(100vh-9rem)]"
+	class={cn(
+		"bg-background flex h-full min-h-[28rem] flex-col overflow-hidden lg:h-[calc(100vh-9rem)]",
+		!bare && "border-border rounded-xl border shadow-2xl"
+	)}
 	aria-label="AI Copilot"
 >
-	<header class="border-border/40 flex items-center justify-between gap-2 border-b px-3 py-2.5">
-		<div class="flex min-w-0 items-center gap-2">
-			<div class="bg-foreground text-background flex size-6 shrink-0 items-center justify-center rounded-md">
-				<Sparkles class="size-3.5" aria-hidden="true" />
-			</div>
-			<span class="text-foreground truncate text-xs font-semibold">AI Copilot</span>
-		</div>
-		<div class="flex shrink-0 items-center gap-1.5" aria-label="Status: {status.label}">
-			<span
-				class={cn(
-					"size-1.5 rounded-full",
-					status.tone === "ready" && "bg-status-active",
-					status.tone === "thinking" && "status-dot-pulse bg-amber-400",
-					status.tone === "error" && "bg-destructive"
-				)}
-			></span>
-			<span class="text-muted-foreground/80 text-[10px] font-medium tracking-wide">
-				{status.label}
-			</span>
-		</div>
-	</header>
-
-	<div class="border-border/40 border-b p-2">
-		<div class="bg-card/60 border-border/60 grid grid-cols-2 gap-1 rounded-lg border p-1">
+	<div class="border-border border-b p-2">
+		<div class={cn("bg-card border-border grid grid-cols-2 gap-1 rounded-lg border p-1", bare && "mr-12")}>
 			{#each railTabs as tab (tab.id)}
 				{@const isActive = ai.railTab === tab.id}
 				<button
@@ -118,19 +85,16 @@
 					onclick={() => ai.toggleRailTab(tab.id)}
 					aria-expanded={isActive}
 					class={cn(
-						"flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs transition-all",
+						"flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs transition-colors",
 						isActive
-							? "bg-foreground text-background font-semibold shadow-sm shadow-black/20"
-							: "text-muted-foreground pointer-fine:hover:text-foreground pointer-fine:hover:bg-accent/40 font-medium"
+							? "bg-primary/10 text-foreground font-medium"
+							: "text-muted-foreground pointer-fine:hover:text-foreground pointer-fine:hover:bg-muted"
 					)}
 				>
 					<tab.icon class="size-3.5 shrink-0" aria-hidden="true" />
 					<span>{tab.label}</span>
 					<span
-						class={cn(
-							"rounded-full px-1.5 py-px text-[10px] font-medium tabular-nums",
-							isActive ? "bg-background/25 text-background" : "bg-muted/70 text-muted-foreground"
-						)}
+						class="bg-background text-muted-foreground rounded-full px-1.5 py-px text-[10px] font-medium tabular-nums"
 					>
 						{tab.count}
 					</span>
@@ -151,29 +115,31 @@
 
 	<div
 		bind:this={scrollContainer}
-		class="ai-scroll flex-1 space-y-4 overflow-y-auto px-3.5 py-4"
+		class="ai-scroll flex-1 space-y-3 overflow-y-auto px-4 py-4"
 		aria-live="polite"
 		aria-relevant="additions"
 	>
 		{#if ai.messages.length === 0}
 			<div class="flex h-full flex-col items-center justify-center px-4 py-6 text-center">
-				<div class="ai-rise mb-4 flex h-7 items-end gap-1" style="animation-delay: 0ms">
-					{#each markBars as bar (bar)}
-						<span
-							class="ai-mark-bar bg-foreground h-7 w-[3.5px] rounded-full"
-							style="animation-delay: {bar * 0.13}s"
-						></span>
-					{/each}
+				<div
+					class="launcher-icon-row launcher-idle-row ai-rise mb-5"
+					style="animation-delay: 0ms"
+					aria-hidden="true"
+				>
+					<div></div>
+					<div></div>
+					<div></div>
+					<div></div>
 				</div>
 				<p
-					class="text-foreground ai-rise mb-1.5 text-sm font-semibold text-balance"
-					style="animation-delay: 90ms"
+					class="text-foreground ai-rise mb-1.5 text-lg font-medium text-balance"
+					style="animation-delay: 100ms"
 				>
 					Type what you want. The invoices follow.
 				</p>
 				<p
-					class="text-muted-foreground ai-rise mb-5 max-w-[17rem] text-xs leading-relaxed text-pretty"
-					style="animation-delay: 150ms"
+					class="text-muted-foreground ai-rise mb-5 max-w-md text-xs leading-relaxed text-pretty md:text-sm"
+					style="animation-delay: 200ms"
 				>
 					Describe an edit in plain words — the copilot updates the right clients and invoices for you.
 				</p>
@@ -182,21 +148,17 @@
 						<button
 							type="button"
 							onclick={() => onSubmit(example.text)}
-							class="ai-rise group border-border/60 bg-background/50 pointer-fine:hover:border-foreground/25 pointer-fine:hover:bg-accent/50 flex w-full items-center gap-2.5 rounded-lg border px-3 py-2.5 text-left transition-colors"
-							style="animation-delay: {220 + i * 80}ms"
+							class="ai-rise group border-border/50 bg-card pointer-fine:hover:border-border pointer-fine:hover:bg-muted flex w-full items-center gap-3 rounded-xl border px-3.5 py-2.5 text-left transition-colors"
+							style="animation-delay: {300 + i * 80}ms"
 						>
 							<span
-								class="bg-muted/60 text-muted-foreground group-hover:text-foreground flex size-7 shrink-0 items-center justify-center rounded-md transition-colors"
+								class="bg-primary/5 text-muted-foreground flex size-8 shrink-0 items-center justify-center rounded-lg"
 							>
 								<example.icon class="size-3.5" aria-hidden="true" />
 							</span>
-							<span class="text-foreground/85 min-w-0 flex-1 text-xs leading-snug text-pretty">
+							<span class="text-muted-foreground min-w-0 flex-1 text-xs leading-snug text-pretty">
 								{example.text}
 							</span>
-							<ArrowRight
-								class="text-muted-foreground size-3.5 shrink-0 opacity-0 transition-opacity group-hover:opacity-100"
-								aria-hidden="true"
-							/>
 						</button>
 					{/each}
 				</div>
@@ -208,24 +170,21 @@
 		{/if}
 
 		{#if ai.error}
-			<div
-				class="ai-enter border-destructive/40 bg-destructive/10 text-destructive rounded-lg border px-3 py-2 text-xs text-pretty"
-				role="alert"
-			>
+			<p class="ai-enter text-center text-xs text-pretty text-red-400/80" role="alert">
 				{ai.error}
-			</div>
+			</p>
 		{/if}
 	</div>
 
 	<form
-		class="border-border/40 border-t p-2.5"
+		class="border-border border-t p-2.5"
 		onsubmit={e => {
 			e.preventDefault();
 			void onSubmit();
 		}}
 	>
 		<div
-			class="border-border/60 bg-background/60 focus-within:border-foreground/30 focus-within:ring-foreground/10 flex items-end gap-1.5 rounded-xl border p-1.5 transition-all focus-within:ring-2"
+			class="border-border bg-card focus-within:border-muted-foreground flex items-end gap-1.5 rounded-2xl border p-1.5 transition-colors"
 		>
 			<textarea
 				bind:this={textarea}
@@ -235,7 +194,7 @@
 				placeholder="Ask the copilot to change something…"
 				rows="1"
 				disabled={ai.inputBusy}
-				class="text-foreground placeholder:text-muted-foreground/60 ai-scroll max-h-32 min-h-[2rem] flex-1 resize-none bg-transparent px-2 py-1.5 text-sm leading-relaxed outline-none disabled:opacity-60"
+				class="text-foreground placeholder:text-muted-foreground ai-scroll max-h-32 min-h-[2rem] flex-1 resize-none bg-transparent px-2 py-1.5 text-sm leading-relaxed outline-none disabled:opacity-60"
 				aria-label="Type a request"
 			></textarea>
 			<button
@@ -246,8 +205,8 @@
 					"disabled:cursor-not-allowed",
 					ai.inputBusy && "cursor-wait",
 					ai.inputBusy || input.trim().length === 0
-						? "bg-muted/50 text-muted-foreground"
-						: "bg-foreground text-background pointer-fine:hover:bg-foreground/90 active:scale-95"
+						? "text-muted-foreground"
+						: "bg-primary/10 text-foreground pointer-fine:hover:bg-muted active:scale-95"
 				)}
 				aria-label="Send"
 			>
@@ -263,13 +222,13 @@
 				{/if}
 			</button>
 		</div>
-		<div class="text-muted-foreground/55 mt-1.5 hidden items-center gap-1 px-1 text-[10px] sm:flex">
-			<kbd class="border-border/60 bg-muted/50 rounded border px-1 py-px font-sans">Enter</kbd>
+		<div class="text-muted-foreground mt-1.5 hidden items-center gap-1 px-1 text-[10px] sm:flex">
+			<kbd class="border-border bg-card rounded border px-1 py-px font-sans">Enter</kbd>
 			<span>to send</span>
-			<span class="text-muted-foreground/30">·</span>
-			<kbd class="border-border/60 bg-muted/50 rounded border px-1 py-px font-sans">Shift</kbd>
+			<span class="text-muted-foreground/40">·</span>
+			<kbd class="border-border bg-card rounded border px-1 py-px font-sans">Shift</kbd>
 			<span>+</span>
-			<kbd class="border-border/60 bg-muted/50 rounded border px-1 py-px font-sans">Enter</kbd>
+			<kbd class="border-border bg-card rounded border px-1 py-px font-sans">Enter</kbd>
 			<span>for a new line</span>
 		</div>
 	</form>

@@ -24,18 +24,18 @@
 	});
 
 	const statusClasses = $derived.by(() => {
-		if (call.undone) return "border-muted/60 bg-muted/30 text-muted-foreground";
+		if (call.undone) return "border-border bg-card text-muted-foreground";
 		switch (call.status) {
 			case "applied":
 				return "border-[var(--status-active-border)] bg-[var(--status-active-bg)] text-[var(--status-active-foreground)]";
 			case "rejected":
-				return "border-muted/50 bg-muted/30 text-muted-foreground";
+				return "border-border bg-card text-muted-foreground";
 			case "failed":
 				return "border-destructive/40 bg-destructive/10 text-destructive";
 			case "pending_confirmation":
-				return "border-yellow-500/30 bg-yellow-500/10 text-yellow-300";
+				return "border-amber-400/30 bg-amber-400/10 text-amber-300";
 			default:
-				return "border-border bg-muted/40 text-muted-foreground";
+				return "border-border bg-card text-muted-foreground";
 		}
 	});
 
@@ -54,16 +54,14 @@
 </script>
 
 {#if isPolishProposal && call.polish}
-	<div class="ai-enter border-border/70 bg-card text-card-foreground space-y-2.5 rounded-lg border p-3 text-xs">
+	<div class="ai-enter border-border bg-card text-muted-foreground space-y-2.5 rounded-lg border p-3 text-xs">
 		<div class="text-muted-foreground flex items-center gap-1.5 font-medium">
 			<Wand2 class="size-3.5" aria-hidden="true" />
 			<span>Suggested rewrite</span>
 		</div>
 		<div class="space-y-1.5">
 			<div class="border-border/50 bg-destructive/5 rounded-md border px-2.5 py-1.5">
-				<div class="text-muted-foreground/70 mb-0.5 text-[10px] font-medium tracking-wide uppercase">
-					Current
-				</div>
+				<div class="text-muted-foreground mb-0.5 text-[10px] font-medium tracking-wide uppercase">Current</div>
 				<p class="text-muted-foreground break-words whitespace-pre-wrap">
 					{call.polish.oldText || "(empty)"}
 				</p>
@@ -83,7 +81,7 @@
 			<button
 				type="button"
 				onclick={onRejectPolish}
-				class="text-foreground/80 pointer-fine:hover:text-foreground pointer-fine:hover:bg-background border-border/70 bg-background/60 inline-flex items-center gap-1 rounded-md border px-2.5 py-1.5 font-medium transition-colors"
+				class="text-muted-foreground pointer-fine:hover:text-foreground pointer-fine:hover:bg-muted border-border bg-card inline-flex items-center gap-1 rounded-md border px-2.5 py-1.5 font-medium transition-colors"
 			>
 				<X class="size-3" aria-hidden="true" />
 				Reject
@@ -91,7 +89,7 @@
 			<button
 				type="button"
 				onclick={onApplyPolish}
-				class="bg-foreground text-background pointer-fine:hover:bg-foreground/90 inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 font-medium transition-colors"
+				class="bg-primary/10 text-foreground pointer-fine:hover:bg-muted inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 font-medium transition-colors"
 			>
 				<Check class="size-3" aria-hidden="true" />
 				Apply
@@ -117,7 +115,7 @@
 			{/if}
 		</span>
 		<span class="font-medium break-all">{call.name}</span>
-		<span class="text-muted-foreground/80 tabular-nums">· {statusLabel}</span>
+		<span class="text-muted-foreground tabular-nums">· {statusLabel}</span>
 		{#if call.error}
 			<span class="text-destructive/80 w-full break-all">{call.error}</span>
 		{/if}
@@ -127,7 +125,7 @@
 				onclick={onUndo}
 				disabled={undoing}
 				class={cn(
-					"text-foreground/80 pointer-fine:hover:text-foreground pointer-fine:hover:bg-background border-border/70 bg-background/60 ml-auto inline-flex items-center gap-1 rounded-md border px-2 py-1 font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50",
+					"text-muted-foreground pointer-fine:hover:text-foreground pointer-fine:hover:bg-muted border-border bg-card ml-auto inline-flex items-center gap-1 rounded-md border px-2 py-1 font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50",
 					undoing && "cursor-wait"
 				)}
 			>

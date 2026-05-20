@@ -4,7 +4,6 @@
 	import { parseMarkdown } from "$lib/ai/markdown";
 	import AiToolBadge from "./AiToolBadge.svelte";
 	import { cn } from "$lib/utils";
-	import { Sparkles } from "@lucide/svelte";
 
 	let { message }: { message: AiMessage } = $props();
 
@@ -30,36 +29,31 @@
 		{#if node.type === "text"}{node.value}{:else if node.type === "bold"}<strong
 				class="text-foreground font-semibold">{node.value}</strong
 			>{:else if node.type === "italic"}<em class="italic">{node.value}</em>{:else if node.type === "code"}<code
-				class="bg-muted/80 text-foreground rounded px-1 py-0.5 font-mono text-[0.85em]">{node.value}</code
+				class="bg-card text-foreground rounded px-1 py-0.5 font-mono text-[0.85em]">{node.value}</code
 			>{:else if node.type === "link"}<a
 				href={node.href}
 				target="_blank"
 				rel="noopener noreferrer"
-				class="text-foreground decoration-foreground/35 hover:decoration-foreground font-medium underline underline-offset-2 transition-colors"
+				class="text-foreground decoration-foreground/50 hover:decoration-foreground font-medium underline underline-offset-2 transition-colors"
 				>{node.label}</a
 			>{/if}
 	{/each}
 {/snippet}
 
-<div class={cn("flex items-start gap-2.5", isUser ? "ai-enter-right justify-end" : "ai-enter justify-start")}>
-	{#if !isUser}
-		<div
-			class="from-muted to-muted/30 border-border/60 text-foreground/75 flex size-7 shrink-0 items-center justify-center rounded-lg border bg-gradient-to-br"
-		>
-			<Sparkles class="size-3.5" aria-hidden="true" />
-		</div>
-	{/if}
-
-	<div class={cn("flex max-w-[88%] min-w-0 flex-col gap-1.5", isUser ? "items-end" : "items-start")}>
+<div class={cn("flex", isUser ? "justify-end" : "justify-start")}>
+	<div
+		class={cn(
+			"flex max-w-[85%] min-w-0 flex-col gap-1.5",
+			isUser ? "ai-enter-right items-end" : "ai-enter items-start"
+		)}
+	>
 		{#if isUser}
-			<div
-				class="bg-foreground text-background rounded-2xl rounded-br-md px-3.5 py-2.5 text-sm leading-relaxed shadow-sm"
-			>
+			<div class="bg-primary/10 text-foreground rounded-2xl rounded-br-md px-4 py-2.5 text-sm leading-relaxed">
 				<span class="break-words whitespace-pre-wrap">{message.content}</span>
 			</div>
 		{:else if message.content}
 			<div
-				class="bg-card border-border/70 text-card-foreground rounded-2xl rounded-bl-md border px-3.5 py-2.5 text-sm"
+				class="border-border/50 bg-card text-muted-foreground rounded-2xl rounded-bl-md border px-4 py-2.5 text-sm"
 			>
 				<div class="ai-prose space-y-2.5 leading-relaxed">
 					{#each blocks as block, bi (bi)}
@@ -85,9 +79,9 @@
 								{/each}
 							</ul>
 						{:else if block.type === "codeblock"}
-							<pre
-								class="ai-scroll border-border/70 bg-background/70 overflow-x-auto rounded-lg border p-2.5"><code
-									class="text-foreground/90 font-mono text-[11px] leading-relaxed">{block.value}</code
+							<pre class="ai-scroll border-border bg-card overflow-x-auto rounded-lg border p-2.5"><code
+									class="text-muted-foreground font-mono text-[11px] leading-relaxed"
+									>{block.value}</code
 								></pre>
 						{/if}
 					{/each}
@@ -95,18 +89,17 @@
 			</div>
 		{:else if message.streaming}
 			<div
-				class="bg-card border-border/70 rounded-2xl rounded-bl-md border px-3.5 py-3"
+				class="bg-card flex items-end gap-[3px] rounded-2xl rounded-bl-md px-4 py-3 backdrop-blur-xl"
 				role="status"
 				aria-label="Generating response"
 			>
-				<div class="flex h-4 items-end gap-[3px]">
-					{#each waveBars as bar (bar)}
-						<span
-							class="ai-wave-bar bg-foreground/45 h-4 w-[3px] rounded-full"
-							style="animation-delay: {bar * 0.12}s"
-						></span>
-					{/each}
-				</div>
+				{#each waveBars as bar (bar)}
+					<span
+						class="ai-wave-bar bg-foreground/40 h-[18px] w-0.5 rounded-[1px]"
+						style="animation-delay: {bar * 0.12}s"
+						aria-hidden="true"
+					></span>
+				{/each}
 				<span class="sr-only">Generating response…</span>
 			</div>
 		{/if}
@@ -120,7 +113,7 @@
 		{/if}
 
 		{#if message.content && timeLabel}
-			<span class="text-muted-foreground/55 px-1 text-[10px] tabular-nums">{timeLabel}</span>
+			<span class="text-muted-foreground px-1 text-[10px] tabular-nums">{timeLabel}</span>
 		{/if}
 	</div>
 </div>
