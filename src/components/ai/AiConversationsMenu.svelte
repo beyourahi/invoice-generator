@@ -58,7 +58,7 @@
 							e.stopPropagation();
 							onRename(conv.id, conv.title);
 						}}
-						aria-label="Rename"
+						aria-label="Rename conversation {conv.title}"
 					>
 						<Pencil class="size-3" aria-hidden="true" />
 					</button>
@@ -69,7 +69,7 @@
 							e.stopPropagation();
 							onDelete(conv.id);
 						}}
-						aria-label="Delete"
+						aria-label="Delete conversation {conv.title}"
 					>
 						<Trash2 class="size-3" aria-hidden="true" />
 					</button>
