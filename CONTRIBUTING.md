@@ -39,8 +39,8 @@ Invoice Generator is a focused, single-purpose tool. Contributions should respec
 
 | Tool                                                            | Minimum Version | Notes                                 |
 | --------------------------------------------------------------- | --------------- | ------------------------------------- |
-| [Bun](https://bun.sh)                                           | 1.x             | Package manager and runtime           |
-| [Node.js](https://nodejs.org)                                   | 20.x            | Required by some Wrangler internals   |
+| [Bun](https://bun.sh)                                           | 1.2+            | Package manager and runtime           |
+| [Node.js](https://nodejs.org)                                   | 20.19+ / 22.12+ | Required by Vite 8 and the toolchain  |
 | [Wrangler](https://developers.cloudflare.com/workers/wrangler/) | 4.x             | Installed as a dev dependency via Bun |
 | Git                                                             | 2.5+            | Required for worktree support         |
 
@@ -58,28 +58,22 @@ bun install
 bun run dev
 ```
 
-This wipes `.wrangler/`, `.svelte-kit/`, and `bundled/`, reinstalls dependencies, runs `cf-typegen` and `format`, then starts the Vite dev server. The app opens automatically in your default browser.
+This runs `vite dev --open --host`: it starts the Vite dev server, opens the app in your default browser, and exposes it on your local network.
 
 > **Note:** The Vite dev server does not provide a Cloudflare D1 binding. Authentication will be silently disabled and all routes will treat the session as unauthenticated. Use `bun run preview` (Wrangler-backed) to test auth locally.
 
 ### Environment Variables
 
-Authentication requires Cloudflare secrets. For local testing via `bun run preview`, create a `.dev.vars` file at the project root (this file is gitignored):
-
-```env
-BETTER_AUTH_SECRET=<random-secret>
-BETTER_AUTH_URL=http://localhost:8788
-GOOGLE_CLIENT_ID=<your-google-client-id>
-GOOGLE_CLIENT_SECRET=<your-google-client-secret>
-```
-
-Generate a random secret with:
+Two gitignored env files live at the project root, each read by a different tool. Copy the committed templates and fill in the values:
 
 ```bash
-openssl rand -base64 32
+cp .dev.vars.example .dev.vars   # auth secrets — read by `wrangler dev`
+cp .env.example .env             # Cloudflare credentials — read by drizzle-kit
 ```
 
-Never commit `.env`, `.env.*`, or `.dev.vars`.
+`.dev.vars` holds the auth secrets used by local `bun run preview`: `BETTER_AUTH_SECRET` (generate with `openssl rand -base64 32`), `BETTER_AUTH_URL` (`http://localhost:8787` — the Wrangler dev server), `GOOGLE_CLIENT_ID`, and `GOOGLE_CLIENT_SECRET`. `.env` holds `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_DATABASE_ID`, and `CLOUDFLARE_D1_TOKEN` for drizzle-kit's remote D1 commands.
+
+Wrangler reads `.dev.vars` for the Worker runtime — not `.env` — while Bun loads `.env` for `bun run` scripts. Never commit `.dev.vars` or `.env`.
 
 ### Database (D1)
 

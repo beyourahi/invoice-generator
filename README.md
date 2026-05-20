@@ -31,16 +31,11 @@ A SvelteKit app for generating batches of PDF invoices. Configure a sender ident
 bun install
 ```
 
-Create `.dev.vars`:
+Copy the example env files and fill in the values:
 
-```dotenv
-BETTER_AUTH_SECRET=    # openssl rand -base64 32
-BETTER_AUTH_URL=http://localhost:5173
-GOOGLE_CLIENT_ID=
-GOOGLE_CLIENT_SECRET=
-CLOUDFLARE_ACCOUNT_ID=       # from Cloudflare dashboard
-CLOUDFLARE_DATABASE_ID=      # from Cloudflare D1 dashboard
-CLOUDFLARE_D1_TOKEN=         # Cloudflare API token with D1 edit permission
+```bash
+cp .dev.vars.example .dev.vars   # auth secrets — read by wrangler dev
+cp .env.example .env             # Cloudflare credentials — read by drizzle-kit
 ```
 
 Apply migrations and start:
@@ -54,19 +49,26 @@ bun run dev              # http://localhost:5173
 
 ---
 
-## Environment Variables
+Two gitignored files at the project root, each read by a different tool — copy [`.dev.vars.example`](./.dev.vars.example) and [`.env.example`](./.env.example).
 
-| Variable                 | Required | Description                                  |
-| ------------------------ | -------- | -------------------------------------------- |
-| `BETTER_AUTH_SECRET`     | Yes      | Random secret for session signing            |
-| `BETTER_AUTH_URL`        | Yes      | Deployed URL (also set in `wrangler.jsonc`)  |
-| `GOOGLE_CLIENT_ID`       | Yes      | Google OAuth client ID                       |
-| `GOOGLE_CLIENT_SECRET`   | Yes      | Google OAuth client secret                   |
-| `CLOUDFLARE_ACCOUNT_ID`  | Yes      | Cloudflare account ID                        |
-| `CLOUDFLARE_DATABASE_ID` | Yes      | D1 database ID                               |
-| `CLOUDFLARE_D1_TOKEN`    | Yes      | Cloudflare API token with D1 edit permission |
+`.dev.vars` — Worker runtime secrets, loaded by `wrangler dev`:
 
-`BETTER_AUTH_URL` is also a non-secret binding in `wrangler.jsonc` for production. All others are secrets — never commit them.
+| Variable               | Description                                       |
+| ---------------------- | ------------------------------------------------- |
+| `BETTER_AUTH_SECRET`   | Random secret for session signing                 |
+| `BETTER_AUTH_URL`      | Worker base URL — `http://localhost:8787` locally |
+| `GOOGLE_CLIENT_ID`     | Google OAuth client ID                            |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth client secret                        |
+
+`.env` — drizzle-kit credentials, loaded by Bun for `bun run db:*`:
+
+| Variable                 | Description                                  |
+| ------------------------ | -------------------------------------------- |
+| `CLOUDFLARE_ACCOUNT_ID`  | Cloudflare account ID                        |
+| `CLOUDFLARE_DATABASE_ID` | D1 database ID                               |
+| `CLOUDFLARE_D1_TOKEN`    | Cloudflare API token with D1 edit permission |
+
+Wrangler reads `.dev.vars` (not `.env`) for the Worker. In production, set the `.dev.vars` values as Worker secrets via `wrangler secret put`; `BETTER_AUTH_URL` is a non-secret binding in `wrangler.jsonc`. Never commit `.dev.vars` or `.env`.
 
 ---
 
@@ -106,7 +108,7 @@ wrangler deploy
 1. Go to [Google Cloud Console](https://console.cloud.google.com) → APIs & Services → Credentials
 2. Create an OAuth 2.0 Client ID (Web application)
 3. Add authorized redirect URIs:
-   - `http://localhost:5173/api/auth/callback/google` (local)
+   - `http://localhost:8787/api/auth/callback/google` (local — Wrangler dev server)
    - `https://invoice-generator.beyourahi.workers.dev/api/auth/callback/google` (production)
 
 ---
