@@ -17,7 +17,7 @@
 			case "pending_confirmation":
 				return "Awaiting confirmation";
 			default:
-				return "Pending";
+				return "Working…";
 		}
 	});
 
@@ -48,20 +48,27 @@
 	};
 </script>
 
-<div class={cn("flex flex-wrap items-center gap-2 rounded-md border px-2.5 py-1.5 text-xs", statusClasses)}>
-	{#if call.status === "pending" || call.status === "pending_confirmation"}
-		<Loader2 class="size-3 animate-spin" aria-hidden="true" />
-	{:else if call.status === "applied" && !call.undone}
-		<CheckCircle2 class="size-3" aria-hidden="true" />
-	{:else if call.status === "failed"}
-		<CircleX class="size-3" aria-hidden="true" />
-	{:else}
-		<ShieldAlert class="size-3" aria-hidden="true" />
-	{/if}
-	<span class="font-medium">{call.name}</span>
-	<span class="text-muted-foreground/80 tabular-nums">{statusLabel}</span>
+<div
+	class={cn(
+		"ai-enter flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border px-2.5 py-2 text-xs",
+		statusClasses
+	)}
+>
+	<span class="flex size-4 shrink-0 items-center justify-center">
+		{#if call.status === "pending" || call.status === "pending_confirmation"}
+			<Loader2 class="size-3.5 animate-spin" aria-hidden="true" />
+		{:else if call.status === "applied" && !call.undone}
+			<CheckCircle2 class="size-3.5" aria-hidden="true" />
+		{:else if call.status === "failed"}
+			<CircleX class="size-3.5" aria-hidden="true" />
+		{:else}
+			<ShieldAlert class="size-3.5" aria-hidden="true" />
+		{/if}
+	</span>
+	<span class="font-medium break-all">{call.name}</span>
+	<span class="text-muted-foreground/80 tabular-nums">· {statusLabel}</span>
 	{#if call.error}
-		<span class="text-destructive/80 break-all">— {call.error}</span>
+		<span class="text-destructive/80 w-full break-all">{call.error}</span>
 	{/if}
 	{#if canUndo}
 		<button
@@ -69,7 +76,7 @@
 			onclick={onUndo}
 			disabled={undoing}
 			class={cn(
-				"text-foreground/80 pointer-fine:hover:text-foreground border-border/70 bg-background/60 ml-auto inline-flex items-center gap-1 rounded border px-2 py-0.5 transition-colors disabled:cursor-not-allowed disabled:opacity-50",
+				"text-foreground/80 pointer-fine:hover:text-foreground pointer-fine:hover:bg-background border-border/70 bg-background/60 ml-auto inline-flex items-center gap-1 rounded-md border px-2 py-1 font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50",
 				undoing && "cursor-wait"
 			)}
 		>

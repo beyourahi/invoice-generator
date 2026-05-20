@@ -158,6 +158,148 @@
 	}
 }
 
+/* ───────────────────────────────  AI Copilot  ─────────────────────────────── */
+
+/* Bubble + element entrances */
+@keyframes ai-in-up {
+	from {
+		opacity: 0;
+		transform: translateY(9px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes ai-in-right {
+	from {
+		opacity: 0;
+		transform: translateX(11px);
+	}
+	to {
+		opacity: 1;
+		transform: translateX(0);
+	}
+}
+
+/* Streaming "thinking" equalizer */
+@keyframes ai-wave {
+	0%,
+	100% {
+		transform: scaleY(0.3);
+		opacity: 0.35;
+	}
+	50% {
+		transform: scaleY(1);
+		opacity: 0.95;
+	}
+}
+
+/* Send-button working dots */
+@keyframes ai-dot {
+	0%,
+	100% {
+		transform: translateY(0);
+		opacity: 0.4;
+	}
+	50% {
+		transform: translateY(-2.5px);
+		opacity: 1;
+	}
+}
+
+/* Welcome mark — slow looping wave */
+@keyframes ai-mark-wave {
+	0% {
+		transform: scaleY(0.45);
+	}
+	16% {
+		transform: scaleY(1);
+	}
+	44%,
+	100% {
+		transform: scaleY(0.45);
+	}
+}
+
+/* Mobile FAB halo */
+@keyframes ai-ring {
+	0% {
+		transform: scale(1);
+		opacity: 0.5;
+	}
+	100% {
+		transform: scale(2);
+		opacity: 0;
+	}
+}
+
+.ai-enter {
+	animation: ai-in-up 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.ai-enter-right {
+	animation: ai-in-right 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.ai-rise {
+	animation: ai-in-up 0.44s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.ai-wave-bar {
+	transform-origin: bottom;
+	animation: ai-wave 1.05s ease-in-out infinite;
+}
+
+.ai-dot {
+	animation: ai-dot 1.1s ease-in-out infinite;
+}
+
+.ai-mark-bar {
+	transform-origin: bottom;
+	animation: ai-mark-wave 1.9s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.ai-ring {
+	animation: ai-ring 2.8s ease-out infinite;
+}
+
+/* Thin scrollbar for the message stream */
+.ai-scroll {
+	scrollbar-width: thin;
+	scrollbar-color: var(--border) transparent;
+}
+
+.ai-scroll::-webkit-scrollbar {
+	width: 6px;
+}
+
+.ai-scroll::-webkit-scrollbar-thumb {
+	background: var(--border);
+	border-radius: 9999px;
+}
+
+.ai-scroll::-webkit-scrollbar-thumb:hover {
+	background: var(--muted-foreground);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.ai-enter,
+	.ai-enter-right,
+	.ai-rise,
+	.ai-dot,
+	.ai-ring {
+		animation: none;
+	}
+	.ai-wave-bar,
+	.ai-mark-bar {
+		animation: none;
+		transform: scaleY(0.7);
+		opacity: 0.6;
+	}
+}
+
 /* Scrollbar (from order-processor) */
 *::-webkit-scrollbar {
 	@apply w-2 bg-transparent;
