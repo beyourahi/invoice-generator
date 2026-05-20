@@ -115,6 +115,7 @@ rm -rf node_modules/ .wrangler/ .svelte-kit/ && bun install
 
 ```
 invoice-generator/
+├── docs/                        # In-repo technical references (AI Copilot PRD)
 ├── migrations/                  # D1 SQL migration files
 ├── src/
 │   ├── app.css                  # Tailwind v4 CSS-first config + global styles
@@ -123,44 +124,63 @@ invoice-generator/
 │   ├── hooks.server.ts          # Auth session + CSP/security headers
 │   ├── hooks.client.ts          # Client-side error handling
 │   ├── components/              # Route-level UI components (uses $src alias)
-│   │   └── InvoicePreview.svelte
+│   │   ├── ai/                  # AI Copilot UI (sidebar, dialogs, mobile sheet)
+│   │   └── *.svelte             # ClientCard, FixedSenderPanel, GenerationPanel, etc.
 │   ├── lib/
 │   │   ├── auth-client.ts       # Better Auth Svelte client
-│   │   ├── index.ts             # Re-exports from $lib/config
 │   │   ├── types.ts             # Shared TypeScript types
 │   │   ├── utils.ts             # cn() and shared utilities
+│   │   ├── ai/                  # AI Copilot client layer (model, tools, streaming, undo)
+│   │   ├── api/
+│   │   │   └── client.ts        # Typed fetch wrapper + sync/debounceSync
 │   │   ├── assets/
 │   │   ├── components/
 │   │   │   └── ui/              # shadcn-svelte components (AUTO-GENERATED — do not edit)
 │   │   ├── config/
 │   │   │   ├── app.ts           # APP_CONFIG (name, description, url, author)
 │   │   │   └── index.ts
-│   │   ├── hooks/
-│   │   │   └── use-current-user.ts
+│   │   ├── format/
+│   │   │   └── currency.ts      # formatAmount() + currencySymbol()
+│   │   ├── hooks/               # use-current-user() and re-exports
 │   │   ├── invoice/
+│   │   │   ├── active.ts        # Active-filter helpers (generation queue source)
 │   │   │   ├── builder.ts       # buildInvoiceHtml() + ID/filename helpers
 │   │   │   ├── months.ts        # MONTHS array + MONTH_TO_NUMBER map
 │   │   │   └── resolver.ts      # resolveTokens() — pure token substitution
+│   │   ├── payments/
+│   │   │   └── registry.ts      # Payment method type definitions
 │   │   ├── pdf/
-│   │   │   ├── generator.ts     # iframe → html2canvas → jsPDF pipeline
-│   │   │   └── zip.ts           # fflate zipSync wrapper
+│   │   │   ├── generator.ts            # iframe → html2canvas → jsPDF pipeline
+│   │   │   ├── sequential-download.ts  # File System Access API + sequential fallback
+│   │   │   └── zip.ts                  # fflate zipSync wrapper
 │   │   ├── server/
 │   │   │   ├── auth.ts          # createAuth() factory (Better Auth + Drizzle)
-│   │   │   └── schema.ts        # Drizzle schema for Better Auth tables
+│   │   │   ├── schema.ts        # Drizzle schema (all tables)
+│   │   │   ├── db.ts            # getDatabase() Drizzle factory
+│   │   │   ├── api.ts           # requireApiContext() + request helpers
+│   │   │   ├── dto.ts           # Row-to-domain mappers + AppState
+│   │   │   ├── validation.ts    # Shared Zod request schemas
+│   │   │   ├── ai-quota.ts      # Per-user AI quota (KV-backed)
+│   │   │   ├── ai-undo.ts       # Server-side action reversal
+│   │   │   ├── log.ts           # Structured AI logging
+│   │   │   └── repositories/    # D1 data access (clients, payment methods, AI, ...)
 │   │   ├── stores/
-│   │   │   ├── session.svelte.ts  # Ephemeral client/invoice state
-│   │   │   └── fixed.svelte.ts    # Persistent localStorage sender/bank state
+│   │   │   ├── session.svelte.ts  # Client/invoice state, synced to D1
+│   │   │   ├── fixed.svelte.ts    # Sender/bank state, synced to D1
+│   │   │   └── ai.svelte.ts       # AI Copilot session state
 │   │   └── themes/
+│   │       ├── default.ts       # Default invoice theme
 │   │       └── registry.ts      # ThemeId → Theme map + ACTIVE_THEME_ID
 │   └── routes/
-│       ├── +layout.svelte       # Toaster mount + fixed.init() on onMount
-│       ├── +layout.server.ts    # Passes user/session/currentUser to PageData
+│       ├── +error.svelte        # Error boundary page
+│       ├── +layout.svelte       # Footer + app shell
+│       ├── +layout.server.ts    # Passes user/session/currentUser + aiEnabled to PageData
 │       ├── +page.svelte         # Main invoice app (auth-gated)
-│       ├── +page.server.ts      # Redirect to /login if unauthenticated
-│       ├── login/               # Google sign-in page
-│       └── api/logout/          # Session deletion endpoint
+│       ├── +page.server.ts      # Auth guard + server-side data hydration
+│       ├── api/                 # REST API: clients, payment methods, fixed, AI Copilot, logout
+│       └── login/               # Google sign-in page
 ├── static/                      # Static assets
-├── wrangler.jsonc               # Cloudflare Workers config + D1 bindings
+├── wrangler.jsonc               # Cloudflare Workers config + D1/AI/KV bindings
 ├── svelte.config.js             # SvelteKit config + path aliases ($src, $lib)
 ├── vite.config.ts               # Vite config with Tailwind plugin
 ├── drizzle.config.ts            # Drizzle ORM config
@@ -186,9 +206,10 @@ Never use relative paths from route files. Always use the appropriate alias.
 
 The entire PDF generation pipeline runs in the browser. No server actions, no API routes:
 
-1. `builder.ts` assembles the HTML document string from the theme template and client data
-2. `generator.ts` injects that HTML into a hidden off-screen `<iframe>`, waits for fonts, captures it with `html2canvas` at 2× scale, then writes to jsPDF
-3. `zip.ts` collects all generated Blobs into a `fflate` `zipSync` archive
+1. `active.ts` resolves the generation queue — only clients and entries that are both active
+2. `builder.ts` assembles the HTML document string from the theme template and client data
+3. `generator.ts` injects that HTML into a hidden off-screen `<iframe>`, waits for fonts, captures it with `html2canvas` at 2× scale, then writes to jsPDF
+4. `sequential-download.ts` saves the generated Blobs via the File System Access API (directory picker) or sequential downloads; `zip.ts` is the ZIP fallback
 
 **Critical constraints:**
 
@@ -198,12 +219,13 @@ The entire PDF generation pipeline runs in the browser. No server actions, no AP
 
 ### Store Pattern
 
-Both stores use the factory function + `$state` closure pattern, exported as singletons:
+All three stores use the factory function + `$state` closure pattern, exported as singletons:
 
-- `session.svelte.ts` — ephemeral per-session state (clients, invoices, generation lifecycle)
-- `fixed.svelte.ts` — persistent sender/bank data backed by `localStorage`
+- `session.svelte.ts` — client/invoice state and the generation lifecycle, synced to D1
+- `fixed.svelte.ts` — sender/bank data, synced to D1
+- `ai.svelte.ts` — AI Copilot conversations, messages, and chat UI state
 
-`fixed.init()` must only be called from `+layout.svelte`'s `onMount` (SSR guard). Never call it at module scope or inside `$effect`.
+Each store exposes a `hydrate()` method seeded once from server-loaded data inside `+page.svelte`'s `untrack()` block. Never call `hydrate()` a second time or at module scope.
 
 ### Theme System
 
@@ -211,7 +233,7 @@ Themes are registered in `$lib/themes/registry.ts`. `ACTIVE_THEME_ID` is hardcod
 
 ### Authentication
 
-Google OAuth via Better Auth is the only sign-in method. `emailAndPassword` is explicitly disabled. The server layer (`hooks.server.ts`, route server files) handles only auth session management — the PDF pipeline is unaffected by auth state.
+Google OAuth via Better Auth is the only sign-in method. `emailAndPassword` is explicitly disabled. The server layer handles auth session management, plus D1 data persistence and AI Copilot inference via the REST API under `src/routes/api/`. The PDF pipeline is unaffected by auth state and stays entirely client-side.
 
 ### shadcn-svelte Components
 
@@ -493,8 +515,8 @@ For changes touching the invoice pipeline:
    - File names match the format `invoice-{PREFIX}-{MMDD}-{YEAR}.pdf`
    - Invoice IDs match `{PREFIX}-{MMDD}-{YEAR}`
    - `{MONTH}` token substitutes correctly in service descriptions
-   - Per-file download produces a valid PDF
-   - ZIP download produces a valid archive with correct folder structure: `{ClientName}-{Year}-Invoices/`
+   - Directory-picker and sequential downloads save files under `invoices/`, with a `{ClientName}-{Year}-Invoices/` subfolder per multi-invoice client
+   - The ZIP fallback produces a valid archive with the same folder structure
 5. Test with a single client and a single invoice entry as well.
 
 For changes touching auth:
@@ -528,9 +550,9 @@ Priority test targets are the pure functions: `resolver.ts` (token substitution)
 
 Ship zero comments by default. The only acceptable comment is one that explains a non-obvious _why_: a subtle invariant, a workaround for a specific upstream bug, or a hidden external constraint. Never describe _what_ the code does — that belongs in the names and structure of the code itself.
 
-### agent_docs/
+### docs/
 
-For extended technical references (invoice schema specs, theme development guides, PDF rendering edge cases), create an `agent_docs/` directory at the project root and add markdown files there. Do not bloat `CLAUDE.md` with deep reference material.
+For extended technical references (product specs, theme development guides, PDF rendering edge cases), add markdown files to the `docs/` directory at the project root. Do not bloat `CLAUDE.md` with deep reference material.
 
 ---
 

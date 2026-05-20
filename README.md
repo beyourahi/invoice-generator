@@ -1,6 +1,6 @@
 # Invoice Generator
 
-A SvelteKit app for generating batches of PDF invoices. Configure a sender identity, add clients with service details and invoice months, then bulk-generate and download PDFs individually or as a ZIP.
+A SvelteKit app for generating batches of PDF invoices. Configure a sender identity, add clients with service details and invoice months, then bulk-generate and download PDFs individually or as a ZIP. An optional AI Copilot drives the same client and invoice operations through natural-language commands.
 
 **Live**: https://invoice-generator.beyourahi.workers.dev
 
@@ -8,17 +8,18 @@ A SvelteKit app for generating batches of PDF invoices. Configure a sender ident
 
 ## Tech Stack
 
-| Layer         | Technology                     |
-| ------------- | ------------------------------ |
-| Framework     | SvelteKit 2 + Svelte 5 (runes) |
-| Styling       | Tailwind CSS v4                |
-| UI Components | shadcn-svelte                  |
-| Auth          | Better Auth (Google OAuth)     |
-| Database      | Cloudflare D1 + Drizzle ORM    |
-| PDF           | html2canvas + jsPDF            |
-| ZIP           | fflate                         |
-| Deployment    | Cloudflare Workers             |
-| Package mgr   | Bun                            |
+| Layer         | Technology                        |
+| ------------- | --------------------------------- |
+| Framework     | SvelteKit 2 + Svelte 5 (runes)    |
+| Styling       | Tailwind CSS v4                   |
+| UI Components | shadcn-svelte                     |
+| Auth          | Better Auth (Google OAuth)        |
+| Database      | Cloudflare D1 + Drizzle ORM       |
+| AI            | Cloudflare Workers AI (Llama 3.3) |
+| PDF           | html2canvas + jsPDF               |
+| ZIP           | fflate                            |
+| Deployment    | Cloudflare Workers                |
+| Package mgr   | Bun                               |
 
 ---
 
@@ -30,7 +31,7 @@ A SvelteKit app for generating batches of PDF invoices. Configure a sender ident
 bun install
 ```
 
-Copy `.dev.vars.example` to `.dev.vars`:
+Create `.dev.vars`:
 
 ```dotenv
 BETTER_AUTH_SECRET=    # openssl rand -base64 32
