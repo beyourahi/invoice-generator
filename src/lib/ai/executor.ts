@@ -2,7 +2,8 @@ import { api } from "$lib/api/client";
 import type { AppState } from "$lib/server/dto";
 import { session } from "$lib/stores/session.svelte";
 import { fixed } from "$lib/stores/fixed.svelte";
-import { argSchemas, executors, type ArgsOf } from "./tools";
+import { executors } from "./tools";
+import { argSchemas, type ArgsOf } from "./schemas";
 import { detectAnomalies } from "./safety";
 import { resolvedTier, TIER_MAP, READ_ONLY_TOOLS } from "./tools-catalog";
 import type {
