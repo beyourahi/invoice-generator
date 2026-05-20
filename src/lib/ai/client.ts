@@ -5,7 +5,6 @@ export const MODEL_ID = "@cf/meta/llama-3.3-70b-instruct-fp8-fast" as const;
 export interface RunChatEnv {
 	AI: Ai;
 	AI_GATEWAY_SLUG?: string;
-	CLOUDFLARE_ACCOUNT_ID?: string;
 }
 
 export interface RunChatParams {
@@ -14,6 +13,7 @@ export interface RunChatParams {
 	userMessage: string;
 	tools: ToolCatalogEntry[];
 	maxTokens?: number;
+	cacheKey?: string;
 }
 
 export interface RawChatResult {
@@ -23,7 +23,7 @@ export interface RawChatResult {
 	outputTokens: number;
 }
 
-interface InternalResponse {
+interface StreamChunk {
 	response?: string;
 	tool_calls?: Array<{ name?: string; arguments?: unknown; args?: unknown }>;
 	usage?: { prompt_tokens?: number; completion_tokens?: number };
@@ -55,8 +55,19 @@ const normalizeToolCall = (raw: {
 	return { id: crypto.randomUUID(), name, args: parsed ?? {} };
 };
 
-const inferRaw = async (env: RunChatEnv, params: RunChatParams): Promise<RawChatResult> => {
-	const messages: Array<{ role: string; content: string }> = [
+const buildGatewayOptions = (env: RunChatEnv, cacheKey?: string) => {
+	if (!env.AI_GATEWAY_SLUG || env.AI_GATEWAY_SLUG.length === 0) return undefined;
+	const gateway = cacheKey
+		? { id: env.AI_GATEWAY_SLUG, skipCache: false, cacheKey }
+		: { id: env.AI_GATEWAY_SLUG, skipCache: true };
+	return { gateway };
+};
+
+export const runChatFrames = async function* (
+	env: RunChatEnv,
+	params: RunChatParams
+): AsyncGenerator<Frame, RawChatResult> {
+	const messages = [
 		{ role: "system", content: params.systemContext },
 		...params.history.map((m) => ({ role: m.role, content: m.content })),
 		{ role: "user", content: params.userMessage }
@@ -65,69 +76,81 @@ const inferRaw = async (env: RunChatEnv, params: RunChatParams): Promise<RawChat
 	const input: Record<string, unknown> = {
 		messages,
 		max_tokens: params.maxTokens ?? 800,
-		temperature: 0.2
+		temperature: 0.2,
+		stream: true
 	};
 	if (params.tools.length > 0) {
 		input.tools = buildToolsPayload(params.tools);
 	}
 
-	const aiOptions: { gateway?: { id: string; skipCache?: boolean } } = {};
-	if (env.AI_GATEWAY_SLUG && env.AI_GATEWAY_SLUG.length > 0) {
-		aiOptions.gateway = { id: env.AI_GATEWAY_SLUG };
-	}
+	const result: RawChatResult = { text: "", toolCalls: [], inputTokens: 0, outputTokens: 0 };
 
-	const raw = (await env.AI.run(MODEL_ID, input, aiOptions)) as unknown as InternalResponse;
-
-	const text = typeof raw.response === "string" ? raw.response : "";
-	const toolCalls = Array.isArray(raw.tool_calls)
-		? raw.tool_calls.map((c) => normalizeToolCall(c)).filter((c): c is ParsedToolCall => c !== null)
-		: [];
-
-	return {
-		text,
-		toolCalls,
-		inputTokens: raw.usage?.prompt_tokens ?? 0,
-		outputTokens: raw.usage?.completion_tokens ?? 0
-	};
-};
-
-const CHUNK_SIZE = 18;
-
-export const runChatFrames = async function* (
-	env: RunChatEnv,
-	params: RunChatParams
-): AsyncGenerator<Frame, RawChatResult> {
-	const turnId = crypto.randomUUID();
-	let result: RawChatResult;
+	let stream: ReadableStream<Uint8Array>;
 	try {
-		result = await inferRaw(env, params);
+		stream = (await env.AI.run(
+			MODEL_ID,
+			input,
+			buildGatewayOptions(env, params.cacheKey)
+		)) as unknown as ReadableStream<Uint8Array>;
 	} catch (err) {
 		yield {
 			t: "error",
 			message: err instanceof Error ? err.message : "Model invocation failed"
 		};
-		return {
-			text: "",
-			toolCalls: [],
-			inputTokens: 0,
-			outputTokens: 0
-		};
+		return result;
 	}
 
-	for (let i = 0; i < result.text.length; i += CHUNK_SIZE) {
-		yield { t: "text", delta: result.text.slice(i, i + CHUNK_SIZE) };
+	const reader = stream.getReader();
+	const decoder = new TextDecoder();
+	let buffer = "";
+	try {
+		while (true) {
+			const { value, done } = await reader.read();
+			if (done) break;
+			buffer += decoder.decode(value, { stream: true });
+			let newlineIdx = buffer.indexOf("\n");
+			while (newlineIdx !== -1) {
+				const line = buffer.slice(0, newlineIdx).trim();
+				buffer = buffer.slice(newlineIdx + 1);
+				newlineIdx = buffer.indexOf("\n");
+				if (!line.startsWith("data:")) continue;
+				const payload = line.slice(5).trim();
+				if (payload.length === 0 || payload === "[DONE]") continue;
+				let chunk: StreamChunk;
+				try {
+					chunk = JSON.parse(payload) as StreamChunk;
+				} catch {
+					continue;
+				}
+				if (typeof chunk.response === "string" && chunk.response.length > 0) {
+					result.text += chunk.response;
+					yield { t: "text", delta: chunk.response };
+				}
+				if (Array.isArray(chunk.tool_calls)) {
+					for (const raw of chunk.tool_calls) {
+						const call = normalizeToolCall(raw);
+						if (call) result.toolCalls.push(call);
+					}
+				}
+				if (chunk.usage) {
+					result.inputTokens = chunk.usage.prompt_tokens ?? result.inputTokens;
+					result.outputTokens = chunk.usage.completion_tokens ?? result.outputTokens;
+				}
+			}
+		}
+	} catch (err) {
+		yield {
+			t: "error",
+			message: err instanceof Error ? err.message : "Stream read failed"
+		};
+		return result;
+	} finally {
+		reader.releaseLock();
 	}
 
 	for (const call of result.toolCalls) {
 		yield { t: "tool_call", id: call.id, name: call.name, args: call.args };
 	}
-
-	yield {
-		t: "end",
-		turnId,
-		inputTokens: result.inputTokens,
-		outputTokens: result.outputTokens
-	};
 
 	return result;
 };

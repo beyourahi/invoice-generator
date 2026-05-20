@@ -23,6 +23,7 @@ declare global {
 				AI_QUOTA_KV?: KVNamespace;
 				AI_GATEWAY_SLUG?: string;
 				AI_COPILOT_ENABLED?: string;
+				AI_MONTHLY_CAP_USD?: string;
 			};
 			cf: CfProperties;
 			ctx: ExecutionContext;

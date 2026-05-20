@@ -19,6 +19,7 @@ export interface ChatTurnLog {
 	toolCallSuccessCount: number;
 	latencyMs: number;
 	promptVersion: string;
+	retried: boolean;
 	error?: string;
 }
 
@@ -48,6 +49,7 @@ export const logChatTurn = async (entry: ChatTurnLog) => {
 			tool_call_success_count: entry.toolCallSuccessCount,
 			latency_ms: entry.latencyMs,
 			prompt_version: entry.promptVersion,
+			retried: entry.retried,
 			error: entry.error ?? null
 		})
 	);

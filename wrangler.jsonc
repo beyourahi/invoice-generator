@@ -30,7 +30,8 @@
 	"vars": {
 		"BETTER_AUTH_URL": "https://invoice-generator.beyourahi.workers.dev",
 		"AI_GATEWAY_SLUG": "invoice-generator-ai",
-		"AI_COPILOT_ENABLED": "true"
+		"AI_COPILOT_ENABLED": "true",
+		"AI_MONTHLY_CAP_USD": "1.00"
 	},
 	"observability": {
 		"enabled": true

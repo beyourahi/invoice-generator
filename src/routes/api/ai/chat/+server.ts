@@ -15,6 +15,7 @@ import {
 	type AiMessageToolCall
 } from "$lib/server/repositories/ai-messages";
 import { checkAndIncrementQuota } from "$lib/server/ai-quota";
+import { checkSpendCap, recordSpend } from "$lib/server/ai-spend";
 import { logChatTurn } from "$lib/server/log";
 import { projectAppState } from "$lib/ai/context";
 import {
@@ -23,9 +24,11 @@ import {
 	PROMPT_VERSION,
 	FEW_SHOTS_V1
 } from "$lib/ai/prompts";
-import { runChatFrames } from "$lib/ai/client";
+import { runChatFrames, type RawChatResult } from "$lib/ai/client";
 import { sseStream } from "$lib/ai/streaming";
 import { TOOLS_CATALOG } from "$lib/ai/tools-catalog";
+import { argSchemas, isKnownToolName } from "$lib/ai/schemas";
+import type { Frame, ParsedToolCall } from "$lib/ai/types";
 
 const bodySchema = z.object({
 	conversationId: z.string().nullable().optional(),
@@ -38,6 +41,43 @@ const toHistory = (
 	rows
 		.filter((m) => m.role === "user" || m.role === "assistant")
 		.map((m) => ({ role: m.role as "user" | "assistant", content: m.content }));
+
+const sha256Hex = async (input: string): Promise<string> => {
+	const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(input));
+	return Array.from(new Uint8Array(digest))
+		.map((b) => b.toString(16).padStart(2, "0"))
+		.join("");
+};
+
+interface ValidatedCall {
+	call: ParsedToolCall;
+	valid: boolean;
+	error?: string;
+}
+
+const validateToolCalls = (calls: ParsedToolCall[]): ValidatedCall[] =>
+	calls.map((call) => {
+		if (!isKnownToolName(call.name)) {
+			return { call, valid: false, error: `Unknown tool "${call.name}"` };
+		}
+		const result = argSchemas[call.name].safeParse(call.args ?? {});
+		if (!result.success) {
+			return {
+				call,
+				valid: false,
+				error: result.error.issues[0]?.message ?? "Invalid arguments"
+			};
+		}
+		return { call: { ...call, args: result.data }, valid: true };
+	});
+
+const correctiveMessage = (invalid: ValidatedCall[]): string =>
+	[
+		"Your previous tool call(s) failed schema validation:",
+		...invalid.map((v) => `- "${v.call.name}": ${v.error}`),
+		"",
+		"Re-issue the corrected tool call(s) now. Argument names and types must exactly match each tool's argument schema. If you cannot produce a valid call, reply with a short plain-text explanation instead."
+	].join("\n");
 
 export const POST: RequestHandler = async (event) => {
 	const start = Date.now();
@@ -66,6 +106,17 @@ export const POST: RequestHandler = async (event) => {
 		);
 	}
 
+	const spend = await checkSpendCap(env.AI_QUOTA_KV, userId, env.AI_MONTHLY_CAP_USD);
+	if (!spend.allowed) {
+		return json(
+			{
+				code: "spend_cap_reached",
+				message: `Monthly AI spend cap reached ($${spend.spentUsd.toFixed(2)} of $${spend.capUsd.toFixed(2)}). Resets at the start of next month.`
+			},
+			{ status: 429 }
+		);
+	}
+
 	const requestedId = parsed.conversationId ?? null;
 	let conversation = requestedId ? await getConversation(db, userId, requestedId) : null;
 	if (!conversation) {
@@ -82,83 +133,130 @@ export const POST: RequestHandler = async (event) => {
 
 	const appState = await loadAppState(db, userId);
 	const context = projectAppState(appState);
-
 	const systemContext = buildSystemContext(context, TOOLS_CATALOG);
 	const withFewShots = history.length === 0 ? [...FEW_SHOTS_V1, ...history] : history;
+	const cacheKey = await sha256Hex(`${PROMPT_VERSION}|${context.summaryText}|${parsed.message}`);
+	const turnId = crypto.randomUUID();
 
 	return sseStream(async (push) => {
 		let assistantText = "";
-		const toolCalls: AiMessageToolCall[] = [];
 		let inputTokens = 0;
 		let outputTokens = 0;
 		let errored: string | null = null;
+		let retried = false;
+		let finalCalls: ParsedToolCall[] = [];
+		let successCount = 0;
+
+		const consume = async (
+			gen: AsyncGenerator<Frame, RawChatResult>,
+			streamText: boolean
+		): Promise<RawChatResult> => {
+			let step = await gen.next();
+			while (!step.done) {
+				const frame = step.value;
+				if (frame.t === "text" && streamText) {
+					assistantText += frame.delta;
+					push(frame);
+				} else if (frame.t === "error") {
+					errored = frame.message;
+					push(frame);
+				}
+				step = await gen.next();
+			}
+			return step.value;
+		};
 
 		try {
-			const gen = runChatFrames(
-				{
-					AI: env.AI,
-					AI_GATEWAY_SLUG: env.AI_GATEWAY_SLUG,
-					CLOUDFLARE_ACCOUNT_ID: undefined
-				},
-				{
+			const first = await consume(
+				runChatFrames(env, {
 					systemContext,
 					history: withFewShots,
 					userMessage: parsed.message,
-					tools: TOOLS_CATALOG
-				}
+					tools: TOOLS_CATALOG,
+					cacheKey
+				}),
+				true
 			);
+			inputTokens += first.inputTokens;
+			outputTokens += first.outputTokens;
 
-			while (true) {
-				const next = await gen.next();
-				if (next.done) {
-					break;
-				}
-				const frame = next.value;
-				if (frame.t === "text") {
-					assistantText += frame.delta;
-				} else if (frame.t === "tool_call") {
-					toolCalls.push({ id: frame.id, name: frame.name, args: frame.args });
-				} else if (frame.t === "end") {
-					inputTokens = frame.inputTokens;
-					outputTokens = frame.outputTokens;
-				} else if (frame.t === "error") {
-					errored = frame.message;
-				}
-				push(frame);
+			let validated = validateToolCalls(first.toolCalls);
+			const invalid = validated.filter((v) => !v.valid);
+
+			if (invalid.length > 0 && !errored) {
+				retried = true;
+				console.log(
+					JSON.stringify({
+						event: "ai.validation_retry",
+						turn_id: turnId,
+						failed: invalid.map((v) => ({ tool: v.call.name, error: v.error }))
+					})
+				);
+				const retryHistory = [
+					...withFewShots,
+					{ role: "user" as const, content: parsed.message },
+					{
+						role: "assistant" as const,
+						content: `${first.text}\n\n[Attempted tool calls: ${JSON.stringify(
+							first.toolCalls.map((c) => ({ name: c.name, args: c.args }))
+						)}]`
+					}
+				];
+				const retry = await consume(
+					runChatFrames(env, {
+						systemContext,
+						history: retryHistory,
+						userMessage: correctiveMessage(invalid),
+						tools: TOOLS_CATALOG
+					}),
+					false
+				);
+				inputTokens += retry.inputTokens;
+				outputTokens += retry.outputTokens;
+				validated = validateToolCalls(retry.toolCalls);
 			}
+
+			finalCalls = validated.map((v) => v.call);
+			successCount = validated.filter((v) => v.valid).length;
+
+			for (const call of finalCalls) {
+				push({ t: "tool_call", id: call.id, name: call.name, args: call.args });
+			}
+
+			const toolCalls: AiMessageToolCall[] = finalCalls.map((c) => ({
+				id: c.id,
+				name: c.name,
+				args: c.args
+			}));
+			await appendMessage(db, activeConversationId, {
+				role: "assistant",
+				content: assistantText,
+				toolCalls: toolCalls.length > 0 ? toolCalls : null,
+				toolResults: null,
+				inputTokens,
+				outputTokens
+			});
+			await touchUpdatedAt(db, activeConversationId);
+			await recordSpend(env.AI_QUOTA_KV, userId, inputTokens, outputTokens);
 		} catch (err) {
 			errored = err instanceof Error ? err.message : "Stream failed";
 			push({ t: "error", message: errored });
 		}
 
-		await appendMessage(db, activeConversationId, {
-			role: "assistant",
-			content: assistantText,
-			toolCalls: toolCalls.length > 0 ? toolCalls : null,
-			toolResults: null,
-			inputTokens,
-			outputTokens
-		});
-		await touchUpdatedAt(db, activeConversationId);
-
 		await logChatTurn({
 			userId,
 			conversationId: activeConversationId,
-			turnId: crypto.randomUUID(),
+			turnId,
 			inputTokens,
 			outputTokens,
-			toolCallCount: toolCalls.length,
-			toolCallSuccessCount: 0,
+			toolCallCount: finalCalls.length,
+			toolCallSuccessCount: successCount,
 			latencyMs: Date.now() - start,
 			promptVersion: PROMPT_VERSION,
+			retried,
 			error: errored ?? undefined
 		});
 
-		push({
-			t: "end",
-			turnId: activeConversationId,
-			inputTokens,
-			outputTokens
-		});
+		push({ t: "end", turnId, inputTokens, outputTokens });
 	});
 };
