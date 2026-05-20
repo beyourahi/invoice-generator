@@ -237,14 +237,17 @@ An optional natural-language assistant for managing clients, invoices, and payme
   - `streaming.ts` — SSE frame encode/decode (`encodeFrame`, `decodeFrame`, `streamFrames`, `sseStream`).
   - `context.ts` — `projectAppState(appState)` serializes current state into a tokenized (`cli_1`, `ent_1`, `pm_1`) prompt context.
   - `prompts.ts` — system prompt builder (`buildSystemContext`); prompt version `v1`.
-  - `tools-catalog.ts` — `TOOLS_CATALOG`: 18 tools, each tagged Tier A (auto-apply) or Tier B (destructive/money-mutating — requires confirmation).
-  - `tools.ts` — per-tool Zod arg schemas and executors; executors call the REST API and return `{ inverse, summary }`.
+  - `tools-catalog.ts` — `TOOLS_CATALOG`: 19 tools, each tagged Tier A (auto-apply) or Tier B (destructive/money-mutating — requires confirmation).
+  - `schemas.ts` — per-tool Zod arg schemas (`argSchemas`, `ArgsOf`). Server-safe (no DOM/store imports) so `chat/+server.ts` shares them with `tools.ts`.
+  - `tools.ts` — per-tool executors; each validates args via `argSchemas`, calls the REST API, and returns `{ inverse, summary }`.
   - `executor.ts` — `executeToolCall()`: validates args, resolves the safety tier, runs anomaly detection, requests confirmation for Tier B, records the action, executes.
   - `safety.ts` — `detectAnomalies()`: five non-blocking detectors (amount outlier, volume surge, missing payment methods, stale period, currency mismatch).
   - `inverse.ts` — builds an `InverseRecord` (reverse tool call + optional snapshot) for every executed tool, enabling undo.
+  - `markdown.ts` — minimal AST-based markdown parser; renders AI message text in `AiMessage.svelte` (no markdown library).
   - `chat-client.ts` — `sendMessage`, `triggerUndo`, conversation CRUD, confirmation responses.
 - **`$lib/server/`** — AI server layer:
   - `ai-quota.ts` — `checkAndIncrementQuota(kv, userId)`: per-user daily turn limit (default 200) tracked in `AI_QUOTA_KV`; disabled when the KV binding is absent.
+  - `ai-spend.ts` — `checkSpendCap` / `recordSpend` / `estimateTurnCostUsd`: per-user monthly USD spend cap (default $1.00, override via `AI_MONTHLY_CAP_USD`) tracked in `AI_QUOTA_KV`; disabled when the KV binding is absent.
   - `ai-undo.ts` — `applyInverse(db, userId, inverse)`: server-side reversal of an action; throws `UndoInvalidatedError` if the target no longer exists.
   - `log.ts` — `logChatTurn` / `logToolExecution`: structured stdout logging with hashed user IDs.
   - `repositories/ai-conversations.ts`, `ai-messages.ts`, `ai-actions.ts` — D1 persistence for the three AI tables.
@@ -433,8 +436,8 @@ Configured in `wrangler.jsonc`:
 - **ASSETS**: static SvelteKit output
 - **DB**: D1 database binding (required for auth and data at runtime)
 - **AI**: Workers AI binding (required for the AI Copilot)
-- **AI_QUOTA_KV**: KV namespace for AI Copilot per-user daily quota (optional — quota is disabled if absent)
-- **vars**: `BETTER_AUTH_URL`, `AI_GATEWAY_SLUG` (AI Gateway route), `AI_COPILOT_ENABLED` (feature flag)
+- **AI_QUOTA_KV**: KV namespace backing the AI Copilot per-user daily turn quota and monthly USD spend cap (optional — both disabled if absent)
+- **vars**: `BETTER_AUTH_URL`, `AI_GATEWAY_SLUG` (AI Gateway route), `AI_COPILOT_ENABLED` (feature flag), `AI_MONTHLY_CAP_USD` (monthly AI spend cap, USD)
 - **Compatibility**: `nodejs_compat` flag
 - Run `bun run cf-typegen` after any `wrangler.jsonc` changes
 
@@ -518,7 +521,7 @@ When encountering unfamiliar patterns, check in this order:
 
 16. **Active toggles use optimistic updates with rollback** — `setClientActive` and `setInvoiceActive` capture the previous `isActive` value, mutate locally, then call the API. On failure they restore the prior state. Do not add a separate "saving" flag; the rollback path is the contract.
 
-17. **AI Copilot is gated by `AI_COPILOT_ENABLED`** — setting the var to `"false"` disables the feature in `+layout.server.ts` and `+page.server.ts`. The `AI` binding is required when enabled; `AI_QUOTA_KV` is optional (quota is skipped if absent).
+17. **AI Copilot is gated by `AI_COPILOT_ENABLED`** — setting the var to `"false"` disables the feature in `+layout.server.ts` and `+page.server.ts`. The `AI` binding is required when enabled; `AI_QUOTA_KV` is optional (daily quota and monthly spend cap are skipped if absent).
 
 18. **Every AI tool must produce an inverse** — each executor in `$lib/ai/tools.ts` returns an `InverseRecord` so the action can be reversed via `applyInverse`. When adding or changing a tool, update its inverse in `$lib/ai/inverse.ts` in lockstep, or undo will silently break.
 

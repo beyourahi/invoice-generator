@@ -6,14 +6,11 @@
 	class="text-muted-foreground flex items-center justify-center px-4 py-6 text-center text-xs sm:px-6 sm:py-8 sm:text-sm"
 >
 	<p class="text-pretty">
-		<a
-			href={APP_CONFIG.author.url}
-			target="_blank"
-			rel="noopener noreferrer"
-			class="group pointer-fine:hover:text-foreground whitespace-nowrap transition-colors duration-200"
-		>
+		<a href={APP_CONFIG.author.url} target="_blank" rel="noopener noreferrer" class="group whitespace-nowrap">
 			Designed by
-			<span class="underline-offset-4 pointer-fine:group-hover:underline">
+			<span
+				class="pointer-fine:group-hover:text-foreground underline-offset-4 pointer-fine:group-hover:underline"
+			>
 				{APP_CONFIG.author.name}
 			</span>
 		</a>
@@ -22,10 +19,14 @@
 			href="https://dropoutstudio.co/tools"
 			target="_blank"
 			rel="noopener noreferrer"
-			class="group pointer-fine:hover:text-foreground whitespace-nowrap transition-colors duration-200"
+			class="group whitespace-nowrap"
 		>
 			Check out
-			<span class="underline-offset-4 pointer-fine:group-hover:underline"> other tools </span>
+			<span
+				class="pointer-fine:group-hover:text-foreground underline-offset-4 pointer-fine:group-hover:underline"
+			>
+				other tools
+			</span>
 		</a>
 	</p>
 </footer>

@@ -11,6 +11,10 @@ const config = {
 		adapter: adapter({
 			platformProxy: {
 				configPath: "wrangler.jsonc"
+			},
+			routes: {
+				include: ["/*"],
+				exclude: ["<all>"]
 			}
 		})
 	}
