@@ -109,8 +109,6 @@ export interface AiHydrationPayload {
 	anomalySettings: AnomalySettings;
 }
 
-type RailTab = "conversations" | "history";
-
 const createAiStore = () => {
 	let enabled = $state(true);
 	let activeConversationId = $state<string | null>(null);
@@ -118,7 +116,7 @@ const createAiStore = () => {
 	let messages = $state<AiMessage[]>([]);
 	let pendingConfirmations = $state<PendingConfirmation[]>([]);
 	let pendingPolish = $state<PendingPolish[]>([]);
-	let railTab = $state<RailTab | null>(null);
+	let railOpen = $state(false);
 	let historyActions = $state<AiHistoryAction[]>([]);
 	let showUndone = $state(false);
 	let streaming = $state(false);
@@ -159,12 +157,12 @@ const createAiStore = () => {
 		inputFocusNonce++;
 	};
 
-	const toggleRailTab = (tab: RailTab) => {
-		railTab = railTab === tab ? null : tab;
+	const toggleRail = () => {
+		railOpen = !railOpen;
 	};
 
-	const closeRailTab = () => {
-		railTab = null;
+	const closeRail = () => {
+		railOpen = false;
 	};
 
 	const setShowUndone = (v: boolean) => {
@@ -365,8 +363,8 @@ const createAiStore = () => {
 		get pendingPolish() {
 			return pendingPolish;
 		},
-		get railTab() {
-			return railTab;
+		get railOpen() {
+			return railOpen;
 		},
 		get historyActions() {
 			return historyActions;
@@ -403,8 +401,8 @@ const createAiStore = () => {
 		setActiveTab,
 		setMobileOpen,
 		requestInputFocus,
-		toggleRailTab,
-		closeRailTab,
+		toggleRail,
+		closeRail,
 		setShowUndone,
 		setError,
 		setStreaming,

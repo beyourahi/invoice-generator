@@ -11,12 +11,12 @@
 
 	const onNew = async () => {
 		await createNewConversation();
-		ai.closeRailTab();
+		ai.closeRail();
 	};
 
 	const onSwitch = async (id: string) => {
 		if (id !== ai.activeConversationId) await switchConversation(id);
-		ai.closeRailTab();
+		ai.closeRail();
 	};
 
 	const onRename = async (id: string, currentTitle: string) => {

@@ -2,9 +2,8 @@
 	import { ai } from "$lib/stores/ai.svelte";
 	import { sendMessage } from "$lib/ai/chat-client";
 	import AiMessage from "./AiMessage.svelte";
-	import AiHistoryPanel from "./AiHistoryPanel.svelte";
 	import AiConversationsPanel from "./AiConversationsPanel.svelte";
-	import { ArrowUp, CalendarPlus, EyeOff, History, MessagesSquare, Wand2 } from "@lucide/svelte";
+	import { ArrowUp, CalendarPlus, EyeOff, History, Wand2 } from "@lucide/svelte";
 	import { tick } from "svelte";
 	import { cn } from "$lib/utils";
 
@@ -23,16 +22,6 @@
 	const dots = [0, 1, 2];
 
 	const lastContent = $derived(ai.messages.at(-1)?.content ?? "");
-
-	const railTabs = $derived([
-		{
-			id: "conversations" as const,
-			label: "Conversations",
-			icon: MessagesSquare,
-			count: ai.conversations.length
-		},
-		{ id: "history" as const, label: "History", icon: History, count: ai.historyActions.length }
-	]);
 
 	const autoGrow = () => {
 		if (!textarea) return;
@@ -82,38 +71,31 @@
 	aria-label="AI Copilot"
 >
 	<div class="border-border border-b p-2">
-		<div class={cn("bg-card border-border grid grid-cols-2 gap-1 rounded-lg border p-1", bare && "mr-12")}>
-			{#each railTabs as tab (tab.id)}
-				{@const isActive = ai.railTab === tab.id}
-				<button
-					type="button"
-					onclick={() => ai.toggleRailTab(tab.id)}
-					aria-expanded={isActive}
-					class={cn(
-						"flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs transition-colors",
-						isActive
-							? "bg-primary/10 text-foreground font-medium"
-							: "text-muted-foreground pointer-fine:hover:text-foreground pointer-fine:hover:bg-muted"
-					)}
+		<div class={cn(bare && "mr-12")}>
+			<button
+				type="button"
+				onclick={ai.toggleRail}
+				aria-expanded={ai.railOpen}
+				class={cn(
+					"bg-card border-border flex w-full items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-xs transition-colors",
+					ai.railOpen
+						? "bg-primary/10 text-foreground font-medium"
+						: "text-muted-foreground pointer-fine:hover:text-foreground pointer-fine:hover:bg-muted"
+				)}
+			>
+				<History class="size-3.5 shrink-0" aria-hidden="true" />
+				<span>History</span>
+				<span
+					class="bg-background text-muted-foreground rounded-full px-1.5 py-px text-[10px] font-medium tabular-nums"
 				>
-					<tab.icon class="size-3.5 shrink-0" aria-hidden="true" />
-					<span>{tab.label}</span>
-					<span
-						class="bg-background text-muted-foreground rounded-full px-1.5 py-px text-[10px] font-medium tabular-nums"
-					>
-						{tab.count}
-					</span>
-				</button>
-			{/each}
+					{ai.conversations.length}
+				</span>
+			</button>
 		</div>
 
-		{#if ai.railTab}
+		{#if ai.railOpen}
 			<div class="ai-enter mt-2">
-				{#if ai.railTab === "conversations"}
-					<AiConversationsPanel />
-				{:else}
-					<AiHistoryPanel />
-				{/if}
+				<AiConversationsPanel />
 			</div>
 		{/if}
 	</div>
