@@ -26,6 +26,49 @@ export class UndoInvalidatedError extends Error {
 	}
 }
 
+export const KNOWN_INVERSE_TOOLS = new Set([
+	"noop",
+	"deleteClient",
+	"updateClient",
+	"restoreClient",
+	"deleteInvoiceEntries",
+	"updateInvoiceEntry",
+	"restoreInvoiceEntry",
+	"setClientActive",
+	"setInvoiceActive",
+	"togglePaymentMethod",
+	"reorderClientPaymentMethods",
+	"updateFixedField",
+	"addPaymentMethod",
+	"removePaymentMethod",
+	"restorePaymentMethod",
+	"updatePaymentMethodValue",
+	"updatePaymentMethodLabel",
+	"reorderPaymentMethods",
+	"setSelectedClientId",
+	"polishText"
+]);
+
+const SNAPSHOT_REQUIRED_INVERSES = new Set([
+	"restoreClient",
+	"restoreInvoiceEntry",
+	"restorePaymentMethod"
+]);
+
+export const validateInverse = (inverse: unknown): boolean => {
+	if (!inverse || typeof inverse !== "object" || Array.isArray(inverse)) return false;
+	const record = inverse as Record<string, unknown>;
+	if (typeof record.tool !== "string" || !KNOWN_INVERSE_TOOLS.has(record.tool)) return false;
+	if (!record.args || typeof record.args !== "object" || Array.isArray(record.args)) return false;
+	if (
+		SNAPSHOT_REQUIRED_INVERSES.has(record.tool) &&
+		(!record.snapshot || typeof record.snapshot !== "object")
+	) {
+		return false;
+	}
+	return true;
+};
+
 interface InverseShape {
 	tool: string;
 	args: unknown;

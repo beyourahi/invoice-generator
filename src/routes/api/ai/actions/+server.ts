@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { RequestHandler } from "./$types";
 import { requireApiContext, parseJson, ok } from "$lib/server/api";
 import { insertAction, listRecent } from "$lib/server/repositories/ai-actions";
+import { validateInverse } from "$lib/server/ai-undo";
 import { logToolExecution } from "$lib/server/log";
 
 const insertSchema = z.object({
@@ -71,7 +72,7 @@ export const POST: RequestHandler = async (event) => {
 		requiredConfirmation: body.requiredConfirmation,
 		applied: body.applied,
 		anomalyTriggered: body.anomalyTriggered ?? null,
-		inverseValidated: body.applied,
+		inverseValidated: validateInverse(body.inverse),
 		error: body.error ?? undefined
 	});
 	return ok({ id: row.id, createdAt: row.createdAt.toISOString() });
