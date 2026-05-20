@@ -109,6 +109,8 @@ export interface AiHydrationPayload {
 	anomalySettings: AnomalySettings;
 }
 
+type RailTab = "conversations" | "history";
+
 const createAiStore = () => {
 	let enabled = $state(true);
 	let activeConversationId = $state<string | null>(null);
@@ -116,7 +118,7 @@ const createAiStore = () => {
 	let messages = $state<AiMessage[]>([]);
 	let pendingConfirmations = $state<PendingConfirmation[]>([]);
 	let pendingPolish = $state<PendingPolish[]>([]);
-	let historyOpen = $state(false);
+	let railTab = $state<RailTab | null>(null);
 	let historyActions = $state<AiHistoryAction[]>([]);
 	let showUndone = $state(false);
 	let streaming = $state(false);
@@ -152,8 +154,12 @@ const createAiStore = () => {
 		mobileOpen = open;
 	};
 
-	const setHistoryOpen = (open: boolean) => {
-		historyOpen = open;
+	const toggleRailTab = (tab: RailTab) => {
+		railTab = railTab === tab ? null : tab;
+	};
+
+	const closeRailTab = () => {
+		railTab = null;
 	};
 
 	const setShowUndone = (v: boolean) => {
@@ -354,8 +360,8 @@ const createAiStore = () => {
 		get pendingPolish() {
 			return pendingPolish;
 		},
-		get historyOpen() {
-			return historyOpen;
+		get railTab() {
+			return railTab;
 		},
 		get historyActions() {
 			return historyActions;
@@ -388,7 +394,8 @@ const createAiStore = () => {
 		setEnabled,
 		setActiveTab,
 		setMobileOpen,
-		setHistoryOpen,
+		toggleRailTab,
+		closeRailTab,
 		setShowUndone,
 		setError,
 		setStreaming,

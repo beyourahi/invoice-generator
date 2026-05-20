@@ -252,7 +252,7 @@ An optional natural-language assistant for managing clients, invoices, and payme
   - `log.ts` — `logChatTurn` / `logToolExecution`: structured stdout logging with hashed user IDs.
   - `repositories/ai-conversations.ts`, `ai-messages.ts`, `ai-actions.ts` — D1 persistence for the three AI tables.
 - **`$lib/stores/ai.svelte.ts`** — the `ai` store (see Store Design).
-- **`src/components/ai/`** — `AiSidebar`, `AiMessage`, `AiToolBadge`, `AiConfirmDialog`, `AiAnomalyWarning`, `AiSettingsDialog`, `AiHistoryPanel`, `AiConversationsMenu`, `AiMobileFab`, `AiMobileSheet`.
+- **`src/components/ai/`** — `AiSidebar`, `AiMessage`, `AiToolBadge`, `AiConfirmDialog`, `AiAnomalyWarning`, `AiSettingsDialog`, `AiHistoryPanel`, `AiConversationsPanel`, `AiMobileFab`, `AiMobileSheet`. `AiSidebar` hosts a two-tab rail (`Conversations` / `History`) that toggles `AiConversationsPanel` and `AiHistoryPanel` above the persistent chat thread.
 
 **Data flow**: user message → `POST /api/ai/chat` (loads context, runs the model, streams frames) → client parses frames and runs each tool via `executeToolCall` → Tier B tools wait for `AiConfirmDialog` approval → applied actions are recorded and reversible via `POST /api/ai/undo/[id]`.
 

@@ -3,8 +3,17 @@
 	import { sendMessage } from "$lib/ai/chat-client";
 	import AiMessage from "./AiMessage.svelte";
 	import AiHistoryPanel from "./AiHistoryPanel.svelte";
-	import AiConversationsMenu from "./AiConversationsMenu.svelte";
-	import { ArrowRight, ArrowUp, CalendarPlus, EyeOff, Sparkles, Wand2 } from "@lucide/svelte";
+	import AiConversationsPanel from "./AiConversationsPanel.svelte";
+	import {
+		ArrowRight,
+		ArrowUp,
+		CalendarPlus,
+		EyeOff,
+		History,
+		MessagesSquare,
+		Sparkles,
+		Wand2
+	} from "@lucide/svelte";
 	import { tick } from "svelte";
 	import { cn } from "$lib/utils";
 
@@ -28,6 +37,16 @@
 	});
 
 	const lastContent = $derived(ai.messages.at(-1)?.content ?? "");
+
+	const railTabs = $derived([
+		{
+			id: "conversations" as const,
+			label: "Conversations",
+			icon: MessagesSquare,
+			count: ai.conversations.length
+		},
+		{ id: "history" as const, label: "History", icon: History, count: ai.historyActions.length }
+	]);
 
 	const autoGrow = () => {
 		if (!textarea) return;
@@ -73,7 +92,7 @@
 			<div class="bg-foreground text-background flex size-6 shrink-0 items-center justify-center rounded-md">
 				<Sparkles class="size-3.5" aria-hidden="true" />
 			</div>
-			<AiConversationsMenu />
+			<span class="text-foreground truncate text-xs font-semibold">AI Copilot</span>
 		</div>
 		<div class="flex shrink-0 items-center gap-1.5" aria-label="Status: {status.label}">
 			<span
@@ -91,7 +110,43 @@
 	</header>
 
 	<div class="border-border/40 border-b p-2">
-		<AiHistoryPanel />
+		<div class="bg-card/60 border-border/60 grid grid-cols-2 gap-1 rounded-lg border p-1">
+			{#each railTabs as tab (tab.id)}
+				{@const isActive = ai.railTab === tab.id}
+				<button
+					type="button"
+					onclick={() => ai.toggleRailTab(tab.id)}
+					aria-expanded={isActive}
+					class={cn(
+						"flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs transition-all",
+						isActive
+							? "bg-foreground text-background font-semibold shadow-sm shadow-black/20"
+							: "text-muted-foreground pointer-fine:hover:text-foreground pointer-fine:hover:bg-accent/40 font-medium"
+					)}
+				>
+					<tab.icon class="size-3.5 shrink-0" aria-hidden="true" />
+					<span>{tab.label}</span>
+					<span
+						class={cn(
+							"rounded-full px-1.5 py-px text-[10px] font-medium tabular-nums",
+							isActive ? "bg-background/25 text-background" : "bg-muted/70 text-muted-foreground"
+						)}
+					>
+						{tab.count}
+					</span>
+				</button>
+			{/each}
+		</div>
+
+		{#if ai.railTab}
+			<div class="ai-enter mt-2">
+				{#if ai.railTab === "conversations"}
+					<AiConversationsPanel />
+				{:else}
+					<AiHistoryPanel />
+				{/if}
+			</div>
+		{/if}
 	</div>
 
 	<div
