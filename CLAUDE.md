@@ -54,7 +54,7 @@ A SvelteKit app that generates batches of PDF invoices. Users configure a fixed 
 | Animations      | None (shadcn Progress + Lucide Loader2 spinner)    |
 | Deployment      | Cloudflare Workers                                 |
 | Package Manager | Bun                                                |
-| Linting         | ESLint 9 flat config + Prettier                    |
+| Linting         | ESLint 10 flat config + Prettier                   |
 
 ---
 
@@ -63,7 +63,7 @@ A SvelteKit app that generates batches of PDF invoices. Users configure a fixed 
 ```bash
 bun run dev              # Start Vite dev server (--open --host: opens browser, exposes on LAN)
 bun run build            # Production build
-bun run preview          # Build then start Wrangler dev (requires build first)
+bun run preview          # Build, then run Wrangler dev (test auth/D1 locally)
 bun run check            # svelte-check TypeScript validation
 bun run lint             # ESLint
 bun run format           # Prettier
@@ -252,7 +252,7 @@ An optional natural-language assistant for managing clients, invoices, and payme
   - `log.ts` — `logChatTurn` / `logToolExecution`: structured stdout logging with hashed user IDs.
   - `repositories/ai-conversations.ts`, `ai-messages.ts`, `ai-actions.ts` — D1 persistence for the three AI tables.
 - **`$lib/stores/ai.svelte.ts`** — the `ai` store (see Store Design).
-- **`src/components/ai/`** — `AiSidebar`, `AiMessage`, `AiToolBadge`, `AiConfirmDialog`, `AiAnomalyWarning`, `AiSettingsDialog`, `AiHistoryPanel`, `AiConversationsPanel`, `AiMobileFab`, `AiMobileSheet`. `AiSidebar` hosts a two-tab rail (`Conversations` / `History`) that toggles `AiConversationsPanel` and `AiHistoryPanel` above the persistent chat thread.
+- **`src/components/ai/`** — `AiSidebar`, `AiMessage`, `AiToolBadge`, `AiConfirmDialog`, `AiAnomalyWarning`, `AiSettingsDialog`, `AiConversationsPanel`, `AiMobileFab`, `AiMobileSheet`. `AiSidebar` has a single collapsible `History` tab that toggles `AiConversationsPanel` (the list of past conversations, with `New chat`) above the persistent chat thread. A `<svelte:boundary>` wraps the message list so a render error degrades to an inline retry rather than crashing the pane. There is no action-log panel — undo for applied actions stays available via per-action toasts and inline `AiToolBadge` controls.
 
 **Data flow**: user message → `POST /api/ai/chat` (loads context, runs the model, streams frames) → client parses frames and runs each tool via `executeToolCall` → Tier B tools wait for `AiConfirmDialog` approval → applied actions are recorded and reversible via `POST /api/ai/undo/[id]`.
 
@@ -535,7 +535,7 @@ This project shares conventions with the broader `~/Desktop/projects` ecosystem:
 - Same Tailwind CSS v4 CSS-first config as all SvelteKit projects
 - Same git worktree workflow as all projects in the workspace
 - Same Conventional Commits format as all projects
-- Same ESLint 9 flat config + Prettier as all projects
+- Same ESLint flat config + Prettier as all projects
 
 If a pattern is unclear here, the most detailed reference implementations are `order-processor/CLAUDE.md` (TypeScript patterns, store design) and `nordcycle/CLAUDE.md` (Svelte 5 + Tailwind conventions).
 
