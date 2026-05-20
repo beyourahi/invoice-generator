@@ -26,9 +26,6 @@ const monthsAgo = (month: MonthName, year: number, today: Date): number => {
 	);
 };
 
-const rollingMean = (values: number[]): number =>
-	values.length === 0 ? 0 : values.reduce((a, b) => a + b, 0) / values.length;
-
 interface ToolArgs {
 	clientId?: string;
 	id?: string;
@@ -44,41 +41,24 @@ const detectAmountOutlier = (
 	args: ToolArgs,
 	appState: AppState
 ): AnomalyResult | null => {
+	if (toolName !== "updateClient") return null;
+	const proposed = args.patch?.serviceAmount ?? args.patch?.amount ?? args.amount;
+	if (proposed === undefined) return null;
+
 	const clientId = args.clientId ?? args.id;
 	if (!clientId) return null;
 	const client = findClient(appState, clientId);
 	if (!client) return null;
 
-	let proposed: number | undefined;
-	if (toolName === "updateClient" || toolName === "updateInvoiceEntry") {
-		proposed = args.patch?.amount ?? args.patch?.serviceAmount ?? args.amount;
-	}
-	if (proposed === undefined) return null;
+	if (client.invoices.length < AMOUNT_OUTLIER_MIN_SAMPLES) return null;
 
-	const baseline = client.service.amount;
-	if (baseline <= 0) return null;
-	if (proposed < baseline * AMOUNT_OUTLIER_MIN_SAMPLES) {
-		// fallthrough — heuristic compares to baseline directly when single sample
-	}
+	const mean = client.service.amount;
+	if (mean <= 0) return null;
 
-	const samples: number[] = [baseline];
-	if (samples.length < AMOUNT_OUTLIER_MIN_SAMPLES) {
-		const lo = baseline * AMOUNT_OUTLIER_LOW;
-		const hi = baseline * AMOUNT_OUTLIER_HIGH;
-		if (proposed < lo || proposed > hi) {
-			return {
-				key: "AmountOutlier",
-				reason: `Proposed amount ${proposed} deviates from ${client.name || "client"}'s usual ${baseline}.`
-			};
-		}
-		return null;
-	}
-
-	const mean = rollingMean(samples);
 	if (proposed > mean * AMOUNT_OUTLIER_HIGH || proposed < mean * AMOUNT_OUTLIER_LOW) {
 		return {
 			key: "AmountOutlier",
-			reason: `Proposed amount ${proposed} is outside ${AMOUNT_OUTLIER_LOW}×–${AMOUNT_OUTLIER_HIGH}× of the mean (${mean.toFixed(0)}).`
+			reason: `Proposed amount ${proposed} is outside ${AMOUNT_OUTLIER_LOW}×–${AMOUNT_OUTLIER_HIGH}× of ${client.name || "the client"}'s usual ${mean} across ${client.invoices.length} existing invoices.`
 		};
 	}
 	return null;
