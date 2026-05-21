@@ -63,7 +63,7 @@
 	</div>
 {/snippet}
 
-<div class="fixed top-4 right-4 z-50 sm:top-6 sm:right-6">
+<div class="fixed top-4 right-4 z-50 sm:top-6 sm:right-6 lg:right-[27rem] xl:right-[29rem]">
 	<div class="sm:hidden">
 		<Dialog.Root bind:open={mobileOpen}>
 			<Dialog.Trigger

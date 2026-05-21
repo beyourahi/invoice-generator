@@ -11,7 +11,6 @@
 	import FixedSenderPanel from "$src/components/FixedSenderPanel.svelte";
 	import GenerationPanel from "$src/components/GenerationPanel.svelte";
 	import InvoicePreview from "$src/components/InvoicePreview.svelte";
-	import RightRailTabs from "$src/components/RightRailTabs.svelte";
 	import AiSidebar from "$src/components/ai/AiSidebar.svelte";
 	import AiConfirmDialog from "$src/components/ai/AiConfirmDialog.svelte";
 	import AiMobileFab from "$src/components/ai/AiMobileFab.svelte";
@@ -34,9 +33,6 @@
 			expandedClients: data.appState.expandedClients
 		});
 		ai.hydrate(data.ai);
-		if (data.ai.enabled && data.appState.clients.length === 0) {
-			ai.setActiveTab("ai");
-		}
 	});
 
 	let ToasterComponent = $state<Component | null>(null);
@@ -72,116 +68,106 @@
 	<User user={page.data.user} currentUser={page.data.currentUser} />
 {/if}
 
-<main class="flex w-full grow flex-col items-center gap-12 px-4 pt-16 pb-6 sm:gap-16 sm:pt-20 sm:pb-8 lg:gap-20">
-	<Heading />
+<div class="flex w-full grow flex-col lg:flex-row">
+	<main class="flex min-w-0 grow flex-col items-center gap-12 px-4 pt-16 pb-6 sm:gap-16 sm:pt-20 sm:pb-8 lg:gap-20">
+		<Heading />
 
-	<div class="container flex w-full min-w-0 flex-col gap-8 sm:gap-10 lg:gap-12">
-		<div class="grid w-full min-w-0 grid-cols-1 items-start gap-6 lg:grid-cols-2 lg:gap-8">
-			<section class="min-w-0 space-y-4">
-				<FixedSenderPanel />
+		<div class="container flex w-full min-w-0 flex-col gap-8 sm:gap-10 lg:gap-12">
+			<div class="grid w-full min-w-0 grid-cols-1 items-start gap-6 lg:grid-cols-2 lg:gap-8">
+				<section class="min-w-0 space-y-4">
+					<FixedSenderPanel />
 
-				<div class="space-y-3">
-					<div class="flex items-center justify-between">
-						<h2 class="flex items-center gap-2 text-base font-semibold text-balance">
-							<Users size={15} aria-hidden="true" />
-							<span class="whitespace-nowrap">Clients</span>
-						</h2>
-						<p class="text-muted-foreground text-xs whitespace-nowrap tabular-nums">
-							{session.clients.length} total
-						</p>
-					</div>
-
-					{#if session.clients.length === 0}
-						<button
-							class="border-border text-muted-foreground pointer-fine:hover:border-foreground/30 pointer-fine:hover:text-foreground grid min-h-36 w-full cursor-pointer place-items-center rounded-lg border border-dashed text-center transition-colors"
-							onclick={session.addClient}
-							aria-label="Add client"
-						>
-							<div class="flex flex-col items-center gap-2">
-								<UserPlus size={18} aria-hidden="true" />
-								<p class="text-sm font-medium">Add client</p>
-							</div>
-						</button>
-					{:else}
-						<div class="space-y-3">
-							{#each session.clients as client, i (client.id)}
-								<ClientCard
-									{client}
-									index={i}
-									selected={previewClient?.id === client.id}
-									onSelect={() => session.setSelectedClientId(client.id)}
-								/>
-							{/each}
+					<div class="space-y-3">
+						<div class="flex items-center justify-between">
+							<h2 class="flex items-center gap-2 text-base font-semibold text-balance">
+								<Users size={15} aria-hidden="true" />
+								<span class="whitespace-nowrap">Clients</span>
+							</h2>
+							<p class="text-muted-foreground text-xs whitespace-nowrap tabular-nums">
+								{session.clients.length} total
+							</p>
 						</div>
-					{/if}
 
-					{#if session.clients.length > 0}
-						<AddClientButton />
-					{/if}
-				</div>
-			</section>
-
-			<section class="min-w-0 space-y-3 lg:sticky lg:top-8 lg:space-y-0 lg:self-start">
-				<button
-					type="button"
-					onclick={() => (previewOpen = !previewOpen)}
-					aria-expanded={previewOpen}
-					aria-controls="preview-panel"
-					class="border-border bg-card pointer-fine:hover:bg-accent/40 flex w-full items-center justify-between gap-3 rounded-lg border px-4 py-3 text-left transition-colors lg:hidden"
-				>
-					<span class="flex items-center gap-2">
-						<ScanLine size={15} class="text-muted-foreground" aria-hidden="true" />
-						<span class="text-sm font-semibold whitespace-nowrap">Preview</span>
-						<span class="text-muted-foreground text-xs whitespace-nowrap">First scheduled invoice</span>
-					</span>
-					<ChevronDown
-						size={16}
-						class={cn(
-							"text-muted-foreground transition-transform duration-200",
-							previewOpen && "rotate-180"
-						)}
-						aria-hidden="true"
-					/>
-				</button>
-				<div
-					id="preview-panel"
-					class={cn(
-						"grid grid-cols-1 transition-[grid-template-rows] duration-200",
-						"lg:grid-rows-[1fr]",
-						previewOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr] lg:grid-rows-[1fr]"
-					)}
-				>
-					<div class="min-h-0 min-w-0 overflow-hidden lg:overflow-visible">
-						{#if ai.enabled}
-							<div class="hidden lg:block">
-								<RightRailTabs>
-									{#snippet preview()}
-										<InvoicePreview
-											html={previewHtml}
-											loading={false}
-											emptyReason={previewEmptyReason}
-										/>
-									{/snippet}
-									{#snippet sidebar()}
-										<AiSidebar />
-									{/snippet}
-								</RightRailTabs>
-							</div>
-							<div class="lg:hidden">
-								<InvoicePreview html={previewHtml} loading={false} emptyReason={previewEmptyReason} />
-							</div>
+						{#if session.clients.length === 0}
+							<button
+								class="border-border text-muted-foreground pointer-fine:hover:border-foreground/30 pointer-fine:hover:text-foreground grid min-h-36 w-full cursor-pointer place-items-center rounded-lg border border-dashed text-center transition-colors"
+								onclick={session.addClient}
+								aria-label="Add client"
+							>
+								<div class="flex flex-col items-center gap-2">
+									<UserPlus size={18} aria-hidden="true" />
+									<p class="text-sm font-medium">Add client</p>
+								</div>
+							</button>
 						{:else}
-							<InvoicePreview html={previewHtml} loading={false} emptyReason={previewEmptyReason} />
+							<div class="space-y-3">
+								{#each session.clients as client, i (client.id)}
+									<ClientCard
+										{client}
+										index={i}
+										selected={previewClient?.id === client.id}
+										onSelect={() => session.setSelectedClientId(client.id)}
+									/>
+								{/each}
+							</div>
+						{/if}
+
+						{#if session.clients.length > 0}
+							<AddClientButton />
 						{/if}
 					</div>
-				</div>
-			</section>
-		</div>
+				</section>
 
-		<Separator />
-		<GenerationPanel />
-	</div>
-</main>
+				<section class="min-w-0 space-y-3 lg:sticky lg:top-8 lg:space-y-0 lg:self-start">
+					<button
+						type="button"
+						onclick={() => (previewOpen = !previewOpen)}
+						aria-expanded={previewOpen}
+						aria-controls="preview-panel"
+						class="border-border bg-card pointer-fine:hover:bg-accent/40 flex w-full items-center justify-between gap-3 rounded-lg border px-4 py-3 text-left transition-colors lg:hidden"
+					>
+						<span class="flex items-center gap-2">
+							<ScanLine size={15} class="text-muted-foreground" aria-hidden="true" />
+							<span class="text-sm font-semibold whitespace-nowrap">Preview</span>
+							<span class="text-muted-foreground text-xs whitespace-nowrap">First scheduled invoice</span>
+						</span>
+						<ChevronDown
+							size={16}
+							class={cn(
+								"text-muted-foreground transition-transform duration-200",
+								previewOpen && "rotate-180"
+							)}
+							aria-hidden="true"
+						/>
+					</button>
+					<div
+						id="preview-panel"
+						class={cn(
+							"grid grid-cols-1 transition-[grid-template-rows] duration-200",
+							"lg:grid-rows-[1fr]",
+							previewOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr] lg:grid-rows-[1fr]"
+						)}
+					>
+						<div class="min-h-0 min-w-0 overflow-hidden lg:overflow-visible">
+							<InvoicePreview html={previewHtml} loading={false} emptyReason={previewEmptyReason} />
+						</div>
+					</div>
+				</section>
+			</div>
+
+			<Separator />
+			<GenerationPanel />
+		</div>
+	</main>
+
+	{#if ai.enabled}
+		<aside class="hidden shrink-0 lg:block lg:w-[26rem] xl:w-[28rem]">
+			<div class="sticky top-0 h-dvh p-2.5">
+				<AiSidebar />
+			</div>
+		</aside>
+	{/if}
+</div>
 
 {#if ai.enabled}
 	<AiMobileFab />

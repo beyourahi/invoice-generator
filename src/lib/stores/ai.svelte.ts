@@ -124,7 +124,6 @@ const createAiStore = () => {
 	let error = $state<string | null>(null);
 	let anomalySettings = $state<AnomalySettings>({ ...DEFAULT_ANOMALY_SETTINGS });
 	let mobileOpen = $state(false);
-	let activeTab = $state<"preview" | "ai">("preview");
 	let inputFocusNonce = $state(0);
 
 	const hydrate = (payload: AiHydrationPayload) => {
@@ -143,10 +142,6 @@ const createAiStore = () => {
 
 	const setEnabled = (v: boolean) => {
 		enabled = v;
-	};
-
-	const setActiveTab = (tab: "preview" | "ai") => {
-		activeTab = tab;
 	};
 
 	const setMobileOpen = (open: boolean) => {
@@ -390,15 +385,11 @@ const createAiStore = () => {
 		get mobileOpen() {
 			return mobileOpen;
 		},
-		get activeTab() {
-			return activeTab;
-		},
 		get inputFocusNonce() {
 			return inputFocusNonce;
 		},
 		hydrate,
 		setEnabled,
-		setActiveTab,
 		setMobileOpen,
 		requestInputFocus,
 		toggleRail,

@@ -4,6 +4,7 @@
 	import { toolLabel } from "$lib/ai/tool-labels";
 	import { Check, CheckCircle2, CircleX, Loader2, ShieldAlert, Undo2, Wand2, X } from "@lucide/svelte";
 	import { cn } from "$lib/utils";
+	import AiAnomalyWarning from "./AiAnomalyWarning.svelte";
 
 	let { call }: { call: AiToolCall } = $props();
 
@@ -25,18 +26,18 @@
 	});
 
 	const statusClasses = $derived.by(() => {
-		if (call.undone) return "bg-card text-muted-foreground";
+		if (call.undone) return "border-border bg-card text-muted-foreground";
 		switch (call.status) {
 			case "applied":
-				return "bg-status-active-bg text-status-active-foreground";
+				return "border-courier-accent/30 bg-courier-accent/10 text-courier-accent";
 			case "rejected":
-				return "bg-card text-muted-foreground";
+				return "border-border bg-card text-muted-foreground";
 			case "failed":
-				return "bg-destructive/10 text-destructive";
+				return "border-destructive/40 bg-destructive/10 text-red-300";
 			case "pending_confirmation":
-				return "bg-destructive/10 text-destructive";
+				return "border-amber-400/30 bg-amber-400/10 text-amber-300";
 			default:
-				return "bg-card text-muted-foreground";
+				return "border-border bg-card text-muted-foreground";
 		}
 	});
 
@@ -55,7 +56,9 @@
 </script>
 
 {#if isPolishProposal && call.polish}
-	<div class="ai-enter border-border bg-card text-muted-foreground space-y-2.5 rounded-lg border p-3 text-xs">
+	<div
+		class="ai-enter border-border bg-card text-muted-foreground space-y-2.5 rounded-lg border border-solid p-3 text-xs"
+	>
 		<div class="text-muted-foreground flex items-center gap-1.5 font-medium">
 			<Wand2 class="size-3.5" aria-hidden="true" />
 			<span>Suggested rewrite</span>
@@ -67,10 +70,8 @@
 					{call.polish.oldText || "(empty)"}
 				</p>
 			</div>
-			<div class="bg-status-active-bg rounded-md px-2.5 py-1.5">
-				<div class="text-status-active-foreground mb-0.5 text-[10px] font-medium tracking-wide uppercase">
-					Proposed
-				</div>
+			<div class="bg-courier-accent/10 rounded-md px-2.5 py-1.5">
+				<div class="text-courier-accent mb-0.5 text-[10px] font-medium tracking-wide uppercase">Proposed</div>
 				<p class="text-foreground break-words whitespace-pre-wrap">{call.polish.newText}</p>
 			</div>
 		</div>
@@ -78,7 +79,7 @@
 			<button
 				type="button"
 				onclick={onRejectPolish}
-				class="text-muted-foreground pointer-fine:hover:text-foreground pointer-fine:hover:bg-muted border-border bg-card inline-flex items-center gap-1 rounded-md border px-2.5 py-1.5 font-medium transition-colors"
+				class="text-muted-foreground hover:text-foreground hover:bg-muted border-border bg-card inline-flex items-center gap-1 rounded-md border border-solid px-2.5 py-1.5 font-medium transition-colors"
 			>
 				<X class="size-3" aria-hidden="true" />
 				Reject
@@ -86,7 +87,7 @@
 			<button
 				type="button"
 				onclick={onApplyPolish}
-				class="bg-primary/10 text-foreground pointer-fine:hover:bg-muted inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 font-medium transition-colors"
+				class="bg-primary/10 text-foreground hover:bg-muted inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 font-medium transition-colors"
 			>
 				<Check class="size-3" aria-hidden="true" />
 				Apply
@@ -94,41 +95,46 @@
 		</div>
 	</div>
 {:else}
-	<div
-		class={cn(
-			"ai-enter flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border px-2.5 py-2 text-xs",
-			statusClasses
-		)}
-	>
-		<span class="flex size-4 shrink-0 items-center justify-center">
-			{#if call.status === "pending" || call.status === "pending_confirmation"}
-				<Loader2 class="size-3.5 animate-spin" aria-hidden="true" />
-			{:else if call.status === "applied" && !call.undone}
-				<CheckCircle2 class="size-3.5" aria-hidden="true" />
-			{:else if call.status === "failed"}
-				<CircleX class="size-3.5" aria-hidden="true" />
-			{:else}
-				<ShieldAlert class="size-3.5" aria-hidden="true" />
+	<div class="ai-enter flex w-full flex-col gap-1.5">
+		<div
+			class={cn(
+				"flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-solid px-2.5 py-2 text-xs",
+				statusClasses
+			)}
+		>
+			<span class="flex size-4 shrink-0 items-center justify-center">
+				{#if call.status === "pending" || call.status === "pending_confirmation"}
+					<Loader2 class="size-3.5 animate-spin" aria-hidden="true" />
+				{:else if call.status === "applied" && !call.undone}
+					<CheckCircle2 class="size-3.5" aria-hidden="true" />
+				{:else if call.status === "failed"}
+					<CircleX class="size-3.5" aria-hidden="true" />
+				{:else}
+					<ShieldAlert class="size-3.5" aria-hidden="true" />
+				{/if}
+			</span>
+			<span class="font-medium break-words">{toolLabel(call.name)}</span>
+			<span class="tabular-nums">· {statusLabel}</span>
+			{#if canUndo}
+				<button
+					type="button"
+					onclick={onUndo}
+					disabled={undoing}
+					class={cn(
+						"text-muted-foreground hover:text-foreground hover:bg-muted border-border bg-card ml-auto inline-flex items-center gap-1 rounded-md border border-solid px-2 py-1 font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50",
+						undoing && "cursor-wait"
+					)}
+				>
+					<Undo2 class="size-3" aria-hidden="true" />
+					Undo
+				</button>
 			{/if}
-		</span>
-		<span class="font-medium break-all">{toolLabel(call.name)}</span>
-		<span class="text-muted-foreground tabular-nums">· {statusLabel}</span>
-		{#if call.error}
-			<span class="text-destructive/80 w-full break-all">{call.error}</span>
-		{/if}
-		{#if canUndo}
-			<button
-				type="button"
-				onclick={onUndo}
-				disabled={undoing}
-				class={cn(
-					"text-muted-foreground pointer-fine:hover:text-foreground pointer-fine:hover:bg-muted border-border bg-card ml-auto inline-flex items-center gap-1 rounded-md border px-2 py-1 font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50",
-					undoing && "cursor-wait"
-				)}
-			>
-				<Undo2 class="size-3" aria-hidden="true" />
-				Undo
-			</button>
+			{#if call.error}
+				<span class="w-full break-words">{call.error}</span>
+			{/if}
+		</div>
+		{#if call.anomalies.length > 0}
+			<AiAnomalyWarning anomalies={call.anomalies} />
 		{/if}
 	</div>
 {/if}

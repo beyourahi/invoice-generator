@@ -28,8 +28,9 @@
 	{#each nodes as node, i (i)}
 		{#if node.type === "text"}{node.value}{:else if node.type === "bold"}<strong
 				class="text-foreground font-semibold">{node.value}</strong
-			>{:else if node.type === "italic"}<em class="italic">{node.value}</em
-			>{:else if node.type === "code"}{node.value}{:else if node.type === "link"}<a
+			>{:else if node.type === "italic"}<em class="italic">{node.value}</em>{:else if node.type === "code"}<code
+				class="bg-muted text-foreground rounded px-1 py-0.5 font-mono text-[0.85em]">{node.value}</code
+			>{:else if node.type === "link"}<a
 				href={node.href}
 				target="_blank"
 				rel="noopener noreferrer"
@@ -42,7 +43,7 @@
 <div class={cn("flex", isUser ? "justify-end" : "justify-start")}>
 	<div
 		class={cn(
-			"flex max-w-[85%] min-w-0 flex-col gap-1.5",
+			"flex max-w-[88%] min-w-0 flex-col gap-1.5",
 			isUser ? "ai-enter-right items-end" : "ai-enter items-start"
 		)}
 	>
@@ -50,11 +51,11 @@
 			<div class="bg-primary/10 text-foreground rounded-2xl rounded-br-md px-4 py-2.5 text-sm leading-relaxed">
 				<span class="break-words whitespace-pre-wrap">{message.content}</span>
 			</div>
-		{:else if blocks.length > 0}
+		{:else if message.content}
 			<div
-				class="border-border/50 bg-card text-muted-foreground rounded-2xl rounded-bl-md border px-4 py-2.5 text-sm"
+				class="border-border-strong/50 bg-card text-muted-foreground rounded-2xl rounded-bl-md border border-solid px-4 py-2.5 text-sm"
 			>
-				<div class="ai-prose space-y-2.5 leading-relaxed">
+				<div class="space-y-2.5 leading-relaxed">
 					{#each blocks as block, bi (bi)}
 						{#if block.type === "paragraph"}
 							<p class="text-pretty">
@@ -78,14 +79,14 @@
 								{/each}
 							</ul>
 						{:else if block.type === "codeblock"}
-							<p class="text-pretty break-words whitespace-pre-wrap">{block.value}</p>
+							<p class="text-pretty whitespace-pre-wrap">{block.value}</p>
 						{/if}
 					{/each}
 				</div>
 			</div>
 		{:else if message.streaming}
 			<div
-				class="bg-card flex items-end gap-[3px] rounded-2xl rounded-bl-md px-4 py-3 backdrop-blur-xl"
+				class="bg-card border-border-strong/50 flex items-end gap-[3px] rounded-2xl rounded-bl-md border border-solid px-4 py-3"
 				role="status"
 				aria-label="Generating response"
 			>

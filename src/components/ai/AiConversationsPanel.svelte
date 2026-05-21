@@ -32,8 +32,8 @@
 				{@const active = conv.id === ai.activeConversationId}
 				<li
 					class={cn(
-						"flex items-center gap-1 rounded-lg border px-2 py-1.5 transition-colors",
-						active ? "border-border bg-muted" : "border-border/50 bg-card pointer-fine:hover:bg-muted"
+						"flex items-center gap-1 rounded-lg border border-solid px-2 py-1.5 transition-colors",
+						active ? "border-border-strong/60 bg-muted" : "border-border-strong/40 bg-card hover:bg-muted"
 					)}
 				>
 					<button
@@ -56,7 +56,7 @@
 					</button>
 					<button
 						type="button"
-						class="text-muted-foreground pointer-fine:hover:text-foreground pointer-fine:hover:bg-muted rounded-md p-1 transition-colors"
+						class="text-muted-foreground hover:text-foreground hover:bg-muted rounded-md p-1 transition-colors"
 						onclick={() => onRename(conv.id, conv.title)}
 						aria-label="Rename conversation {conv.title}"
 						title="Rename"
@@ -65,7 +65,7 @@
 					</button>
 					<button
 						type="button"
-						class="text-muted-foreground pointer-fine:hover:text-destructive pointer-fine:hover:bg-destructive/10 rounded-md p-1 transition-colors"
+						class="text-muted-foreground hover:bg-destructive/10 rounded-md p-1 transition-colors hover:text-red-300"
 						onclick={() => onDelete(conv.id)}
 						aria-label="Delete conversation {conv.title}"
 						title="Delete"
