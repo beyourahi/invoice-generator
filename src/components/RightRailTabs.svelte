@@ -18,7 +18,7 @@
 		</TabsTrigger>
 		<TabsTrigger value="ai" class={triggerClass}>
 			<Sparkles class="size-4" aria-hidden="true" />
-			AI
+			AI Copilot
 		</TabsTrigger>
 	</TabsList>
 

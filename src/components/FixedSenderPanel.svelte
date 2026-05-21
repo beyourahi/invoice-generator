@@ -6,7 +6,7 @@
 	import Input from "$lib/components/ui/input.svelte";
 	import Textarea from "$lib/components/ui/textarea.svelte";
 	import { Separator } from "$lib/components/ui/separator";
-	import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "$lib/components/ui/card";
+	import { Card, CardContent } from "$lib/components/ui/card";
 	import * as Field from "$lib/components/ui/field";
 	import SelectDialog from "$src/components/SelectDialog.svelte";
 	import PaymentMethodCard from "$src/components/PaymentMethodCard.svelte";
@@ -57,118 +57,123 @@
 	};
 </script>
 
-<Card size="sm">
-	<CardHeader>
-		<CardTitle class="flex items-center gap-2 text-base font-semibold text-balance">
+<div class="space-y-3">
+	<div class="space-y-1">
+		<h2 class="flex items-center gap-2 text-base font-semibold text-balance">
 			<UserRound size={15} aria-hidden="true" />
 			<span class="whitespace-nowrap">Your details</span>
-		</CardTitle>
-		<CardDescription class="text-xs text-pretty">Stays on this device — autofills every invoice.</CardDescription>
-	</CardHeader>
-	<CardContent class="space-y-5">
-		<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-			<Field.Field class="gap-1.5 sm:col-span-2">
-				<Field.FieldLabel for="from-name">Name</Field.FieldLabel>
-				<Input
-					id="from-name"
-					placeholder="e.g., Albus Dumbledore"
-					value={fixed.value.from.name}
-					oninput={e => fixed.updateFrom("name", valueFromInput(e))}
-				/>
-			</Field.Field>
-			<Field.Field class="gap-1.5">
-				<Field.FieldLabel for="from-phone">Phone</Field.FieldLabel>
-				<Input
-					id="from-phone"
-					type="tel"
-					placeholder="e.g., +880 1XXXXXXXXX"
-					value={fixed.value.from.phone}
-					oninput={e => fixed.updateFrom("phone", valueFromInput(e))}
-				/>
-			</Field.Field>
-			<Field.Field class="gap-1.5" data-invalid={senderEmailError !== ""}>
-				<Field.FieldLabel for="from-email">Email</Field.FieldLabel>
-				<Input
-					id="from-email"
-					type="email"
-					placeholder="e.g., albus@hogwarts.edu"
-					value={fixed.value.from.email}
-					aria-invalid={senderEmailError !== ""}
-					oninput={e => fixed.updateFrom("email", valueFromInput(e))}
-					onblur={() => (emailTouched = true)}
-					class={senderEmailError ? "border-destructive focus-visible:border-destructive" : ""}
-				/>
-				<Field.FieldError>{senderEmailError}</Field.FieldError>
-			</Field.Field>
-			<Field.Field class="gap-1.5 sm:col-span-2">
-				<Field.FieldLabel for="from-address">Address</Field.FieldLabel>
-				<Textarea
-					id="from-address"
-					placeholder="e.g., Headmaster's Office, Hogwarts Castle"
-					value={fixed.value.from.address}
-					oninput={e => fixed.updateFrom("address", valueFromTextArea(e))}
-				/>
-			</Field.Field>
-		</div>
+		</h2>
+		<p class="text-muted-foreground text-xs text-pretty">
+			Stays on this device — autofills every invoice.
+		</p>
+	</div>
 
-		<Separator />
-
-		<div class="space-y-3">
-			<div class="flex items-center justify-between gap-3">
-				<SectionEyebrow icon={Wallet} label="Payment methods" />
-				{#if methods.length > 0}
-					<p class="text-muted-foreground text-xs whitespace-nowrap tabular-nums">{methods.length} saved</p>
-				{/if}
+	<Card size="sm">
+		<CardContent class="space-y-5">
+			<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+				<Field.Field class="gap-1.5 sm:col-span-2">
+					<Field.FieldLabel for="from-name">Name</Field.FieldLabel>
+					<Input
+						id="from-name"
+						placeholder="e.g., Albus Dumbledore"
+						value={fixed.value.from.name}
+						oninput={e => fixed.updateFrom("name", valueFromInput(e))}
+					/>
+				</Field.Field>
+				<Field.Field class="gap-1.5">
+					<Field.FieldLabel for="from-phone">Phone</Field.FieldLabel>
+					<Input
+						id="from-phone"
+						type="tel"
+						placeholder="e.g., +880 1XXXXXXXXX"
+						value={fixed.value.from.phone}
+						oninput={e => fixed.updateFrom("phone", valueFromInput(e))}
+					/>
+				</Field.Field>
+				<Field.Field class="gap-1.5" data-invalid={senderEmailError !== ""}>
+					<Field.FieldLabel for="from-email">Email</Field.FieldLabel>
+					<Input
+						id="from-email"
+						type="email"
+						placeholder="e.g., albus@hogwarts.edu"
+						value={fixed.value.from.email}
+						aria-invalid={senderEmailError !== ""}
+						oninput={e => fixed.updateFrom("email", valueFromInput(e))}
+						onblur={() => (emailTouched = true)}
+						class={senderEmailError ? "border-destructive focus-visible:border-destructive" : ""}
+					/>
+					<Field.FieldError>{senderEmailError}</Field.FieldError>
+				</Field.Field>
+				<Field.Field class="gap-1.5 sm:col-span-2">
+					<Field.FieldLabel for="from-address">Address</Field.FieldLabel>
+					<Textarea
+						id="from-address"
+						placeholder="e.g., Headmaster's Office, Hogwarts Castle"
+						value={fixed.value.from.address}
+						oninput={e => fixed.updateFrom("address", valueFromTextArea(e))}
+					/>
+				</Field.Field>
 			</div>
 
-			{#if methods.length === 0}
-				<div
-					class="border-border text-muted-foreground grid min-h-28 w-full place-items-center rounded-lg border border-dashed text-center"
-				>
-					<div class="space-y-1">
-						<p class="text-sm font-medium text-balance">No payment methods yet</p>
-						<p class="text-xs text-pretty">Pick one below to attach it to your invoices.</p>
-					</div>
+			<Separator />
+
+			<div class="space-y-3">
+				<div class="flex items-center justify-between gap-3">
+					<SectionEyebrow icon={Wallet} label="Payment methods" />
+					{#if methods.length > 0}
+						<p class="text-muted-foreground text-xs whitespace-nowrap tabular-nums">{methods.length} saved</p>
+					{/if}
 				</div>
-			{:else}
-				<div class="space-y-2">
-					{#each methods as method, i (method.id)}
-						<div id="method-row-{method.id}">
-							<PaymentMethodCard
-								{method}
-								index={i}
-								total={methods.length}
-								expanded={expandedMethodId === method.id}
-								onToggle={next => handleToggle(method.id, next)}
-							/>
+
+				{#if methods.length === 0}
+					<div
+						class="border-border text-muted-foreground grid min-h-28 w-full place-items-center rounded-lg border border-dashed text-center"
+					>
+						<div class="space-y-1">
+							<p class="text-sm font-medium text-balance">No payment methods yet</p>
+							<p class="text-xs text-pretty">Pick one below to attach it to your invoices.</p>
 						</div>
-					{/each}
-				</div>
-			{/if}
+					</div>
+				{:else}
+					<div class="space-y-2">
+						{#each methods as method, i (method.id)}
+							<div id="method-row-{method.id}">
+								<PaymentMethodCard
+									{method}
+									index={i}
+									total={methods.length}
+									expanded={expandedMethodId === method.id}
+									onToggle={next => handleToggle(method.id, next)}
+								/>
+							</div>
+						{/each}
+					</div>
+				{/if}
 
-			<div class="bg-muted/30 rounded-lg p-2">
-				<SelectDialog
-					value={pickerValue}
-					title="Add payment method"
-					placeholder={pendingKind
-						? `Adding ${getMethodDef(pendingKind).name}…`
-						: methods.length === 0
-							? "Choose a payment method to add…"
-							: "Add or open another method…"}
-					options={PAYMENT_METHOD_KINDS.map(kind => {
-						const def = getMethodDef(kind);
-						const already = methods.some(m => m.kind === kind);
-						return {
-							value: kind,
-							label: def.name,
-							description: def.description,
-							badge: already ? "Open" : undefined
-						};
-					})}
-					onSelect={handlePickerChange}
-					disabled={pendingKind !== null}
-				/>
+				<div class="bg-muted/30 rounded-lg p-2">
+					<SelectDialog
+						value={pickerValue}
+						title="Add payment method"
+						placeholder={pendingKind
+							? `Adding ${getMethodDef(pendingKind).name}…`
+							: methods.length === 0
+								? "Choose a payment method to add…"
+								: "Add or open another method…"}
+						options={PAYMENT_METHOD_KINDS.map(kind => {
+							const def = getMethodDef(kind);
+							const already = methods.some(m => m.kind === kind);
+							return {
+								value: kind,
+								label: def.name,
+								description: def.description,
+								badge: already ? "Open" : undefined
+							};
+						})}
+						onSelect={handlePickerChange}
+						disabled={pendingKind !== null}
+					/>
+				</div>
 			</div>
-		</div>
-	</CardContent>
-</Card>
+		</CardContent>
+	</Card>
+</div>

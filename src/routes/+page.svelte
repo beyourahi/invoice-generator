@@ -20,7 +20,7 @@
 	import { page } from "$app/state";
 	import User from "$src/components/User.svelte";
 	import { onMount, untrack, type Component } from "svelte";
-	import { ChevronDown, ScanLine, UserPlus } from "@lucide/svelte";
+	import { ChevronDown, ScanLine, UserPlus, Users } from "@lucide/svelte";
 	import { cn } from "$lib/utils";
 	import type { PageData } from "./$types";
 
@@ -82,7 +82,10 @@
 
 				<div class="space-y-3">
 					<div class="flex items-center justify-between">
-						<h2 class="text-base font-semibold text-balance">Clients</h2>
+						<h2 class="flex items-center gap-2 text-base font-semibold text-balance">
+							<Users size={15} aria-hidden="true" />
+							<span class="whitespace-nowrap">Clients</span>
+						</h2>
 						<p class="text-muted-foreground text-xs whitespace-nowrap tabular-nums">
 							{session.clients.length} total
 						</p>
