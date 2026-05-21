@@ -169,13 +169,11 @@
 					<AiMessage message={msg} />
 				{/each}
 
-				{#snippet failed(error, reset)}
+				{#snippet failed(_error, reset)}
 					<div class="ai-enter flex flex-col items-center gap-2 py-6 text-center" role="alert">
 						<p class="text-sm font-medium text-red-400/90">The copilot hit a display error.</p>
 						<p class="text-muted-foreground max-w-xs text-xs text-pretty">
-							{error instanceof Error
-								? error.message
-								: "Something went wrong rendering this conversation."}
+							Something went wrong showing this conversation. Retry to reload it.
 						</p>
 						<button
 							type="button"

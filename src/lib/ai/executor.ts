@@ -6,6 +6,7 @@ import { executors } from "./tools";
 import { argSchemas, type ArgsOf } from "./schemas";
 import { detectAnomalies } from "./safety";
 import { resolvedTier, TIER_MAP, READ_ONLY_TOOLS } from "./tools-catalog";
+import { toolLabel } from "./tool-labels";
 import type {
 	AnomalyResult,
 	AnomalySettings,
@@ -66,6 +67,11 @@ const snapshotAppState = (): AppState => ({
 const humanLabelFor = (toolName: string, args: unknown): string => {
 	const a = (args ?? {}) as Record<string, unknown>;
 	switch (toolName) {
+		case "createClient": {
+			const data = (a.data as Record<string, unknown> | undefined) ?? {};
+			const name = typeof data.name === "string" ? data.name.trim() : "";
+			return name ? `Create client "${name}"` : "Create a new client";
+		}
 		case "deleteClient": {
 			const c = session.clients.find((x) => x.id === a.clientId);
 			return `Delete client "${c?.name || a.clientId}" and all its invoices`;
@@ -95,7 +101,7 @@ const humanLabelFor = (toolName: string, args: unknown): string => {
 			return `Update ${keys} on the ${e?.month || ""} invoice for "${c?.name || a.clientId}"`;
 		}
 		default:
-			return toolName;
+			return toolLabel(toolName);
 	}
 };
 

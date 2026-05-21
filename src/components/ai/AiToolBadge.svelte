@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { AiToolCall } from "$lib/stores/ai.svelte";
 	import { triggerUndo, respondToPolish } from "$lib/ai/chat-client";
+	import { toolLabel } from "$lib/ai/tool-labels";
 	import { Check, CheckCircle2, CircleX, Loader2, ShieldAlert, Undo2, Wand2, X } from "@lucide/svelte";
 	import { cn } from "$lib/utils";
 
@@ -114,7 +115,7 @@
 				<ShieldAlert class="size-3.5" aria-hidden="true" />
 			{/if}
 		</span>
-		<span class="font-medium break-all">{call.name}</span>
+		<span class="font-medium break-all">{toolLabel(call.name)}</span>
 		<span class="text-muted-foreground tabular-nums">· {statusLabel}</span>
 		{#if call.error}
 			<span class="text-destructive/80 w-full break-all">{call.error}</span>

@@ -12,6 +12,7 @@
 	import { ai } from "$lib/stores/ai.svelte";
 	import { respondToConfirmation, respondToAllConfirmations } from "$lib/ai/chat-client";
 	import AiAnomalyWarning from "./AiAnomalyWarning.svelte";
+	import { toolLabel } from "$lib/ai/tool-labels";
 	import { ShieldCheck, Undo2 } from "@lucide/svelte";
 
 	const open = $derived(ai.pendingConfirmations.length > 0);
@@ -96,8 +97,8 @@
 									>
 										{req.humanLabel}
 									</span>
-									<span class="text-muted-foreground font-mono text-[10px]">
-										{req.toolName}
+									<span class="text-muted-foreground text-[10px] tracking-wide uppercase">
+										{toolLabel(req.toolName)}
 									</span>
 									{#if req.anomalies.length > 0}
 										<AiAnomalyWarning anomalies={req.anomalies} />

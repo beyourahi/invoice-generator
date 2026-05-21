@@ -6,6 +6,8 @@ import {
 	type PolishApprovalRequest
 } from "./executor";
 import { streamFrames, type Frame } from "./streaming";
+import { friendlyErrorMessage } from "./errors";
+import { toolLabel } from "./tool-labels";
 import type { AnomalySettings, ParsedToolCall } from "./types";
 
 interface SendOptions {
@@ -94,17 +96,16 @@ export const sendMessage = async (message: string, options: SendOptions = {}): P
 			} catch {
 				/* ignore */
 			}
-			const msg =
+			const raw =
 				(payload as { message?: string } | null)?.message ?? `Request failed (${response.status})`;
-			ai.appendAssistantDelta(assistantId, msg);
 			ai.finalizeAssistantMessage(assistantId);
-			ai.setError(msg);
+			ai.setError(friendlyErrorMessage(raw));
 			ai.setStreaming(false);
 			return;
 		}
 
 		if (!response.body) {
-			ai.setError("Empty response");
+			ai.setError(friendlyErrorMessage("Empty response"));
 			ai.finalizeAssistantMessage(assistantId);
 			ai.setStreaming(false);
 			return;
@@ -134,13 +135,11 @@ export const sendMessage = async (message: string, options: SendOptions = {}): P
 					options.onConversationCreated?.(assignedConversationId);
 				}
 			} else if (frame.t === "error") {
-				ai.setError(frame.message);
+				ai.setError(friendlyErrorMessage(frame.message));
 			}
 		}
 	} catch (err) {
-		const msg = err instanceof Error ? err.message : "Stream failed";
-		ai.setError(msg);
-		ai.appendAssistantDelta(assistantId, `\n\n[error: ${msg}]`);
+		ai.setError(friendlyErrorMessage(err));
 	}
 
 	ai.finalizeAssistantMessage(assistantId);
@@ -154,7 +153,7 @@ export const sendMessage = async (message: string, options: SendOptions = {}): P
 			ai.updateToolCall(assistantId, frame.id, {
 				status: frame.status,
 				actionId: frame.actionId ?? null,
-				error: frame.error ?? null
+				error: frame.error ? friendlyErrorMessage(frame.error) : null
 			});
 		} else if (frame.t === "anomaly") {
 			ai.updateToolCall(assistantId, frame.toolCallId, {
@@ -180,11 +179,11 @@ export const sendMessage = async (message: string, options: SendOptions = {}): P
 			needsReload = true;
 			fireToast({
 				type: "success",
-				message: `Applied ${call.name}`,
+				message: `${toolLabel(call.name)} — done`,
 				actionId: outcome.actionId
 			});
 		} else if (outcome.status === "failed") {
-			fireToast({ type: "error", message: outcome.error ?? "Tool failed" });
+			fireToast({ type: "error", message: friendlyErrorMessage(outcome.error ?? "Tool failed") });
 		}
 	}
 
@@ -226,8 +225,9 @@ export const triggerUndo = async (actionId: string): Promise<boolean> => {
 		});
 		if (!response.ok) {
 			const text = await response.text();
-			ai.markHistoryActionUndoFailed(actionId, text || "Undo failed");
-			fireToast({ type: "error", message: text || "Undo failed" });
+			const friendly = friendlyErrorMessage(text || "Undo failed");
+			ai.markHistoryActionUndoFailed(actionId, friendly);
+			fireToast({ type: "error", message: friendly });
 			return false;
 		}
 		ai.markHistoryActionUndone(actionId);
@@ -235,7 +235,7 @@ export const triggerUndo = async (actionId: string): Promise<boolean> => {
 		fireToast({ type: "info", message: "Reverted" });
 		return true;
 	} catch (err) {
-		const msg = err instanceof Error ? err.message : "Undo failed";
+		const msg = friendlyErrorMessage(err);
 		ai.markHistoryActionUndoFailed(actionId, msg);
 		fireToast({ type: "error", message: msg });
 		return false;
