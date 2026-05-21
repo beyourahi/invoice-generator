@@ -63,9 +63,7 @@
 			<UserRound size={15} aria-hidden="true" />
 			<span class="whitespace-nowrap">Your details</span>
 		</h2>
-		<p class="text-muted-foreground text-xs text-pretty">
-			Stays on this device — autofills every invoice.
-		</p>
+		<p class="text-muted-foreground text-xs text-pretty">Stays on this device — autofills every invoice.</p>
 	</div>
 
 	<Card size="sm">
@@ -121,7 +119,9 @@
 				<div class="flex items-center justify-between gap-3">
 					<SectionEyebrow icon={Wallet} label="Payment methods" />
 					{#if methods.length > 0}
-						<p class="text-muted-foreground text-xs whitespace-nowrap tabular-nums">{methods.length} saved</p>
+						<p class="text-muted-foreground text-xs whitespace-nowrap tabular-nums">
+							{methods.length} saved
+						</p>
 					{/if}
 				</div>
 
