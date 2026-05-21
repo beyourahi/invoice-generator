@@ -25,6 +25,7 @@ import {
 	FEW_SHOTS_V1
 } from "$lib/ai/prompts";
 import { runChatFrames, type RawChatResult } from "$lib/ai/client";
+import { salvageTextToolCalls } from "$lib/ai/salvage";
 import { sseStream } from "$lib/ai/streaming";
 import { TOOLS_CATALOG } from "$lib/ai/tools-catalog";
 import { argSchemas, isKnownToolName } from "$lib/ai/schemas";
@@ -185,7 +186,16 @@ export const POST: RequestHandler = async (event) => {
 			inputTokens += first.inputTokens;
 			outputTokens += first.outputTokens;
 
-			let validated = validateToolCalls(decodeCallTokens(first.toolCalls, context.tokenMap));
+			let firstCalls = first.toolCalls;
+			if (firstCalls.length === 0 && !errored && assistantText.trim().length > 0) {
+				const salvaged = salvageTextToolCalls(assistantText);
+				if (salvaged.calls.length > 0) {
+					firstCalls = salvaged.calls;
+					assistantText = salvaged.cleanedText;
+				}
+			}
+
+			let validated = validateToolCalls(decodeCallTokens(firstCalls, context.tokenMap));
 			const invalid = validated.filter((v) => !v.valid);
 
 			if (invalid.length > 0 && !errored) {
@@ -218,7 +228,12 @@ export const POST: RequestHandler = async (event) => {
 				);
 				inputTokens += retry.inputTokens;
 				outputTokens += retry.outputTokens;
-				validated = validateToolCalls(decodeCallTokens(retry.toolCalls, context.tokenMap));
+				let retryCalls = retry.toolCalls;
+				if (retryCalls.length === 0 && retry.text.trim().length > 0) {
+					const salvaged = salvageTextToolCalls(retry.text);
+					if (salvaged.calls.length > 0) retryCalls = salvaged.calls;
+				}
+				validated = validateToolCalls(decodeCallTokens(retryCalls, context.tokenMap));
 			}
 
 			finalCalls = validated.map((v) => v.call);
