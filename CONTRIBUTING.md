@@ -179,7 +179,7 @@ invoice-generator/
 ├── vite.config.ts               # Vite config with Tailwind plugin
 ├── drizzle.config.ts            # Drizzle ORM config
 ├── tsconfig.json                # TypeScript strict config
-├── eslint.config.js             # ESLint 9 flat config
+├── eslint.config.js             # ESLint 10 flat config
 └── components.json              # shadcn-svelte registry config
 ```
 

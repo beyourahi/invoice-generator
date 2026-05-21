@@ -8,18 +8,18 @@ A SvelteKit app for generating batches of PDF invoices. Configure a sender ident
 
 ## Tech Stack
 
-| Layer         | Technology                            |
-| ------------- | ------------------------------------- |
-| Framework     | SvelteKit 2 + Svelte 5 (runes)        |
-| Styling       | Tailwind CSS v4                       |
-| UI Components | shadcn-svelte                         |
-| Auth          | Better Auth (Google OAuth)            |
-| Database      | Cloudflare D1 + Drizzle ORM           |
-| AI            | Cloudflare Workers AI (Llama 4 Scout) |
-| PDF           | html2canvas + jsPDF                   |
-| ZIP           | fflate                                |
-| Deployment    | Cloudflare Workers                    |
-| Package mgr   | Bun                                   |
+| Layer         | Technology                           |
+| ------------- | ------------------------------------ |
+| Framework     | SvelteKit 2 + Svelte 5 (runes)       |
+| Styling       | Tailwind CSS v4                      |
+| UI Components | shadcn-svelte                        |
+| Auth          | Better Auth (Google OAuth)           |
+| Database      | Cloudflare D1 + Drizzle ORM          |
+| AI            | Cloudflare Workers AI (GPT-OSS 120B) |
+| PDF           | html2canvas + jsPDF                  |
+| ZIP           | fflate                               |
+| Deployment    | Cloudflare Workers                   |
+| Package mgr   | Bun                                  |
 
 ---
 
