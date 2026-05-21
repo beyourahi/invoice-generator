@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { ai } from "$lib/stores/ai.svelte";
-	import { sendMessage } from "$lib/ai/chat-client";
+	import { createNewConversation, sendMessage } from "$lib/ai/chat-client";
 	import AiMessage from "./AiMessage.svelte";
 	import AiConversationsPanel from "./AiConversationsPanel.svelte";
-	import { ArrowUp, CalendarPlus, EyeOff, History, Wand2 } from "@lucide/svelte";
+	import { ArrowUp, CalendarPlus, EyeOff, History, MessageSquarePlus, Wand2 } from "@lucide/svelte";
 	import { tick } from "svelte";
 	import { cn } from "$lib/utils";
 
@@ -51,6 +51,11 @@
 		scrollContainer.scrollTop = scrollContainer.scrollHeight;
 	};
 
+	const onNewChat = async () => {
+		await createNewConversation();
+		ai.closeRail();
+	};
+
 	$effect(() => {
 		void ai.messages.length;
 		void lastContent;
@@ -71,13 +76,21 @@
 	aria-label="AI Copilot"
 >
 	<div class="border-border border-b p-2">
-		<div class={cn(bare && "mr-12")}>
+		<div class={cn("flex items-center gap-2", bare && "mr-12")}>
+			<button
+				type="button"
+				onclick={onNewChat}
+				class="bg-card border-border text-muted-foreground pointer-fine:hover:text-foreground pointer-fine:hover:bg-muted flex flex-1 items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-xs transition-colors"
+			>
+				<MessageSquarePlus class="size-3.5 shrink-0" aria-hidden="true" />
+				<span>New Chat</span>
+			</button>
 			<button
 				type="button"
 				onclick={ai.toggleRail}
 				aria-expanded={ai.railOpen}
 				class={cn(
-					"bg-card border-border flex w-full items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-xs transition-colors",
+					"bg-card border-border flex flex-1 items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-xs transition-colors",
 					ai.railOpen
 						? "bg-primary/10 text-foreground font-medium"
 						: "text-muted-foreground pointer-fine:hover:text-foreground pointer-fine:hover:bg-muted"

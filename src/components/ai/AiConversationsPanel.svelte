@@ -1,18 +1,8 @@
 <script lang="ts">
 	import { ai } from "$lib/stores/ai.svelte";
-	import {
-		createNewConversation,
-		deleteConversation,
-		renameConversation,
-		switchConversation
-	} from "$lib/ai/chat-client";
-	import { MessageSquarePlus, Pencil, Trash2 } from "@lucide/svelte";
+	import { deleteConversation, renameConversation, switchConversation } from "$lib/ai/chat-client";
+	import { Pencil, Trash2 } from "@lucide/svelte";
 	import { cn } from "$lib/utils";
-
-	const onNew = async () => {
-		await createNewConversation();
-		ai.closeRail();
-	};
 
 	const onSwitch = async (id: string) => {
 		if (id !== ai.activeConversationId) await switchConversation(id);
@@ -34,15 +24,6 @@
 </script>
 
 <div class="space-y-2">
-	<button
-		type="button"
-		onclick={onNew}
-		class="border-border/50 bg-card text-foreground pointer-fine:hover:border-border pointer-fine:hover:bg-muted flex w-full items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium transition-colors"
-	>
-		<MessageSquarePlus class="size-3.5 shrink-0" aria-hidden="true" />
-		New chat
-	</button>
-
 	{#if ai.conversations.length === 0}
 		<p class="text-muted-foreground py-3 text-center text-xs text-balance">No conversations yet.</p>
 	{:else}
