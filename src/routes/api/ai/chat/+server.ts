@@ -17,7 +17,7 @@ import {
 import { checkAndIncrementQuota } from "$lib/server/ai-quota";
 import { checkSpendCap, recordSpend } from "$lib/server/ai-spend";
 import { logChatTurn } from "$lib/server/log";
-import { projectAppState } from "$lib/ai/context";
+import { projectAppState, decodeTokens } from "$lib/ai/context";
 import {
 	buildSystemContext,
 	titleFromMessage,
@@ -54,6 +54,11 @@ interface ValidatedCall {
 	valid: boolean;
 	error?: string;
 }
+
+const decodeCallTokens = (
+	calls: ParsedToolCall[],
+	tokenMap: Record<string, string>
+): ParsedToolCall[] => calls.map((call) => ({ ...call, args: decodeTokens(call.args, tokenMap) }));
 
 const validateToolCalls = (calls: ParsedToolCall[]): ValidatedCall[] =>
 	calls.map((call) => {
@@ -180,7 +185,7 @@ export const POST: RequestHandler = async (event) => {
 			inputTokens += first.inputTokens;
 			outputTokens += first.outputTokens;
 
-			let validated = validateToolCalls(first.toolCalls);
+			let validated = validateToolCalls(decodeCallTokens(first.toolCalls, context.tokenMap));
 			const invalid = validated.filter((v) => !v.valid);
 
 			if (invalid.length > 0 && !errored) {
@@ -213,7 +218,7 @@ export const POST: RequestHandler = async (event) => {
 				);
 				inputTokens += retry.inputTokens;
 				outputTokens += retry.outputTokens;
-				validated = validateToolCalls(retry.toolCalls);
+				validated = validateToolCalls(decodeCallTokens(retry.toolCalls, context.tokenMap));
 			}
 
 			finalCalls = validated.map((v) => v.call);

@@ -145,6 +145,25 @@ const renderSummary = (payload: Omit<ContextPayload, "summaryText" | "tokenMap">
 	return lines.join("\n");
 };
 
+const STATE_TOKEN_RE = /^(?:cli|ent|pm)_\d+$/;
+
+export const decodeTokens = <T>(value: T, tokenMap: Record<string, string>): T => {
+	if (typeof value === "string") {
+		return (STATE_TOKEN_RE.test(value) && tokenMap[value] ? tokenMap[value] : value) as T;
+	}
+	if (Array.isArray(value)) {
+		return value.map((item) => decodeTokens(item, tokenMap)) as T;
+	}
+	if (value && typeof value === "object") {
+		const decoded: Record<string, unknown> = {};
+		for (const [key, item] of Object.entries(value)) {
+			decoded[key] = decodeTokens(item, tokenMap);
+		}
+		return decoded as T;
+	}
+	return value;
+};
+
 export const projectAppState = (appState: AppState): ContextPayload => {
 	const tokenMap: Record<string, string> = {};
 
