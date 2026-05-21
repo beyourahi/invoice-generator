@@ -83,7 +83,7 @@
 			</Tabs.List>
 
 			<Tabs.Content value="details">
-				<div class="grid w-full min-w-0 grid-cols-1 items-start gap-6 xl:grid-cols-2 xl:gap-8">
+				<div class="grid w-full min-w-0 grid-cols-1 items-start gap-6">
 					<div class="min-w-0">
 						<FixedSenderPanel />
 					</div>
