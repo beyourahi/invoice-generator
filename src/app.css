@@ -702,17 +702,19 @@ textarea,
 }
 
 .invoice-preview-stage {
+	display: flex;
+	justify-content: center;
 	height: var(--preview-height);
-	background-color: var(--color-preview-paper);
 }
 
 .invoice-preview-frame {
 	display: block;
 	width: 794px;
 	height: 1123px;
+	flex: none;
 	border: 0;
 	transform: scale(var(--preview-scale));
-	transform-origin: top left;
+	transform-origin: top center;
 }
 
 [data-slot="dialog-overlay"] {
