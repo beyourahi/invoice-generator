@@ -71,12 +71,12 @@
 
 	<div class="container flex w-full min-w-0 flex-col gap-8 sm:gap-10 lg:gap-12">
 		<Tabs.Root bind:value={activeTab} class="gap-6">
-			<Tabs.List class="w-full self-center sm:w-fit">
-				<Tabs.Trigger value="details" class="px-4">
+			<Tabs.List class="w-full self-center group-data-horizontal/tabs:h-auto sm:w-fit">
+				<Tabs.Trigger value="details" class="h-auto min-h-11 gap-2 px-6 py-3 text-base">
 					<SquarePen aria-hidden="true" />
 					Details
 				</Tabs.Trigger>
-				<Tabs.Trigger value="preview" class="px-4">
+				<Tabs.Trigger value="preview" class="h-auto min-h-11 gap-2 px-6 py-3 text-base">
 					<ScanLine aria-hidden="true" />
 					Preview
 				</Tabs.Trigger>
