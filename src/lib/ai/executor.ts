@@ -6,7 +6,7 @@ import { executors } from "./tools";
 import { argSchemas, type ArgsOf } from "./schemas";
 import { detectAnomalies } from "./safety";
 import { resolvedTier, TIER_MAP, READ_ONLY_TOOLS } from "./tools-catalog";
-import { toolLabel } from "./tool-labels";
+import { toolLabel, fieldLabel } from "./tool-labels";
 import type {
 	AnomalyResult,
 	AnomalySettings,
@@ -90,14 +90,14 @@ const humanLabelFor = (toolName: string, args: unknown): string => {
 		case "updateClient": {
 			const c = session.clients.find((x) => x.id === a.clientId);
 			const patch = (a.patch as Record<string, unknown>) ?? {};
-			const keys = Object.keys(patch).join(", ");
+			const keys = Object.keys(patch).map(fieldLabel).join(", ");
 			return `Update ${keys} on client "${c?.name || a.clientId}"`;
 		}
 		case "updateInvoiceEntry": {
 			const c = session.clients.find((x) => x.id === a.clientId);
 			const e = c?.invoices.find((x) => x.id === a.entryId);
 			const patch = (a.patch as Record<string, unknown>) ?? {};
-			const keys = Object.keys(patch).join(", ");
+			const keys = Object.keys(patch).map(fieldLabel).join(", ");
 			return `Update ${keys} on the ${e?.month || ""} invoice for "${c?.name || a.clientId}"`;
 		}
 		default:
@@ -152,7 +152,7 @@ const buildConfirmationDetail = (
 			const patch = (a.patch as Record<string, unknown>) ?? {};
 			for (const [key, value] of Object.entries(patch)) {
 				diff.push({
-					label: key,
+					label: fieldLabel(key),
 					current: displayValue(currentClientField(client, key)),
 					proposed: displayValue(value)
 				});
@@ -167,7 +167,7 @@ const buildConfirmationDetail = (
 			const patch = (a.patch as Record<string, unknown>) ?? {};
 			for (const [key, value] of Object.entries(patch)) {
 				diff.push({
-					label: key,
+					label: fieldLabel(key),
 					current: displayValue(entry?.[key]),
 					proposed: displayValue(value)
 				});
@@ -178,7 +178,7 @@ const buildConfirmationDetail = (
 			const method = fixed.value.paymentMethods.find((x) => x.id === a.paymentMethodId);
 			const field = String(a.field ?? "");
 			diff.push({
-				label: field,
+				label: fieldLabel(field),
 				current: displayValue(method?.values?.[field]),
 				proposed: displayValue(a.value)
 			});
@@ -187,7 +187,7 @@ const buildConfirmationDetail = (
 		case "updateFixedField": {
 			const field = String(a.field ?? "") as "name" | "phone" | "email" | "address";
 			diff.push({
-				label: field,
+				label: fieldLabel(field),
 				current: displayValue(fixed.value.from[field]),
 				proposed: displayValue(a.value)
 			});

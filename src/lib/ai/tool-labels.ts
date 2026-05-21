@@ -21,3 +21,21 @@ const TOOL_LABELS: Record<string, string> = {
 };
 
 export const toolLabel = (name: string): string => TOOL_LABELS[name] ?? "Update";
+
+const FIELD_LABELS: Record<string, string> = {
+	name: "name",
+	invoicePrefix: "invoice prefix",
+	phone: "phone",
+	email: "email",
+	address: "address",
+	serviceDescription: "service description",
+	serviceAmount: "amount",
+	serviceCurrency: "currency",
+	year: "year",
+	isActive: "active status",
+	month: "month",
+	issueDay: "issue day",
+	dueDay: "due day"
+};
+
+export const fieldLabel = (key: string): string => FIELD_LABELS[key] ?? key;
