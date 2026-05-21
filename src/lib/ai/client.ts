@@ -1,6 +1,6 @@
 import type { Frame, ParsedToolCall, ToolCatalogEntry } from "./types";
 
-export const MODEL_ID = "@cf/meta/llama-4-scout-17b-16e-instruct" as const;
+export const MODEL_ID = "@cf/openai/gpt-oss-120b" as const;
 
 export interface RunChatEnv {
 	AI: Ai;
@@ -24,15 +24,19 @@ export interface RawChatResult {
 }
 
 interface StreamToolCallDelta {
-	id?: string | null;
 	index?: number;
-	function?: { name?: string | null; arguments?: string };
+	id?: string | null;
+	function?: { name?: string | null; arguments?: string | null };
+}
+
+interface StreamChoiceDelta {
+	content?: string | null;
+	tool_calls?: StreamToolCallDelta[];
 }
 
 interface StreamChunk {
-	response?: string;
-	tool_calls?: StreamToolCallDelta[];
-	usage?: { prompt_tokens?: number; completion_tokens?: number };
+	choices?: Array<{ delta?: StreamChoiceDelta }>;
+	usage?: { prompt_tokens?: number; completion_tokens?: number } | null;
 }
 
 const buildToolsPayload = (tools: ToolCatalogEntry[]) =>
@@ -65,9 +69,11 @@ export const runChatFrames = async function* (
 
 	const input: Record<string, unknown> = {
 		messages,
-		max_tokens: params.maxTokens ?? 800,
+		max_completion_tokens: params.maxTokens ?? 2048,
 		temperature: 0.2,
-		stream: true
+		reasoning_effort: "medium",
+		stream: true,
+		stream_options: { include_usage: true }
 	};
 	if (params.tools.length > 0) {
 		input.tools = buildToolsPayload(params.tools);
@@ -113,22 +119,31 @@ export const runChatFrames = async function* (
 				} catch {
 					continue;
 				}
-				if (typeof chunk.response === "string" && chunk.response.length > 0) {
-					result.text += chunk.response;
-					yield { t: "text", delta: chunk.response };
-				}
-				if (Array.isArray(chunk.tool_calls)) {
-					for (const delta of chunk.tool_calls) {
-						const idx = typeof delta.index === "number" ? delta.index : 0;
-						let entry = toolAccum.get(idx);
-						if (!entry) {
-							entry = { id: crypto.randomUUID(), name: "", argsText: "" };
-							toolAccum.set(idx, entry);
-						}
-						const fn = delta.function;
-						if (fn) {
-							if (typeof fn.name === "string" && fn.name.length > 0) entry.name = fn.name;
-							if (typeof fn.arguments === "string") entry.argsText += fn.arguments;
+				const delta = chunk.choices?.[0]?.delta;
+				if (delta) {
+					if (typeof delta.content === "string" && delta.content.length > 0) {
+						result.text += delta.content;
+						yield { t: "text", delta: delta.content };
+					}
+					if (Array.isArray(delta.tool_calls)) {
+						for (const tc of delta.tool_calls) {
+							const idx = typeof tc.index === "number" ? tc.index : 0;
+							let entry = toolAccum.get(idx);
+							if (!entry) {
+								entry = {
+									id: tc.id && tc.id.length > 0 ? tc.id : crypto.randomUUID(),
+									name: "",
+									argsText: ""
+								};
+								toolAccum.set(idx, entry);
+							} else if (tc.id && tc.id.length > 0) {
+								entry.id = tc.id;
+							}
+							const fn = tc.function;
+							if (fn) {
+								if (typeof fn.name === "string" && fn.name.length > 0) entry.name = fn.name;
+								if (typeof fn.arguments === "string") entry.argsText += fn.arguments;
+							}
 						}
 					}
 				}

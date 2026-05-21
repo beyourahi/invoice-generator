@@ -39,22 +39,22 @@ A SvelteKit app that generates batches of PDF invoices. Users configure a fixed 
 
 ## Tech Stack
 
-| Layer           | Technology                                         |
-| --------------- | -------------------------------------------------- |
-| Framework       | SvelteKit 2.x (Svelte 5 with runes)                |
-| Language        | TypeScript (strict mode)                           |
-| Styling         | Tailwind CSS v4 (CSS-first config, OKLCH colors)   |
-| UI Components   | shadcn-svelte                                      |
-| Authentication  | Better Auth (Google OAuth only)                    |
-| Database        | Cloudflare D1 (SQLite via Drizzle ORM)             |
-| AI              | Cloudflare Workers AI (Llama 4 Scout) + AI Gateway |
-| Validation      | Zod                                                |
-| PDF Rendering   | html2canvas + jsPDF                                |
-| ZIP Packaging   | fflate (`zipSync`, `level: 0`)                     |
-| Animations      | None (shadcn Progress + Lucide Loader2 spinner)    |
-| Deployment      | Cloudflare Workers                                 |
-| Package Manager | Bun                                                |
-| Linting         | ESLint 10 flat config + Prettier                   |
+| Layer           | Technology                                        |
+| --------------- | ------------------------------------------------- |
+| Framework       | SvelteKit 2.x (Svelte 5 with runes)               |
+| Language        | TypeScript (strict mode)                          |
+| Styling         | Tailwind CSS v4 (CSS-first config, OKLCH colors)  |
+| UI Components   | shadcn-svelte                                     |
+| Authentication  | Better Auth (Google OAuth only)                   |
+| Database        | Cloudflare D1 (SQLite via Drizzle ORM)            |
+| AI              | Cloudflare Workers AI (GPT-OSS 120B) + AI Gateway |
+| Validation      | Zod                                               |
+| PDF Rendering   | html2canvas + jsPDF                               |
+| ZIP Packaging   | fflate (`zipSync`, `level: 0`)                    |
+| Animations      | None (shadcn Progress + Lucide Loader2 spinner)   |
+| Deployment      | Cloudflare Workers                                |
+| Package Manager | Bun                                               |
+| Linting         | ESLint 10 flat config + Prettier                  |
 
 ---
 
@@ -233,7 +233,7 @@ An optional natural-language assistant for managing clients, invoices, and payme
 
 - **`$lib/ai/`** — Client-side AI layer:
   - `types.ts` — shared types: `Frame`, tool-call shapes, `InverseRecord`, `AnomalyResult`, `SafetyTier`.
-  - `client.ts` — `runChatFrames()` calls the Workers AI binding (`@cf/meta/llama-4-scout-17b-16e-instruct`, temperature 0.2), optionally routed through AI Gateway via `AI_GATEWAY_SLUG`.
+  - `client.ts` — `runChatFrames()` calls the Workers AI binding (`@cf/openai/gpt-oss-120b`, OpenAI Chat Completions I/O, temperature 0.2, medium reasoning effort), optionally routed through AI Gateway via `AI_GATEWAY_SLUG`.
   - `streaming.ts` — SSE frame encode/decode (`encodeFrame`, `decodeFrame`, `streamFrames`, `sseStream`).
   - `context.ts` — `projectAppState(appState)` serializes current state into a tokenized (`cli_1`, `ent_1`, `pm_1`) prompt context.
   - `prompts.ts` — system prompt builder (`buildSystemContext`); prompt version `v1`.
