@@ -89,9 +89,13 @@ export const executors: {
 			templateId: args.templateId ?? null
 		});
 		session.aiInjectClient(created);
+		if (args.data) {
+			await fillRemainingFields(created.id, args.data);
+		}
+		const finalName = args.data?.name ?? created.name;
 		return {
 			inverse: inverseForCreateClient(created.id),
-			summary: `Created client ${created.name || "(unnamed)"} (${created.id}).`
+			summary: `Created client ${finalName || "(unnamed)"}.`
 		};
 	},
 

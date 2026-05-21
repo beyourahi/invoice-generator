@@ -29,7 +29,20 @@ const monthEnum = z.enum(MONTH_VALUES as unknown as [MonthName, ...MonthName[]])
 export const argSchemas = {
 	createClient: z
 		.object({
-			templateId: z.string().nullable().optional()
+			templateId: z.string().nullable().optional(),
+			data: z
+				.object({
+					name: z.string().max(200).optional(),
+					invoicePrefix: z.string().max(40).optional(),
+					phone: z.string().max(60).optional(),
+					email: z.string().max(200).optional(),
+					address: z.array(z.string().max(2000)).max(8).optional(),
+					serviceDescription: z.string().max(2000).optional(),
+					serviceAmount: z.number().min(0).max(1_000_000_000).optional(),
+					serviceCurrency: z.enum(CURRENCIES).optional(),
+					year: z.number().int().min(2000).max(2099).optional()
+				})
+				.optional()
 		})
 		.default({}),
 	updateClient: z.object({

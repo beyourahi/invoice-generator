@@ -21,7 +21,7 @@ export const TOOLS_CATALOG: ToolCatalogEntry[] = [
 	{
 		name: "createClient",
 		description:
-			"Create a new client. Returns the new client's ID. The model should follow up with updateClient to set fields.",
+			"Create a new client. Put every field you already know into `data` (name, invoicePrefix, serviceAmount, serviceCurrency, serviceDescription, phone, email, address, year) so the client is fully populated by this single call. Do not leave fields for a later step.",
 		safetyTier: "A",
 		parameters: {
 			type: "object",
@@ -29,6 +29,21 @@ export const TOOLS_CATALOG: ToolCatalogEntry[] = [
 				templateId: {
 					type: "string",
 					description: "Optional ID of an existing client to copy fields from."
+				},
+				data: {
+					type: "object",
+					description: "Initial field values for the new client.",
+					properties: {
+						name: { type: "string" },
+						invoicePrefix: { type: "string" },
+						phone: { type: "string" },
+						email: { type: "string" },
+						address: { type: "array", items: { type: "string" } },
+						serviceDescription: { type: "string" },
+						serviceAmount: { type: "number" },
+						serviceCurrency: { type: "string", enum: ["BDT", "USD"] },
+						year: { type: "number" }
+					}
 				}
 			}
 		}
