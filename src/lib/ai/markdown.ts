@@ -129,6 +129,30 @@ const parseInline = (raw: string): MdInline[] => {
 	return nodes;
 };
 
+const FENCE_BLOCK_RE = /```[\s\S]*?```/g;
+const STATE_TOKEN_RE = /\b(?:cli|ent|pm)_\d+\b/g;
+const UUID_RE = /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi;
+
+export const sanitizeAssistantText = (raw: string): string => {
+	if (!raw) return "";
+	let text = raw.replace(FENCE_BLOCK_RE, " ");
+	const trimmed = text.trim();
+	if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+		try {
+			const parsed: unknown = JSON.parse(trimmed);
+			if (parsed && typeof parsed === "object") return "";
+		} catch {
+			/* not a pure JSON payload — keep the prose */
+		}
+	}
+	text = text.replace(STATE_TOKEN_RE, "").replace(UUID_RE, "");
+	return text
+		.split("\n")
+		.map((line) => line.replace(/[ \t]{2,}/g, " ").trimEnd())
+		.join("\n")
+		.trim();
+};
+
 const BULLET_RE = /^\s*[-*]\s+(.*)$/;
 const ORDERED_RE = /^\s*\d+[.)]\s+(.*)$/;
 const HEADING_RE = /^\s*#{1,6}\s+(.*)$/;

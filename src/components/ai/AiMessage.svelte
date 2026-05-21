@@ -1,14 +1,16 @@
 <script lang="ts">
 	import type { AiMessage } from "$lib/stores/ai.svelte";
 	import type { MdBlock, MdInline } from "$lib/ai/markdown";
-	import { parseMarkdown } from "$lib/ai/markdown";
+	import { parseMarkdown, sanitizeAssistantText } from "$lib/ai/markdown";
 	import AiToolBadge from "./AiToolBadge.svelte";
 	import { cn } from "$lib/utils";
 
 	let { message }: { message: AiMessage } = $props();
 
 	const isUser = $derived(message.role === "user");
-	const blocks = $derived<MdBlock[]>(isUser ? [] : parseMarkdown(message.content));
+	const blocks = $derived<MdBlock[]>(
+		isUser ? [] : parseMarkdown(sanitizeAssistantText(message.content))
+	);
 	const waveBars = [0, 1, 2, 3, 4];
 
 	const timeLabel = $derived.by(() => {
@@ -28,9 +30,7 @@
 	{#each nodes as node, i (i)}
 		{#if node.type === "text"}{node.value}{:else if node.type === "bold"}<strong
 				class="text-foreground font-semibold">{node.value}</strong
-			>{:else if node.type === "italic"}<em class="italic">{node.value}</em>{:else if node.type === "code"}<code
-				class="bg-card text-foreground rounded px-1 py-0.5 font-mono text-[0.85em]">{node.value}</code
-			>{:else if node.type === "link"}<a
+			>{:else if node.type === "italic"}<em class="italic">{node.value}</em>{:else if node.type === "code"}{node.value}{:else if node.type === "link"}<a
 				href={node.href}
 				target="_blank"
 				rel="noopener noreferrer"
@@ -51,7 +51,7 @@
 			<div class="bg-primary/10 text-foreground rounded-2xl rounded-br-md px-4 py-2.5 text-sm leading-relaxed">
 				<span class="break-words whitespace-pre-wrap">{message.content}</span>
 			</div>
-		{:else if message.content}
+		{:else if blocks.length > 0}
 			<div
 				class="border-border/50 bg-card text-muted-foreground rounded-2xl rounded-bl-md border px-4 py-2.5 text-sm"
 			>
@@ -79,10 +79,7 @@
 								{/each}
 							</ul>
 						{:else if block.type === "codeblock"}
-							<pre class="ai-scroll border-border bg-card overflow-x-auto rounded-lg border p-2.5"><code
-									class="text-muted-foreground font-mono text-[11px] leading-relaxed"
-									>{block.value}</code
-								></pre>
+							<p class="break-words whitespace-pre-wrap text-pretty">{block.value}</p>
 						{/if}
 					{/each}
 				</div>
