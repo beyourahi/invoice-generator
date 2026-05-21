@@ -6,6 +6,7 @@
 	import { ai } from "$lib/stores/ai.svelte";
 	import { getTheme, ACTIVE_THEME_ID } from "$lib/themes/registry";
 	import { Separator } from "$lib/components/ui/separator";
+	import * as Tabs from "$lib/components/ui/tabs";
 	import AddClientButton from "$src/components/AddClientButton.svelte";
 	import ClientCard from "$src/components/ClientCard.svelte";
 	import FixedSenderPanel from "$src/components/FixedSenderPanel.svelte";
@@ -19,8 +20,7 @@
 	import { page } from "$app/state";
 	import User from "$src/components/User.svelte";
 	import { onMount, untrack, type Component } from "svelte";
-	import { ChevronDown, ScanLine, UserPlus, Users } from "@lucide/svelte";
-	import { cn } from "$lib/utils";
+	import { ScanLine, SquarePen, UserPlus, Users } from "@lucide/svelte";
 	import type { PageData } from "./$types";
 
 	let { data }: { data: PageData } = $props();
@@ -36,7 +36,7 @@
 	});
 
 	let ToasterComponent = $state<Component | null>(null);
-	let previewOpen = $state(false);
+	let activeTab = $state("details");
 
 	const previewClient = $derived(
 		session.clients.find(c => c.id === session.selectedClientId) ?? session.clients[0] ?? null
@@ -73,87 +73,72 @@
 		<Heading />
 
 		<div class="container flex w-full min-w-0 flex-col gap-8 sm:gap-10 lg:gap-12">
-			<div class="grid w-full min-w-0 grid-cols-1 items-start gap-6 lg:grid-cols-2 lg:gap-8">
-				<section class="min-w-0 space-y-4">
-					<FixedSenderPanel />
+			<Tabs.Root bind:value={activeTab} class="gap-6">
+				<Tabs.List class="w-full self-center sm:w-fit">
+					<Tabs.Trigger value="details" class="px-4">
+						<SquarePen aria-hidden="true" />
+						Details
+					</Tabs.Trigger>
+					<Tabs.Trigger value="preview" class="px-4">
+						<ScanLine aria-hidden="true" />
+						Preview
+					</Tabs.Trigger>
+				</Tabs.List>
 
-					<div class="space-y-3">
-						<div class="flex items-center justify-between">
-							<h2 class="flex items-center gap-2 text-base font-semibold text-balance">
-								<Users size={15} aria-hidden="true" />
-								<span class="whitespace-nowrap">Clients</span>
-							</h2>
-							<p class="text-muted-foreground text-xs whitespace-nowrap tabular-nums">
-								{session.clients.length} total
-							</p>
+				<Tabs.Content value="details">
+					<div class="grid w-full min-w-0 grid-cols-1 items-start gap-6 xl:grid-cols-2 xl:gap-8">
+						<div class="min-w-0">
+							<FixedSenderPanel />
 						</div>
 
-						{#if session.clients.length === 0}
-							<button
-								class="border-border text-muted-foreground pointer-fine:hover:border-foreground/30 pointer-fine:hover:text-foreground grid min-h-36 w-full cursor-pointer place-items-center rounded-lg border border-dashed text-center transition-colors"
-								onclick={session.addClient}
-								aria-label="Add client"
-							>
-								<div class="flex flex-col items-center gap-2">
-									<UserPlus size={18} aria-hidden="true" />
-									<p class="text-sm font-medium">Add client</p>
-								</div>
-							</button>
-						{:else}
-							<div class="space-y-3">
-								{#each session.clients as client, i (client.id)}
-									<ClientCard
-										{client}
-										index={i}
-										selected={previewClient?.id === client.id}
-										onSelect={() => session.setSelectedClientId(client.id)}
-									/>
-								{/each}
+						<div class="min-w-0 space-y-3">
+							<div class="flex items-center justify-between">
+								<h2 class="flex items-center gap-2 text-base font-semibold text-balance">
+									<Users size={15} aria-hidden="true" />
+									<span class="whitespace-nowrap">Clients</span>
+								</h2>
+								<p class="text-muted-foreground text-xs whitespace-nowrap tabular-nums">
+									{session.clients.length} total
+								</p>
 							</div>
-						{/if}
 
-						{#if session.clients.length > 0}
-							<AddClientButton />
-						{/if}
-					</div>
-				</section>
+							{#if session.clients.length === 0}
+								<button
+									class="border-border text-muted-foreground pointer-fine:hover:border-foreground/30 pointer-fine:hover:text-foreground grid min-h-36 w-full cursor-pointer place-items-center rounded-lg border border-dashed text-center transition-colors"
+									onclick={session.addClient}
+									aria-label="Add client"
+								>
+									<div class="flex flex-col items-center gap-2">
+										<UserPlus size={18} aria-hidden="true" />
+										<p class="text-sm font-medium">Add client</p>
+									</div>
+								</button>
+							{:else}
+								<div class="space-y-3">
+									{#each session.clients as client, i (client.id)}
+										<ClientCard
+											{client}
+											index={i}
+											selected={previewClient?.id === client.id}
+											onSelect={() => session.setSelectedClientId(client.id)}
+										/>
+									{/each}
+								</div>
+							{/if}
 
-				<section class="min-w-0 space-y-3 lg:sticky lg:top-8 lg:space-y-0 lg:self-start">
-					<button
-						type="button"
-						onclick={() => (previewOpen = !previewOpen)}
-						aria-expanded={previewOpen}
-						aria-controls="preview-panel"
-						class="border-border bg-card pointer-fine:hover:bg-accent/40 flex w-full items-center justify-between gap-3 rounded-lg border px-4 py-3 text-left transition-colors lg:hidden"
-					>
-						<span class="flex items-center gap-2">
-							<ScanLine size={15} class="text-muted-foreground" aria-hidden="true" />
-							<span class="text-sm font-semibold whitespace-nowrap">Preview</span>
-							<span class="text-muted-foreground text-xs whitespace-nowrap">First scheduled invoice</span>
-						</span>
-						<ChevronDown
-							size={16}
-							class={cn(
-								"text-muted-foreground transition-transform duration-200",
-								previewOpen && "rotate-180"
-							)}
-							aria-hidden="true"
-						/>
-					</button>
-					<div
-						id="preview-panel"
-						class={cn(
-							"grid grid-cols-1 transition-[grid-template-rows] duration-200",
-							"lg:grid-rows-[1fr]",
-							previewOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr] lg:grid-rows-[1fr]"
-						)}
-					>
-						<div class="min-h-0 min-w-0 overflow-hidden lg:overflow-visible">
-							<InvoicePreview html={previewHtml} loading={false} emptyReason={previewEmptyReason} />
+							{#if session.clients.length > 0}
+								<AddClientButton />
+							{/if}
 						</div>
 					</div>
-				</section>
-			</div>
+				</Tabs.Content>
+
+				<Tabs.Content value="preview">
+					<div class="mx-auto w-full max-w-[50rem]">
+						<InvoicePreview html={previewHtml} loading={false} emptyReason={previewEmptyReason} />
+					</div>
+				</Tabs.Content>
+			</Tabs.Root>
 
 			<Separator />
 			<GenerationPanel />
