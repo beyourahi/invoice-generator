@@ -1,6 +1,7 @@
 const KNOWN: Array<{ match: RegExp; message: string }> = [
 	{
-		match: /not found in current state|not found on client|Entry .+ not found|Payment method .+ not found|not found\./i,
+		match:
+			/not found in current state|not found on client|Entry .+ not found|Payment method .+ not found|not found\./i,
 		message: "I couldn't find that — it may have been changed or removed. Refresh and try again."
 	},
 	{
@@ -9,10 +10,12 @@ const KNOWN: Array<{ match: RegExp; message: string }> = [
 	},
 	{
 		match: /Validation failed|Invalid arguments|Empty patch|Invalid request body/i,
-		message: "I couldn't apply that change — the details didn't look right. Try rephrasing your request."
+		message:
+			"I couldn't apply that change — the details didn't look right. Try rephrasing your request."
 	},
 	{
-		match: /Model invocation failed|Stream read failed|Stream failed|stream error|Empty response|AI binding/i,
+		match:
+			/Model invocation failed|Stream read failed|Stream failed|stream error|Empty response|AI binding/i,
 		message: "I couldn't reach the assistant just now. Please try again in a moment."
 	},
 	{

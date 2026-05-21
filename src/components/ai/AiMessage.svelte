@@ -8,9 +8,7 @@
 	let { message }: { message: AiMessage } = $props();
 
 	const isUser = $derived(message.role === "user");
-	const blocks = $derived<MdBlock[]>(
-		isUser ? [] : parseMarkdown(sanitizeAssistantText(message.content))
-	);
+	const blocks = $derived<MdBlock[]>(isUser ? [] : parseMarkdown(sanitizeAssistantText(message.content)));
 	const waveBars = [0, 1, 2, 3, 4];
 
 	const timeLabel = $derived.by(() => {
@@ -30,7 +28,8 @@
 	{#each nodes as node, i (i)}
 		{#if node.type === "text"}{node.value}{:else if node.type === "bold"}<strong
 				class="text-foreground font-semibold">{node.value}</strong
-			>{:else if node.type === "italic"}<em class="italic">{node.value}</em>{:else if node.type === "code"}{node.value}{:else if node.type === "link"}<a
+			>{:else if node.type === "italic"}<em class="italic">{node.value}</em
+			>{:else if node.type === "code"}{node.value}{:else if node.type === "link"}<a
 				href={node.href}
 				target="_blank"
 				rel="noopener noreferrer"
@@ -79,7 +78,7 @@
 								{/each}
 							</ul>
 						{:else if block.type === "codeblock"}
-							<p class="break-words whitespace-pre-wrap text-pretty">{block.value}</p>
+							<p class="text-pretty break-words whitespace-pre-wrap">{block.value}</p>
 						{/if}
 					{/each}
 				</div>

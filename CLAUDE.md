@@ -235,15 +235,18 @@ An optional natural-language assistant for managing clients, invoices, and payme
   - `types.ts` — shared types: `Frame`, tool-call shapes, `InverseRecord`, `AnomalyResult`, `SafetyTier`.
   - `client.ts` — `runChatFrames()` calls the Workers AI binding (`@cf/openai/gpt-oss-120b`, OpenAI Chat Completions I/O, temperature 0.2, medium reasoning effort), optionally routed through AI Gateway via `AI_GATEWAY_SLUG`.
   - `streaming.ts` — SSE frame encode/decode (`encodeFrame`, `decodeFrame`, `streamFrames`, `sseStream`).
+  - `salvage.ts` — `salvage()` recovers tool calls the model emits as plain-text JSON instead of structured tool-call frames; returns `{ calls, cleanedText }`.
   - `context.ts` — `projectAppState(appState)` serializes current state into a tokenized (`cli_1`, `ent_1`, `pm_1`) prompt context.
-  - `prompts.ts` — system prompt builder (`buildSystemContext`); prompt version `v1`.
-  - `tools-catalog.ts` — `TOOLS_CATALOG`: 19 tools, each tagged Tier A (auto-apply) or Tier B (destructive/money-mutating — requires confirmation).
+  - `prompts.ts` — system prompt builder (`buildSystemContext`); `PROMPT_VERSION` is `v2`.
+  - `tools-catalog.ts` — `TOOLS_CATALOG`: 19 tools, each tagged Tier A (auto-apply) or Tier B (destructive/money-mutating — requires confirmation). Exports `TIER_MAP` and `resolvedTier()` — `updateClient`/`updateInvoiceEntry` demote from Tier A to Tier B when the patch touches `serviceAmount`, `serviceCurrency`, or `invoicePrefix`.
+  - `tool-labels.ts` — `toolLabel(name)` and field-label maps; friendly display names for tools and fields shown in `AiToolBadge` and `AiConfirmDialog`.
   - `schemas.ts` — per-tool Zod arg schemas (`argSchemas`, `ArgsOf`). Server-safe (no DOM/store imports) so `chat/+server.ts` shares them with `tools.ts`.
   - `tools.ts` — per-tool executors; each validates args via `argSchemas`, calls the REST API, and returns `{ inverse, summary }`.
   - `executor.ts` — `executeToolCall()`: validates args, resolves the safety tier, runs anomaly detection, requests confirmation for Tier B, records the action, executes.
   - `safety.ts` — `detectAnomalies()`: five non-blocking detectors (amount outlier, volume surge, missing payment methods, stale period, currency mismatch).
   - `inverse.ts` — builds an `InverseRecord` (reverse tool call + optional snapshot) for every executed tool, enabling undo.
   - `markdown.ts` — minimal AST-based markdown parser; renders AI message text in `AiMessage.svelte` (no markdown library).
+  - `errors.ts` — maps technical error strings to friendly user-facing messages; `looksTechnical()` flags raw artifacts (braces, URLs) so they are stripped from rendered replies.
   - `chat-client.ts` — `sendMessage`, `triggerUndo`, conversation CRUD, confirmation responses.
 - **`$lib/server/`** — AI server layer:
   - `ai-quota.ts` — `checkAndIncrementQuota(kv, userId)`: per-user daily turn limit (default 200) tracked in `AI_QUOTA_KV`; disabled when the KV binding is absent.

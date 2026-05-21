@@ -1,5 +1,0 @@
-# Worker runtime secrets — loaded by `wrangler dev`. Copy to .dev.vars and fill in.
-BETTER_AUTH_SECRET=
-BETTER_AUTH_URL=http://localhost:8787
-GOOGLE_CLIENT_ID=
-GOOGLE_CLIENT_SECRET=
