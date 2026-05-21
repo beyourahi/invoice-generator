@@ -99,7 +99,7 @@
 						isScheduled
 							? "border-border text-muted-foreground cursor-not-allowed line-through opacity-30"
 							: isSelected
-								? "border-brand bg-brand/10 text-brand cursor-pointer"
+								? "border-brand bg-brand/10 text-success cursor-pointer"
 								: "border-border pointer-fine:hover:border-foreground/40 pointer-fine:hover:bg-accent/40 cursor-pointer"
 					)}
 					aria-pressed={isSelected}

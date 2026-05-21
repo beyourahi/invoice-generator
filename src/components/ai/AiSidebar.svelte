@@ -171,7 +171,7 @@
 
 				{#snippet failed(_error, reset)}
 					<div class="ai-enter flex flex-col items-center gap-2 py-6 text-center" role="alert">
-						<p class="text-sm font-medium text-red-400/90">The copilot hit a display error.</p>
+						<p class="text-destructive text-sm font-medium">The copilot hit a display error.</p>
 						<p class="text-muted-foreground max-w-xs text-xs text-pretty">
 							Something went wrong showing this conversation. Retry to reload it.
 						</p>
@@ -188,7 +188,7 @@
 		{/if}
 
 		{#if ai.error}
-			<p class="ai-enter text-center text-xs text-pretty text-red-400/80" role="alert">
+			<p class="ai-enter text-destructive/90 text-center text-xs text-pretty" role="alert">
 				{ai.error}
 			</p>
 		{/if}

@@ -88,7 +88,7 @@
 		<span
 			class={cn(
 				"rounded-md px-1.5 py-0.5 font-mono text-[11px] tracking-wider whitespace-nowrap uppercase",
-				complete ? "bg-brand/15 text-brand" : "bg-muted text-muted-foreground"
+				complete ? "bg-brand/15 text-success" : "bg-muted text-muted-foreground"
 			)}
 		>
 			{def.shortName}
@@ -159,7 +159,7 @@
 						<Field.FieldLabel for="{method.id}-{field.key}">
 							{field.label}
 							{#if field.optional}
-								<span class="text-muted-foreground/60 ml-1 text-[11px]">optional</span>
+								<span class="text-muted-foreground ml-1 text-[11px]">optional</span>
 							{/if}
 						</Field.FieldLabel>
 						{#if field.type === "textarea"}

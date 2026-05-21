@@ -62,7 +62,7 @@
 	>
 		<AlertDialogHeader>
 			<AlertDialogTitle class="flex items-center gap-2 text-balance">
-				<ShieldCheck class="size-4 text-amber-300" aria-hidden="true" />
+				<ShieldCheck class="text-muted-foreground size-4" aria-hidden="true" />
 				{isBatch ? `Confirm ${ai.pendingConfirmations.length} operations` : "Confirm operation"}
 			</AlertDialogTitle>
 			{#if first}
@@ -103,7 +103,7 @@
 									{#if req.anomalies.length > 0}
 										<AiAnomalyWarning anomalies={req.anomalies} />
 									{/if}
-									<span class="text-muted-foreground/70 text-[10px] text-pretty">
+									<span class="text-muted-foreground text-[10px] text-pretty">
 										{req.inverseSummary}
 									</span>
 								</div>
@@ -123,13 +123,13 @@
 									{row.label}
 								</div>
 								<div class="flex items-start gap-2 text-xs">
-									<span class="text-destructive/70 shrink-0 font-mono select-none">−</span>
+									<span class="text-destructive shrink-0 font-mono select-none">−</span>
 									<span class="text-muted-foreground min-w-0 break-words line-through">
 										{row.current}
 									</span>
 								</div>
 								<div class="flex items-start gap-2 text-xs">
-									<span class="shrink-0 font-mono text-[var(--status-active-foreground)] select-none">
+									<span class="text-status-active-foreground shrink-0 font-mono select-none">
 										+
 									</span>
 									<span class="text-foreground min-w-0 font-medium break-words">

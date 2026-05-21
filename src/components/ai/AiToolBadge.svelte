@@ -25,18 +25,18 @@
 	});
 
 	const statusClasses = $derived.by(() => {
-		if (call.undone) return "border-border bg-card text-muted-foreground";
+		if (call.undone) return "bg-card text-muted-foreground";
 		switch (call.status) {
 			case "applied":
-				return "border-[var(--status-active-border)] bg-[var(--status-active-bg)] text-[var(--status-active-foreground)]";
+				return "bg-status-active-bg text-status-active-foreground";
 			case "rejected":
-				return "border-border bg-card text-muted-foreground";
+				return "bg-card text-muted-foreground";
 			case "failed":
-				return "border-destructive/40 bg-destructive/10 text-destructive";
+				return "bg-destructive/10 text-destructive";
 			case "pending_confirmation":
-				return "border-amber-400/30 bg-amber-400/10 text-amber-300";
+				return "bg-destructive/10 text-destructive";
 			default:
-				return "border-border bg-card text-muted-foreground";
+				return "bg-card text-muted-foreground";
 		}
 	});
 
@@ -61,18 +61,14 @@
 			<span>Suggested rewrite</span>
 		</div>
 		<div class="space-y-1.5">
-			<div class="border-border/50 bg-destructive/5 rounded-md border px-2.5 py-1.5">
+			<div class="bg-destructive/5 rounded-md px-2.5 py-1.5">
 				<div class="text-muted-foreground mb-0.5 text-[10px] font-medium tracking-wide uppercase">Current</div>
 				<p class="text-muted-foreground break-words whitespace-pre-wrap">
 					{call.polish.oldText || "(empty)"}
 				</p>
 			</div>
-			<div
-				class="rounded-md border border-[var(--status-active-border)] bg-[var(--status-active-bg)] px-2.5 py-1.5"
-			>
-				<div
-					class="mb-0.5 text-[10px] font-medium tracking-wide text-[var(--status-active-foreground)] uppercase"
-				>
+			<div class="bg-status-active-bg rounded-md px-2.5 py-1.5">
+				<div class="text-status-active-foreground mb-0.5 text-[10px] font-medium tracking-wide uppercase">
 					Proposed
 				</div>
 				<p class="text-foreground break-words whitespace-pre-wrap">{call.polish.newText}</p>

@@ -54,7 +54,7 @@
 	<button
 		onclick={handleGoogleLogin}
 		disabled={isLoading}
-		class={`border-border bg-card text-foreground pointer-fine:hover:bg-accent pointer-fine:hover:text-accent-foreground focus-visible:ring-ring sleek group focus-visible:ring-offset-background flex cursor-pointer items-center justify-center gap-2.5 rounded-full border px-6 py-3 text-sm font-medium whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 sm:gap-3 sm:px-8 sm:py-3.5 ${isLoading ? "cursor-wait" : ""}`}
+		class={`border-border bg-card text-foreground pointer-fine:hover:bg-accent pointer-fine:hover:text-accent-foreground focus-visible:ring-ring sleek group focus-visible:ring-offset-background flex cursor-pointer items-center justify-center gap-2.5 rounded-full border border-solid px-6 py-3 text-sm font-medium whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 sm:gap-3 sm:px-8 sm:py-3.5 ${isLoading ? "cursor-wait" : ""}`}
 	>
 		{#if isLoading}
 			<div

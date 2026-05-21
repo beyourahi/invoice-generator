@@ -351,7 +351,7 @@
 								class={cn(
 									"group inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs whitespace-nowrap transition-colors",
 									active
-										? "border-brand bg-brand/10 text-brand"
+										? "border-brand bg-brand/10 text-success"
 										: "border-border text-muted-foreground pointer-fine:hover:border-foreground/40 pointer-fine:hover:text-foreground"
 								)}
 								aria-pressed={active}
@@ -365,7 +365,7 @@
 								<span
 									class={cn(
 										"font-mono text-[11px] whitespace-nowrap uppercase",
-										active ? "text-brand/70" : "text-muted-foreground/70"
+										active ? "text-success/80" : "text-muted-foreground"
 									)}
 								>
 									{def.shortName}
