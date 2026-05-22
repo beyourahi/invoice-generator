@@ -110,7 +110,7 @@
 				session.toggleClientExpanded(client.id);
 			}}
 			onkeydown={selectCard}
-			class="pointer-fine:hover:bg-accent/40 flex cursor-pointer items-center gap-3 px-4 py-3 transition-colors"
+			class="pointer-fine:hover:bg-accent/40 flex min-w-0 cursor-pointer items-center gap-3 px-4 py-3 transition-colors"
 		>
 			<span
 				class={cn(
@@ -121,8 +121,8 @@
 				{badgeNum}
 			</span>
 			<div class={cn("status-transition min-w-0 flex-1", !client.isActive && "opacity-70")}>
-				<div class="flex items-center gap-2">
-					<p class="truncate text-sm font-medium">{client.name || "New client"}</p>
+				<div class="flex min-w-0 items-center gap-2">
+					<p class="min-w-0 truncate text-sm font-medium">{client.name || "New client"}</p>
 					<StatusBadge status={client.isActive ? "active" : "inactive"} size="sm" />
 				</div>
 				<p class="text-muted-foreground truncate text-xs">
