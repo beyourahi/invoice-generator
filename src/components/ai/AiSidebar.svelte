@@ -234,7 +234,7 @@
 				</button>
 			</div>
 		</div>
-		<div class="text-muted-foreground mt-1.5 hidden items-center gap-1 px-1 text-[10px] sm:flex">
+		<div class="text-muted-foreground mt-1.5 hidden items-center justify-center gap-1 px-1 text-[10px] sm:flex">
 			<kbd class="border-border-strong/50 bg-card rounded border border-solid px-1 py-px font-sans">Enter</kbd>
 			<span>to send</span>
 			<span class="text-muted-foreground/40">·</span>
