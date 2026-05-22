@@ -1,7 +1,10 @@
 <script lang="ts">
 	import { tick } from "svelte";
+	import { fade, scale } from "svelte/transition";
+	import { cubicOut } from "svelte/easing";
 	import { ai } from "$lib/stores/ai.svelte";
 	import { respondToConfirmation, respondToAllConfirmations } from "$lib/ai/chat-client";
+	import { motionDuration } from "$lib/motion";
 	import { ShieldCheck, Undo2 } from "@lucide/svelte";
 	import AiAnomalyWarning from "./AiAnomalyWarning.svelte";
 	import { toolLabel } from "$lib/ai/tool-labels";
@@ -56,9 +59,11 @@
 		aria-modal="true"
 		aria-labelledby="ai-confirm-title"
 		class="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+		transition:fade={{ duration: motionDuration("fast") }}
 	>
 		<div
 			class="border-border bg-popover flex max-h-[85vh] w-[min(30rem,calc(100vw-2rem))] flex-col rounded-2xl border border-solid shadow-2xl"
+			transition:scale={{ duration: motionDuration("base"), start: 0.95, easing: cubicOut }}
 		>
 			<div class="border-border flex items-center gap-2 border-b border-solid px-5 py-4">
 				<ShieldCheck class="size-4 shrink-0 text-amber-300" aria-hidden="true" />

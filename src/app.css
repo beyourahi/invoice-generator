@@ -757,3 +757,15 @@ textarea,
 		animation: none;
 	}
 }
+
+[data-slot="progress-indicator"] {
+	transition:
+		transform var(--motion-base) var(--motion-ease-standard),
+		background-color var(--motion-base) var(--motion-ease-standard);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	[data-slot="progress-indicator"] {
+		transition: none;
+	}
+}

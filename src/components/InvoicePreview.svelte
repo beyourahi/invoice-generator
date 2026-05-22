@@ -16,6 +16,8 @@
 		MoveHorizontal
 	} from "@lucide/svelte";
 	import { onMount } from "svelte";
+	import { getGsap, prefersReducedMotion, DURATION } from "$lib/motion";
+	import type { GsapBundle } from "$lib/motion";
 
 	type EmptyReason = "no-client" | "no-entries" | "no-active";
 
@@ -56,6 +58,7 @@
 	let fullscreenRoot: HTMLDivElement;
 	let isFullscreen = $state(false);
 	let widthPreset = $state<WidthPreset>("fit");
+	let previewFrame = $state<HTMLIFrameElement | null>(null);
 
 	const scale = $derived(containerWidth > 0 ? Math.min(containerWidth / 794, 1) : 1);
 	const scaledHeight = $derived(`${Math.round(1123 * scale)}px`);
@@ -155,6 +158,26 @@
 		return () => {
 			document.removeEventListener("fullscreenchange", sync);
 			document.removeEventListener("webkitfullscreenchange", sync);
+		};
+	});
+
+	$effect(() => {
+		void html;
+		const frame = previewFrame;
+		if (!frame || prefersReducedMotion.current) return;
+
+		let bundle: GsapBundle | null = null;
+		let cancelled = false;
+
+		getGsap().then(loaded => {
+			if (cancelled || !loaded) return;
+			bundle = loaded;
+			bundle.gsap.fromTo(frame, { opacity: 0.55 }, { opacity: 1, duration: DURATION.fast });
+		});
+
+		return () => {
+			cancelled = true;
+			bundle?.gsap.killTweensOf(frame);
 		};
 	});
 </script>
@@ -265,7 +288,12 @@
 						style:max-width={presetMaxWidth}
 					>
 						{#if containerWidth > 0}
-							<iframe srcdoc={html} title="Invoice preview" class="invoice-preview-frame"></iframe>
+							<iframe
+								bind:this={previewFrame}
+								srcdoc={html}
+								title="Invoice preview"
+								class="invoice-preview-frame"
+							></iframe>
 						{/if}
 					</div>
 				</div>

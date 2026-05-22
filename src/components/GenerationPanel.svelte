@@ -13,6 +13,7 @@
 	import { Card, CardContent, CardHeader, CardTitle } from "$lib/components/ui/card";
 	import { Progress } from "$lib/components/ui/progress";
 	import * as Table from "$lib/components/ui/table";
+	import { reveal } from "$lib/motion";
 	import { AlertCircle, Download, FileDown, FolderDown, Loader2, RotateCcw, TriangleAlert } from "@lucide/svelte";
 
 	interface ClientGroup {
@@ -304,7 +305,7 @@
 		{/if}
 
 		{#if session.generationState === "done" && clientGroups.length > 0}
-			<div class="border-border overflow-x-auto rounded-lg border">
+			<div class="border-border overflow-x-auto rounded-lg border" use:reveal>
 				<Table.Root>
 					<Table.Header>
 						<Table.Row class="border-border pointer-fine:hover:bg-transparent">
