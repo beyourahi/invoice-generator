@@ -58,8 +58,8 @@ export const flipList = async (container: Element): Promise<() => Promise<void>>
 			duration: DURATION.base,
 			ease: EASE.emphasized,
 			absolute: true,
-			onEnter: els => gsap.fromTo(els, { opacity: 0 }, { opacity: 1, duration: DURATION.fast }),
-			onLeave: els => gsap.to(els, { opacity: 0, duration: DURATION.fast })
+			onEnter: (els) => gsap.fromTo(els, { opacity: 0 }, { opacity: 1, duration: DURATION.fast }),
+			onLeave: (els) => gsap.to(els, { opacity: 0, duration: DURATION.fast })
 		});
 	};
 };

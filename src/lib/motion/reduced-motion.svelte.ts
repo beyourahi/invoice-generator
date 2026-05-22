@@ -6,7 +6,7 @@ const createReducedMotion = () => {
 	let reduced = $state(browser ? window.matchMedia(QUERY).matches : false);
 
 	if (browser) {
-		window.matchMedia(QUERY).addEventListener("change", event => {
+		window.matchMedia(QUERY).addEventListener("change", (event) => {
 			reduced = event.matches;
 		});
 	}

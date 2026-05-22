@@ -18,7 +18,7 @@ export const handleViewTransition = (navigation: OnNavigate): Promise<void> | vo
 		return;
 	}
 
-	return new Promise<void>(resolve => {
+	return new Promise<void>((resolve) => {
 		const transition = document.startViewTransition(async () => {
 			resolve();
 			await navigation.complete;
