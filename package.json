@@ -26,7 +26,7 @@
 		"db:migrate:list": "wrangler d1 migrations list invoice_generator --local"
 	},
 	"devDependencies": {
-		"@cloudflare/workers-types": "^4.20260521.1",
+		"@cloudflare/workers-types": "^4.20260522.1",
 		"@eslint/js": "^10.0.1",
 		"@internationalized/date": "^3.12.1",
 		"@lucide/svelte": "^1.16.0",
@@ -55,7 +55,7 @@
 		"typescript": "^6.0.3",
 		"typescript-eslint": "^8.59.4",
 		"vite": "^8.0.14",
-		"wrangler": "^4.93.0"
+		"wrangler": "^4.93.1"
 	},
 	"dependencies": {
 		"better-auth": "^1.6.11",

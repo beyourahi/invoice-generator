@@ -104,6 +104,7 @@ Each worktree shares the same repository. Agents commit directly to their worktr
 - CSS variables for colors — never hardcode hex/rgb/oklch
 - Arrow functions only — no function declarations
 - Zero comments in shipped code
+- **Motion** — GSAP is the motion engine, used only through `$lib/motion`. Never statically import GSAP (it must not load during SSR on Cloudflare Workers); it loads via a `browser`-guarded dynamic `import()` in `$lib/motion/gsap.ts`. All motion respects `prefers-reduced-motion`; clean up every tween, timeline, and ScrollTrigger on destroy.
 
 ---
 

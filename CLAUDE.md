@@ -39,22 +39,22 @@ A SvelteKit app that generates batches of PDF invoices. Users configure a fixed 
 
 ## Tech Stack
 
-| Layer           | Technology                                        |
-| --------------- | ------------------------------------------------- |
-| Framework       | SvelteKit 2.x (Svelte 5 with runes)               |
-| Language        | TypeScript (strict mode)                          |
-| Styling         | Tailwind CSS v4 (CSS-first config, OKLCH colors)  |
-| UI Components   | shadcn-svelte                                     |
-| Authentication  | Better Auth (Google OAuth only)                   |
-| Database        | Cloudflare D1 (SQLite via Drizzle ORM)            |
-| AI              | Cloudflare Workers AI (GPT-OSS 120B) + AI Gateway |
-| Validation      | Zod                                               |
-| PDF Rendering   | html2canvas + jsPDF                               |
-| ZIP Packaging   | fflate (`zipSync`, `level: 0`)                    |
-| Animations      | None (shadcn Progress + Lucide Loader2 spinner)   |
-| Deployment      | Cloudflare Workers                                |
-| Package Manager | Bun                                               |
-| Linting         | ESLint 10 flat config + Prettier                  |
+| Layer           | Technology                                                  |
+| --------------- | ----------------------------------------------------------- |
+| Framework       | SvelteKit 2.x (Svelte 5 with runes)                         |
+| Language        | TypeScript (strict mode)                                    |
+| Styling         | Tailwind CSS v4 (CSS-first config, OKLCH colors)            |
+| UI Components   | shadcn-svelte                                               |
+| Authentication  | Better Auth (Google OAuth only)                             |
+| Database        | Cloudflare D1 (SQLite via Drizzle ORM)                      |
+| AI              | Cloudflare Workers AI (GPT-OSS 120B) + AI Gateway           |
+| Validation      | Zod                                                         |
+| PDF Rendering   | html2canvas + jsPDF                                         |
+| ZIP Packaging   | fflate (`zipSync`, `level: 0`)                              |
+| Animations      | GSAP 3 (motion, view transitions); shadcn Progress/Skeleton |
+| Deployment      | Cloudflare Workers                                          |
+| Package Manager | Bun                                                         |
+| Linting         | ESLint 10 flat config + Prettier                            |
 
 ---
 
@@ -219,6 +219,19 @@ To add a theme: create a new file in `$lib/themes/` implementing the full `Theme
 
 `src/components/InvoicePreview.svelte` renders a live scaled preview of the first generatable entry (via `firstGeneratableInvoice(client)`) for the selected client. Uses `srcdoc={html}` on an iframe, derives a CSS scale factor from container width (`containerWidth / 794`) via a Svelte action backed by a `ResizeObserver`. Selected client is `session.selectedClientId` (falling back to `session.clients[0]`). Contextual empty states distinguish no-client, no-entries, and no-active scenarios.
 
+### Motion
+
+GSAP-driven motion lives entirely under `$lib/motion/`. Surface code imports only from `$lib/motion` — never directly from `gsap`.
+
+- **`tokens.ts`** — shared duration/ease/stagger/distance constants. The values are a cross-app cohesion contract; do not change them.
+- **`gsap.ts`** — the only place GSAP is loaded. `getGsap()` performs a `browser`-guarded dynamic `import()` of `gsap`, `ScrollTrigger`, and `Flip`, registers the plugins once, and memoizes the bundle. **Never write a top-level `import ... from "gsap"`** anywhere else — GSAP touches `window`/`document` at module eval and must not run during SSR on Cloudflare Workers.
+- **`reduced-motion.svelte.ts`** — `prefersReducedMotion` reactive singleton tracking the `prefers-reduced-motion` media query.
+- **`view-transition.ts`** — `handleViewTransition` is wired via `onNavigate` in `+layout.svelte` for cross-route View Transitions; it falls back gracefully when the API is unavailable or motion is reduced.
+- **`actions.ts`** — the `use:reveal` action for entrance reveals (optionally scroll-triggered).
+- **`helpers.ts`** — `stagger`, `flipList` (GSAP Flip for add/remove/reorder list motion), and `motionDuration` (returns `0` when motion is reduced, for Svelte transitions).
+
+**Rules**: never statically import GSAP; all motion checks `prefersReducedMotion.current` (or routes through `motionDuration`); every tween, timeline, and ScrollTrigger is killed on component/action destroy. The `@media (prefers-reduced-motion: reduce)` blocks and the View Transition CSS in `app.css` enforce reduced-motion fallbacks at the CSS layer.
+
 ### Toast Notifications
 
 `svelte-sonner` via shadcn `sonner` component. The `Toaster` component is lazy-imported in `onMount` in `+page.svelte`. Individual toasts are fired via dynamic `import("svelte-sonner")` inside async handlers in `GenerationPanel`.
@@ -266,7 +279,7 @@ An optional natural-language assistant for managing clients, invoices, and payme
 - **PDF pipeline is client-side only** — `builder.ts`, `generator.ts`, `zip.ts`, `sequential-download.ts`, and all stores run in the browser. Server files handle auth, data persistence, and AI Copilot inference.
 - **Prefer existing abstractions** — check `$lib/` before creating new utilities.
 - **No duplication** — use `resolver.ts` for token substitution; use `api` client for all fetch calls.
-- **Minimal scope** — no animation library. Use shadcn `Progress`, `Skeleton`, and Lucide `Loader2`. Don't add GSAP or other animation libraries.
+- **Motion policy** — GSAP is the motion engine, accessed only through `$lib/motion`. Never statically import GSAP anywhere (SSR safety on Cloudflare Workers); it loads via a `browser`-guarded dynamic `import()` inside `$lib/motion/gsap.ts`. All motion respects `prefers-reduced-motion`. Always clean up timelines, tweens, and ScrollTriggers on component/action destroy. shadcn `Progress`, `Skeleton`, and Lucide `Loader2` remain valid for loading states.
 - **Performance** — PDF generation is blocking by design. Each `generatePdf()` call is sequential. Do not parallelize.
 - **Type safety** — TypeScript strict mode. No `any` except for external library compatibility.
 
