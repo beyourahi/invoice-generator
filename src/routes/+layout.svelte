@@ -2,6 +2,8 @@
 	import "../app.css";
 	import type { Snippet } from "svelte";
 	import { page } from "$app/state";
+	import { onNavigate } from "$app/navigation";
+	import { handleViewTransition } from "$lib/motion";
 	import { Footer } from "$lib/components/ui/footer";
 	import AiSidebar from "$src/components/ai/AiSidebar.svelte";
 	import AiConfirmDialog from "$src/components/ai/AiConfirmDialog.svelte";
@@ -10,6 +12,8 @@
 	import type { LayoutData } from "./$types";
 
 	let { children, data }: { children: Snippet; data: LayoutData } = $props();
+
+	onNavigate(handleViewTransition);
 
 	const showCopilot = $derived(data.aiEnabled && page.route.id === "/" && !page.error);
 </script>
