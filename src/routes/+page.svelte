@@ -16,10 +16,34 @@
 	import { page } from "$app/state";
 	import User from "$src/components/User.svelte";
 	import { onMount, untrack, type Component } from "svelte";
+	import { fade } from "svelte/transition";
+	import { reveal, motionDuration, flipList } from "$lib/motion";
 	import { ScanLine, SquarePen, UserPlus, Users } from "@lucide/svelte";
 	import type { PageData } from "./$types";
 
 	let { data }: { data: PageData } = $props();
+
+	let clientListEl = $state<HTMLDivElement | null>(null);
+
+	const addClientAnimated = async () => {
+		if (!clientListEl) {
+			await session.addClient();
+			return;
+		}
+		const play = await flipList(clientListEl);
+		await session.addClient();
+		await play();
+	};
+
+	const removeClientAnimated = async (id: string) => {
+		if (!clientListEl) {
+			session.removeClient(id);
+			return;
+		}
+		const play = await flipList(clientListEl);
+		session.removeClient(id);
+		await play();
+	};
 
 	untrack(() => {
 		fixed.hydrate(data.appState.fixed);
@@ -67,7 +91,9 @@
 <main
 	class="flex w-full min-w-0 grow flex-col items-center gap-12 px-4 pt-16 pb-6 sm:gap-16 sm:pt-20 sm:pb-8 lg:gap-20"
 >
-	<Heading />
+	<div use:reveal>
+		<Heading />
+	</div>
 
 	<div class="container flex w-full min-w-0 flex-col gap-8 sm:gap-10 lg:gap-12">
 		<Tabs.Root bind:value={activeTab} class="gap-6">
@@ -83,12 +109,15 @@
 			</Tabs.List>
 
 			<Tabs.Content value="details">
-				<div class="grid w-full min-w-0 grid-cols-1 items-start gap-6">
-					<div class="min-w-0">
+				<div
+					class="grid w-full min-w-0 grid-cols-1 items-start gap-6"
+					in:fade={{ duration: motionDuration("fast") }}
+				>
+					<div class="min-w-0" use:reveal={{ delay: 0.05 }}>
 						<FixedSenderPanel />
 					</div>
 
-					<div class="min-w-0 space-y-3">
+					<div class="min-w-0 space-y-3" use:reveal={{ delay: 0.1 }}>
 						<div class="flex items-center justify-between">
 							<h2 class="flex items-center gap-2 text-base font-semibold text-balance">
 								<Users size={15} aria-hidden="true" />
@@ -111,33 +140,36 @@
 								</div>
 							</button>
 						{:else}
-							<div class="space-y-3">
+							<div class="space-y-3" bind:this={clientListEl}>
 								{#each session.clients as client, i (client.id)}
 									<ClientCard
 										{client}
 										index={i}
 										selected={previewClient?.id === client.id}
 										onSelect={() => session.setSelectedClientId(client.id)}
+										onRemove={() => removeClientAnimated(client.id)}
 									/>
 								{/each}
 							</div>
 						{/if}
 
 						{#if session.clients.length > 0}
-							<AddClientButton />
+							<AddClientButton onAdd={addClientAnimated} />
 						{/if}
 					</div>
 				</div>
 			</Tabs.Content>
 
 			<Tabs.Content value="preview">
-				<div class="mx-auto w-full max-w-[50rem]">
+				<div class="mx-auto w-full max-w-[50rem]" in:fade={{ duration: motionDuration("fast") }}>
 					<InvoicePreview html={previewHtml} loading={false} emptyReason={previewEmptyReason} />
 				</div>
 			</Tabs.Content>
 		</Tabs.Root>
 
 		<Separator />
-		<GenerationPanel />
+		<div use:reveal={{ onScroll: true }}>
+			<GenerationPanel />
+		</div>
 	</div>
 </main>

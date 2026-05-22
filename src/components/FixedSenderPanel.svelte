@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { tick } from "svelte";
 	import { fixed } from "$lib/stores/fixed.svelte";
+	import { session } from "$lib/stores/session.svelte";
 	import { PAYMENT_METHOD_KINDS, getMethodDef } from "$lib/payments/registry";
 	import type { PaymentMethodKind } from "$lib/types";
 	import Input from "$lib/components/ui/input.svelte";
@@ -11,6 +12,7 @@
 	import SelectDialog from "$src/components/SelectDialog.svelte";
 	import PaymentMethodCard from "$src/components/PaymentMethodCard.svelte";
 	import SectionEyebrow from "$src/components/SectionEyebrow.svelte";
+	import { flipList } from "$lib/motion";
 	import { UserRound, Wallet } from "@lucide/svelte";
 	import { z } from "zod";
 
@@ -18,6 +20,29 @@
 	let expandedMethodId = $state<string | null>(null);
 	let pendingKind = $state<PaymentMethodKind | null>(null);
 	let pickerValue = $state<string>("");
+	let methodListEl = $state<HTMLDivElement | null>(null);
+
+	const removeMethodAnimated = async (id: string) => {
+		if (!methodListEl) {
+			fixed.removePaymentMethod(id);
+			session.purgePaymentMethodFromClients(id);
+			return;
+		}
+		const play = await flipList(methodListEl);
+		fixed.removePaymentMethod(id);
+		session.purgePaymentMethodFromClients(id);
+		await play();
+	};
+
+	const moveMethodAnimated = async (id: string, direction: -1 | 1) => {
+		if (!methodListEl) {
+			fixed.movePaymentMethod(id, direction);
+			return;
+		}
+		const play = await flipList(methodListEl);
+		fixed.movePaymentMethod(id, direction);
+		await play();
+	};
 
 	const optionalEmailSchema = z.union([z.literal(""), z.string().trim().email("Enter a valid sender email.")]);
 	const senderEmailError = $derived(
@@ -47,8 +72,10 @@
 			return;
 		}
 		pendingKind = kind;
+		const play = methodListEl ? await flipList(methodListEl) : null;
 		const newId = await fixed.addPaymentMethod(kind);
 		pendingKind = null;
+		if (play) await play();
 		if (newId) await focusMethodCard(newId);
 	};
 
@@ -135,7 +162,7 @@
 						</div>
 					</div>
 				{:else}
-					<div class="space-y-2">
+					<div class="space-y-2" bind:this={methodListEl}>
 						{#each methods as method, i (method.id)}
 							<div id="method-row-{method.id}">
 								<PaymentMethodCard
@@ -144,6 +171,8 @@
 									total={methods.length}
 									expanded={expandedMethodId === method.id}
 									onToggle={next => handleToggle(method.id, next)}
+									onRemove={() => removeMethodAnimated(method.id)}
+									onMove={direction => moveMethodAnimated(method.id, direction)}
 								/>
 							</div>
 						{/each}

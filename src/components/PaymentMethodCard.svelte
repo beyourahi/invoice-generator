@@ -10,6 +10,8 @@
 	import * as Field from "$lib/components/ui/field";
 	import OverflowActions from "$src/components/OverflowActions.svelte";
 	import { ArrowDown, ArrowUp, ChevronDown, Trash2 } from "@lucide/svelte";
+	import { slide } from "svelte/transition";
+	import { motionDuration } from "$lib/motion";
 
 	type FieldElement = HTMLInputElement | HTMLTextAreaElement;
 
@@ -18,14 +20,35 @@
 		index,
 		total,
 		expanded = false,
-		onToggle
+		onToggle,
+		onRemove,
+		onMove
 	}: {
 		method: SavedPaymentMethod;
 		index: number;
 		total: number;
 		expanded?: boolean;
 		onToggle?: (next: boolean) => void;
+		onRemove?: () => void;
+		onMove?: (direction: -1 | 1) => void;
 	} = $props();
+
+	const removeMethod = () => {
+		if (onRemove) {
+			onRemove();
+			return;
+		}
+		fixed.removePaymentMethod(method.id);
+		session.purgePaymentMethodFromClients(method.id);
+	};
+
+	const moveMethod = (direction: -1 | 1) => {
+		if (onMove) {
+			onMove(direction);
+			return;
+		}
+		fixed.movePaymentMethod(method.id, direction);
+	};
 
 	const def = $derived(getMethodDef(method.kind));
 	const complete = $derived(isMethodComplete(method));
@@ -43,13 +66,12 @@
 
 	const remove = (event: MouseEvent) => {
 		event.stopPropagation();
-		fixed.removePaymentMethod(method.id);
-		session.purgePaymentMethodFromClients(method.id);
+		removeMethod();
 	};
 
 	const move = (direction: -1 | 1, event: MouseEvent) => {
 		event.stopPropagation();
-		fixed.movePaymentMethod(method.id, direction);
+		moveMethod(direction);
 	};
 
 	const overflowActions = $derived([
@@ -57,22 +79,19 @@
 			label: "Move up",
 			icon: ArrowUp,
 			disabled: index === 0,
-			onSelect: () => fixed.movePaymentMethod(method.id, -1)
+			onSelect: () => moveMethod(-1)
 		},
 		{
 			label: "Move down",
 			icon: ArrowDown,
 			disabled: index === total - 1,
-			onSelect: () => fixed.movePaymentMethod(method.id, 1)
+			onSelect: () => moveMethod(1)
 		},
 		{
 			label: "Remove payment method",
 			icon: Trash2,
 			variant: "destructive" as const,
-			onSelect: () => {
-				fixed.removePaymentMethod(method.id);
-				session.purgePaymentMethodFromClients(method.id);
-			}
+			onSelect: removeMethod
 		}
 	]);
 </script>
@@ -141,7 +160,11 @@
 	</button>
 
 	{#if expanded}
-		<div id="method-panel-{method.id}" class="border-border space-y-3 border-t px-3 pt-3 pb-4">
+		<div
+			id="method-panel-{method.id}"
+			class="border-border space-y-3 border-t px-3 pt-3 pb-4"
+			transition:slide={{ duration: motionDuration("base") }}
+		>
 			<Field.Field class="gap-1.5">
 				<Field.FieldLabel for="label-{method.id}">Display label</Field.FieldLabel>
 				<Input

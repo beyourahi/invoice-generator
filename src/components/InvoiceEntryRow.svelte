@@ -9,6 +9,8 @@
 	import * as Tooltip from "$lib/components/ui/tooltip";
 	import { Switch } from "$lib/components/ui/switch";
 	import SelectDialog from "$src/components/SelectDialog.svelte";
+	import { fade } from "svelte/transition";
+	import { motionDuration } from "$lib/motion";
 	import { Trash2 } from "@lucide/svelte";
 
 	let {
@@ -134,6 +136,7 @@
 			inactive &&
 				"bg-status-inactive-bg before:bg-status-inactive-border opacity-80 before:absolute before:top-2 before:bottom-2 before:left-0 before:w-[3px] before:rounded-full"
 		)}
+		transition:fade={{ duration: motionDuration("fast") }}
 	>
 		<div class="flex items-start gap-2">
 			<div class="min-w-0 flex-1">

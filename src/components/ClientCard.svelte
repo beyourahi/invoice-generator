@@ -20,14 +20,28 @@
 	import MonthPickerDialog from "$src/components/MonthPickerDialog.svelte";
 	import OverflowActions from "$src/components/OverflowActions.svelte";
 	import { ChevronDown, Check, Plus, ReceiptText, Trash2, Wallet } from "@lucide/svelte";
+	import { slide } from "svelte/transition";
+	import { motionDuration } from "$lib/motion";
 	import { z } from "zod";
 
 	let {
 		client,
 		index,
 		selected,
-		onSelect
-	}: { client: Client; index: number; selected: boolean; onSelect: () => void } = $props();
+		onSelect,
+		onRemove
+	}: {
+		client: Client;
+		index: number;
+		selected: boolean;
+		onSelect: () => void;
+		onRemove?: () => void;
+	} = $props();
+
+	const remove = () => {
+		if (onRemove) onRemove();
+		else session.removeClient(client.id);
+	};
 
 	let nameTouched = $state(false);
 	let prefixTouched = $state(false);
@@ -151,7 +165,7 @@
 				class="text-muted-foreground pointer-fine:hover:bg-destructive/10 pointer-fine:hover:text-destructive hidden h-9 w-9 shrink-0 sm:flex sm:h-7 sm:w-7"
 				onclick={e => {
 					e.stopPropagation();
-					session.removeClient(client.id);
+					remove();
 				}}
 				aria-label="Remove client"
 			>
@@ -165,7 +179,7 @@
 							label: "Remove client",
 							icon: Trash2,
 							variant: "destructive" as const,
-							onSelect: () => session.removeClient(client.id)
+							onSelect: remove
 						}
 					]}
 				/>
@@ -190,259 +204,272 @@
 	</CardHeader>
 
 	{#if expanded}
-		<CardContent
-			class={cn("status-transition border-border space-y-5 border-t pb-4", !client.isActive && "opacity-70")}
-		>
-			<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-				<Field.Field class="gap-1.5" data-invalid={nameError !== ""}>
-					<Field.FieldLabel for="name-{client.id}">Client name</Field.FieldLabel>
-					<Input
-						id="name-{client.id}"
-						placeholder="e.g., Ollivanders Wand Shop"
-						value={client.name}
-						aria-invalid={nameError !== ""}
-						oninput={e => patch({ name: valueFromInput(e) })}
-						onblur={() => (nameTouched = true)}
-						class={nameError ? "border-destructive focus-visible:border-destructive" : ""}
-					/>
-					{#if nameError}
-						<Field.FieldError>{nameError}</Field.FieldError>
-					{/if}
-				</Field.Field>
-				<Field.Field class="gap-1.5" data-invalid={prefixError !== ""}>
-					<Field.FieldLabel for="prefix-{client.id}">Invoice prefix</Field.FieldLabel>
-					<Input
-						id="prefix-{client.id}"
-						placeholder="e.g., OLLIVAND"
-						value={client.invoicePrefix}
-						aria-invalid={prefixError !== ""}
-						oninput={e => patch({ invoicePrefix: valueFromInput(e) })}
-						onblur={() => (prefixTouched = true)}
-						class={prefixError ? "border-destructive focus-visible:border-destructive" : ""}
-					/>
-					{#if prefixError}
-						<Field.FieldError>{prefixError}</Field.FieldError>
-					{/if}
-				</Field.Field>
-				<Field.Field class="gap-1.5">
-					<Field.FieldLabel for="phone-{client.id}">Phone</Field.FieldLabel>
-					<Input
-						id="phone-{client.id}"
-						type="tel"
-						placeholder="e.g., +880 1XXXXXXXXX"
-						value={client.phone}
-						oninput={e => patch({ phone: valueFromInput(e) })}
-					/>
-				</Field.Field>
-				<Field.Field class="gap-1.5" data-invalid={emailError !== ""}>
-					<Field.FieldLabel for="email-{client.id}">Email</Field.FieldLabel>
-					<Input
-						id="email-{client.id}"
-						type="email"
-						placeholder="e.g., orders@ollivanders.co"
-						value={client.email}
-						aria-invalid={emailError !== ""}
-						oninput={e => patch({ email: valueFromInput(e) })}
-						onblur={() => (emailTouched = true)}
-						class={emailError ? "border-destructive focus-visible:border-destructive" : ""}
-					/>
-					{#if emailError}
-						<Field.FieldError>{emailError}</Field.FieldError>
-					{/if}
-				</Field.Field>
-				<Field.Field class="gap-1.5 sm:col-span-2">
-					<Field.FieldLabel for="address-{client.id}">Address</Field.FieldLabel>
-					<Textarea
-						id="address-{client.id}"
-						placeholder="e.g., 93A Diagon Alley, London"
-						value={client.address[0] ?? ""}
-						oninput={e => patch({ address: [valueFromTextArea(e)] })}
-					/>
-				</Field.Field>
-			</div>
-
-			<Separator />
-
-			<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-				<Field.Field class="gap-1.5 sm:col-span-2">
-					<Field.FieldLabel for="desc-{client.id}">Service description</Field.FieldLabel>
-					<Textarea
-						id="desc-{client.id}"
-						placeholder="e.g., Spellwork retainer for {'{MONTH}'}"
-						value={client.service.description}
-						oninput={e => patch({ serviceDescription: valueFromTextArea(e) })}
-					/>
-					<Field.FieldDescription>
-						Insert
-						<code class="bg-muted text-foreground rounded px-1 py-0.5 font-mono text-[11px]">
-							{"{MONTH}"}
-						</code>
-						to auto-fill each invoice's month name (e.g. January).
-					</Field.FieldDescription>
-				</Field.Field>
-				<Field.Field class="gap-1.5">
-					<Field.FieldLabel for="amount-{client.id}">Amount</Field.FieldLabel>
-					<Input
-						id="amount-{client.id}"
-						type="number"
-						min="0"
-						placeholder="0"
-						value={String(client.service.amount)}
-						oninput={e => patch({ serviceAmount: parseFloat(valueFromInput(e)) || 0 })}
-						class="tabular-nums"
-					/>
-				</Field.Field>
-				<Field.Field class="gap-1.5">
-					<Field.FieldLabel for="currency-{client.id}">Currency</Field.FieldLabel>
-					<SelectDialog
-						value={client.service.currency}
-						title="Currency"
-						columns={2}
-						options={[
-							{ value: "BDT", label: "BDT (৳)" },
-							{ value: "USD", label: "USD ($)" }
-						]}
-						onSelect={v => patch({ serviceCurrency: v as Currency })}
-					/>
-				</Field.Field>
-				<Field.Field class="gap-1.5">
-					<Field.FieldLabel for="year-{client.id}">Year</Field.FieldLabel>
-					<Input
-						id="year-{client.id}"
-						type="number"
-						min="2020"
-						max="2099"
-						value={String(client.year)}
-						oninput={e => patch({ year: parseInt(valueFromInput(e)) || new Date().getFullYear() })}
-						class="tabular-nums"
-					/>
-				</Field.Field>
-			</div>
-
-			<Separator />
-
-			<div class="space-y-3">
-				<div class="flex items-center justify-between gap-3">
-					<SectionEyebrow icon={Wallet} label="Payment methods" />
-					{#if savedMethods.length > 0}
-						<p class="text-muted-foreground text-xs whitespace-nowrap tabular-nums">
-							{client.payment.methodIds.length} of {savedMethods.length} selected
-						</p>
-					{/if}
+		<div transition:slide={{ duration: motionDuration("base") }}>
+			<CardContent
+				class={cn("status-transition border-border space-y-5 border-t pb-4", !client.isActive && "opacity-70")}
+			>
+				<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+					<Field.Field class="gap-1.5" data-invalid={nameError !== ""}>
+						<Field.FieldLabel for="name-{client.id}">Client name</Field.FieldLabel>
+						<Input
+							id="name-{client.id}"
+							placeholder="e.g., Ollivanders Wand Shop"
+							value={client.name}
+							aria-invalid={nameError !== ""}
+							oninput={e => patch({ name: valueFromInput(e) })}
+							onblur={() => (nameTouched = true)}
+							class={nameError ? "border-destructive focus-visible:border-destructive" : ""}
+						/>
+						{#if nameError}
+							<Field.FieldError>{nameError}</Field.FieldError>
+						{/if}
+					</Field.Field>
+					<Field.Field class="gap-1.5" data-invalid={prefixError !== ""}>
+						<Field.FieldLabel for="prefix-{client.id}">Invoice prefix</Field.FieldLabel>
+						<Input
+							id="prefix-{client.id}"
+							placeholder="e.g., OLLIVAND"
+							value={client.invoicePrefix}
+							aria-invalid={prefixError !== ""}
+							oninput={e => patch({ invoicePrefix: valueFromInput(e) })}
+							onblur={() => (prefixTouched = true)}
+							class={prefixError ? "border-destructive focus-visible:border-destructive" : ""}
+						/>
+						{#if prefixError}
+							<Field.FieldError>{prefixError}</Field.FieldError>
+						{/if}
+					</Field.Field>
+					<Field.Field class="gap-1.5">
+						<Field.FieldLabel for="phone-{client.id}">Phone</Field.FieldLabel>
+						<Input
+							id="phone-{client.id}"
+							type="tel"
+							placeholder="e.g., +880 1XXXXXXXXX"
+							value={client.phone}
+							oninput={e => patch({ phone: valueFromInput(e) })}
+						/>
+					</Field.Field>
+					<Field.Field class="gap-1.5" data-invalid={emailError !== ""}>
+						<Field.FieldLabel for="email-{client.id}">Email</Field.FieldLabel>
+						<Input
+							id="email-{client.id}"
+							type="email"
+							placeholder="e.g., orders@ollivanders.co"
+							value={client.email}
+							aria-invalid={emailError !== ""}
+							oninput={e => patch({ email: valueFromInput(e) })}
+							onblur={() => (emailTouched = true)}
+							class={emailError ? "border-destructive focus-visible:border-destructive" : ""}
+						/>
+						{#if emailError}
+							<Field.FieldError>{emailError}</Field.FieldError>
+						{/if}
+					</Field.Field>
+					<Field.Field class="gap-1.5 sm:col-span-2">
+						<Field.FieldLabel for="address-{client.id}">Address</Field.FieldLabel>
+						<Textarea
+							id="address-{client.id}"
+							placeholder="e.g., 93A Diagon Alley, London"
+							value={client.address[0] ?? ""}
+							oninput={e => patch({ address: [valueFromTextArea(e)] })}
+						/>
+					</Field.Field>
 				</div>
 
-				{#if savedMethods.length === 0}
-					<div
-						class="border-border text-muted-foreground grid min-h-20 w-full place-items-center rounded-lg border border-dashed text-center text-xs"
-					>
-						<div class="space-y-1 px-3">
-							<p class="font-medium text-balance">No payment methods configured</p>
-							<p class="text-pretty">Add one in the sender panel to attach it to invoices.</p>
+				<Separator />
+
+				<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+					<Field.Field class="gap-1.5 sm:col-span-2">
+						<Field.FieldLabel for="desc-{client.id}">Service description</Field.FieldLabel>
+						<Textarea
+							id="desc-{client.id}"
+							placeholder="e.g., Spellwork retainer for {'{MONTH}'}"
+							value={client.service.description}
+							oninput={e => patch({ serviceDescription: valueFromTextArea(e) })}
+						/>
+						<Field.FieldDescription>
+							Insert
+							<code class="bg-muted text-foreground rounded px-1 py-0.5 font-mono text-[11px]">
+								{"{MONTH}"}
+							</code>
+							to auto-fill each invoice's month name (e.g. January).
+						</Field.FieldDescription>
+					</Field.Field>
+					<Field.Field class="gap-1.5">
+						<Field.FieldLabel for="amount-{client.id}">Amount</Field.FieldLabel>
+						<Input
+							id="amount-{client.id}"
+							type="number"
+							min="0"
+							placeholder="0"
+							value={String(client.service.amount)}
+							oninput={e => patch({ serviceAmount: parseFloat(valueFromInput(e)) || 0 })}
+							class="tabular-nums"
+						/>
+					</Field.Field>
+					<Field.Field class="gap-1.5">
+						<Field.FieldLabel for="currency-{client.id}">Currency</Field.FieldLabel>
+						<SelectDialog
+							value={client.service.currency}
+							title="Currency"
+							columns={2}
+							options={[
+								{ value: "BDT", label: "BDT (৳)" },
+								{ value: "USD", label: "USD ($)" }
+							]}
+							onSelect={v => patch({ serviceCurrency: v as Currency })}
+						/>
+					</Field.Field>
+					<Field.Field class="gap-1.5">
+						<Field.FieldLabel for="year-{client.id}">Year</Field.FieldLabel>
+						<Input
+							id="year-{client.id}"
+							type="number"
+							min="2020"
+							max="2099"
+							value={String(client.year)}
+							oninput={e => patch({ year: parseInt(valueFromInput(e)) || new Date().getFullYear() })}
+							class="tabular-nums"
+						/>
+					</Field.Field>
+				</div>
+
+				<Separator />
+
+				<div class="space-y-3">
+					<div class="flex items-center justify-between gap-3">
+						<SectionEyebrow icon={Wallet} label="Payment methods" />
+						{#if savedMethods.length > 0}
+							<p class="text-muted-foreground text-xs whitespace-nowrap tabular-nums">
+								{client.payment.methodIds.length} of {savedMethods.length} selected
+							</p>
+						{/if}
+					</div>
+
+					{#if savedMethods.length === 0}
+						<div
+							class="border-border text-muted-foreground grid min-h-20 w-full place-items-center rounded-lg border border-dashed text-center text-xs"
+						>
+							<div class="space-y-1 px-3">
+								<p class="font-medium text-balance">No payment methods configured</p>
+								<p class="text-pretty">Add one in the sender panel to attach it to invoices.</p>
+							</div>
 						</div>
-					</div>
-				{:else}
-					<div class="flex flex-wrap gap-1.5">
-						{#each savedMethods as method (method.id)}
-							{@const def = getMethodDef(method.kind)}
-							{@const active = client.payment.methodIds.includes(method.id)}
-							<button
-								type="button"
-								onclick={() => session.togglePaymentMethod(client.id, method.id)}
-								class={cn(
-									"group inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs whitespace-nowrap transition-colors",
-									active
-										? "border-brand bg-brand/10 text-success"
-										: "border-border text-muted-foreground pointer-fine:hover:border-foreground/40 pointer-fine:hover:text-foreground"
-								)}
-								aria-pressed={active}
-							>
-								{#if active}
-									<Check size={12} aria-hidden="true" />
-								{:else}
-									<Plus size={12} aria-hidden="true" />
-								{/if}
-								<span class="font-medium whitespace-nowrap">{method.label || def.name}</span>
-								<span
+					{:else}
+						<div class="flex flex-wrap gap-1.5">
+							{#each savedMethods as method (method.id)}
+								{@const def = getMethodDef(method.kind)}
+								{@const active = client.payment.methodIds.includes(method.id)}
+								<button
+									type="button"
+									onclick={() => session.togglePaymentMethod(client.id, method.id)}
 									class={cn(
-										"font-mono text-[11px] whitespace-nowrap uppercase",
-										active ? "text-success/80" : "text-muted-foreground"
+										"group inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs whitespace-nowrap transition-colors",
+										active
+											? "border-brand bg-brand/10 text-success"
+											: "border-border text-muted-foreground pointer-fine:hover:border-foreground/40 pointer-fine:hover:text-foreground"
 									)}
+									aria-pressed={active}
 								>
-									{def.shortName}
-								</span>
-							</button>
-						{/each}
-					</div>
-				{/if}
-			</div>
-
-			<Separator />
-
-			<div class="space-y-3">
-				<div class="flex items-center justify-between gap-3">
-					<SectionEyebrow icon={ReceiptText} label="Invoice schedule" />
-					{#if client.invoices.length > 0}
-						<p class="text-muted-foreground text-xs whitespace-nowrap">{client.invoices.length} rows</p>
+									{#if active}
+										<Check size={12} aria-hidden="true" />
+									{:else}
+										<Plus size={12} aria-hidden="true" />
+									{/if}
+									<span class="font-medium whitespace-nowrap">{method.label || def.name}</span>
+									<span
+										class={cn(
+											"font-mono text-[11px] whitespace-nowrap uppercase",
+											active ? "text-success/80" : "text-muted-foreground"
+										)}
+									>
+										{def.shortName}
+									</span>
+								</button>
+							{/each}
+						</div>
 					{/if}
 				</div>
 
-				{#if client.invoices.length === 0}
-					<MonthPickerDialog
-						{scheduledMonths}
-						onConfirm={months => session.addInvoiceEntries(client.id, months)}
-						variant="empty"
-					/>
-				{:else}
-					<div class="hidden sm:block">
-						<Table.Root>
-							<Table.Header>
-								<Table.Row class="border-border pointer-fine:hover:bg-transparent">
-									<Table.Head class="h-8 pl-0 text-[11px] tracking-wider uppercase">Month</Table.Head>
-									<Table.Head class="h-8 w-[72px] text-center text-[11px] tracking-wider uppercase">
-										Issue
-									</Table.Head>
-									<Table.Head class="h-8 w-[72px] text-center text-[11px] tracking-wider uppercase">
-										Due
-									</Table.Head>
-									<Table.Head class="h-8 w-12 text-center text-[11px] tracking-wider uppercase">
-										Active
-									</Table.Head>
-									<Table.Head class="h-8 w-8"></Table.Head>
-								</Table.Row>
-							</Table.Header>
-							<Table.Body>
-								{#each client.invoices as entry (entry.id)}
-									<InvoiceEntryRow
-										clientId={client.id}
-										clientActive={client.isActive}
-										{entry}
-										as="row"
-									/>
-								{/each}
-							</Table.Body>
-						</Table.Root>
-					</div>
-					<div class="block space-y-2 sm:hidden">
-						{#each client.invoices as entry (entry.id)}
-							<InvoiceEntryRow clientId={client.id} clientActive={client.isActive} {entry} as="card" />
-						{/each}
+				<Separator />
+
+				<div class="space-y-3">
+					<div class="flex items-center justify-between gap-3">
+						<SectionEyebrow icon={ReceiptText} label="Invoice schedule" />
+						{#if client.invoices.length > 0}
+							<p class="text-muted-foreground text-xs whitespace-nowrap">{client.invoices.length} rows</p>
+						{/if}
 					</div>
 
-					<div class="text-muted-foreground flex items-center justify-between gap-3 text-xs">
-						<span class="whitespace-nowrap">
-							{client.invoices.length} invoice{client.invoices.length !== 1 ? "s" : ""}
-						</span>
-						<span class="font-mono whitespace-nowrap tabular-nums">
-							{totalAmount} × {client.invoices.length}
-						</span>
-					</div>
+					{#if client.invoices.length === 0}
+						<MonthPickerDialog
+							{scheduledMonths}
+							onConfirm={months => session.addInvoiceEntries(client.id, months)}
+							variant="empty"
+						/>
+					{:else}
+						<div class="hidden sm:block">
+							<Table.Root>
+								<Table.Header>
+									<Table.Row class="border-border pointer-fine:hover:bg-transparent">
+										<Table.Head class="h-8 pl-0 text-[11px] tracking-wider uppercase"
+											>Month</Table.Head
+										>
+										<Table.Head
+											class="h-8 w-[72px] text-center text-[11px] tracking-wider uppercase"
+										>
+											Issue
+										</Table.Head>
+										<Table.Head
+											class="h-8 w-[72px] text-center text-[11px] tracking-wider uppercase"
+										>
+											Due
+										</Table.Head>
+										<Table.Head class="h-8 w-12 text-center text-[11px] tracking-wider uppercase">
+											Active
+										</Table.Head>
+										<Table.Head class="h-8 w-8"></Table.Head>
+									</Table.Row>
+								</Table.Header>
+								<Table.Body>
+									{#each client.invoices as entry (entry.id)}
+										<InvoiceEntryRow
+											clientId={client.id}
+											clientActive={client.isActive}
+											{entry}
+											as="row"
+										/>
+									{/each}
+								</Table.Body>
+							</Table.Root>
+						</div>
+						<div class="block space-y-2 sm:hidden">
+							{#each client.invoices as entry (entry.id)}
+								<InvoiceEntryRow
+									clientId={client.id}
+									clientActive={client.isActive}
+									{entry}
+									as="card"
+								/>
+							{/each}
+						</div>
 
-					<MonthPickerDialog
-						{scheduledMonths}
-						onConfirm={months => session.addInvoiceEntries(client.id, months)}
-					/>
-				{/if}
-			</div>
-		</CardContent>
+						<div class="text-muted-foreground flex items-center justify-between gap-3 text-xs">
+							<span class="whitespace-nowrap">
+								{client.invoices.length} invoice{client.invoices.length !== 1 ? "s" : ""}
+							</span>
+							<span class="font-mono whitespace-nowrap tabular-nums">
+								{totalAmount} × {client.invoices.length}
+							</span>
+						</div>
+
+						<MonthPickerDialog
+							{scheduledMonths}
+							onConfirm={months => session.addInvoiceEntries(client.id, months)}
+						/>
+					{/if}
+				</div>
+			</CardContent>
+		</div>
 	{/if}
 </Card>
