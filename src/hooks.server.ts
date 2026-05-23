@@ -1,7 +1,9 @@
 import type { Handle, HandleServerError } from "@sveltejs/kit";
 import { svelteKitHandler } from "better-auth/svelte-kit";
 import { building } from "$app/environment";
+import { drizzle } from "drizzle-orm/d1";
 import { createAuth } from "$lib/server/auth";
+import { users } from "$lib/server/schema";
 import { getCurrentUser } from "$lib/hooks";
 
 const CSP = [
@@ -54,6 +56,48 @@ export const handle: Handle = async ({ event, resolve }) => {
 		event.locals.session = null;
 		event.locals.currentUser = null;
 		return resolve(event);
+	}
+
+	// E2E auth bypass: env-gated test affordance for Wrangler preview runs. Synthesizes locals so
+	// auth-gated flows can be exercised without invoking real Google OAuth. Inert unless
+	// E2E_BYPASS_AUTH=true is set in .dev.vars (gitignored). Never set in wrangler.jsonc.
+	if (event.platform?.env?.E2E_BYPASS_AUTH === "true") {
+		const now = new Date();
+		const userId = "e2e-test-user";
+		const dz = drizzle(db);
+		await dz
+			.insert(users)
+			.values({
+				id: userId,
+				email: "e2e@test.local",
+				emailVerified: true,
+				name: "E2E Test User",
+				image: null,
+				createdAt: now,
+				updatedAt: now
+			})
+			.onConflictDoNothing();
+		event.locals.user = {
+			id: userId,
+			email: "e2e@test.local",
+			emailVerified: true,
+			name: "E2E Test User",
+			image: null,
+			createdAt: now,
+			updatedAt: now
+		} as App.Locals["user"];
+		event.locals.session = {
+			id: "e2e-test-session",
+			userId,
+			token: "e2e-test-token",
+			expiresAt: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000),
+			ipAddress: null,
+			userAgent: null,
+			createdAt: now,
+			updatedAt: now
+		} as App.Locals["session"];
+		event.locals.currentUser = getCurrentUser(event.locals.user);
+		return applySecurityHeaders(await resolve(event));
 	}
 
 	const env = {

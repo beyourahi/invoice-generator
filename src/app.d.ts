@@ -24,6 +24,7 @@ declare global {
 				AI_GATEWAY_SLUG?: string;
 				AI_COPILOT_ENABLED?: string;
 				AI_MONTHLY_CAP_USD?: string;
+				E2E_BYPASS_AUTH?: string;
 			};
 			cf: CfProperties;
 			ctx: ExecutionContext;

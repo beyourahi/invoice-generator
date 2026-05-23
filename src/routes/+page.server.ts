@@ -1,5 +1,4 @@
 import { redirect } from "@sveltejs/kit";
-import { dev } from "$app/environment";
 import type { PageServerLoad } from "./$types";
 import { getDatabase } from "$lib/server/db";
 import { loadAppState } from "$lib/server/repositories/state";
@@ -22,22 +21,9 @@ const emptyAi = (enabled: boolean): AiHydrationPayload => ({
 	anomalySettings: { ...DEFAULT_ANOMALY_SETTINGS }
 });
 
-export const load: PageServerLoad = async ({ locals, platform, url }) => {
-	const devBypass = dev && url.searchParams.get("__dev_bypass") === "1";
-	if (!locals.user && !devBypass) {
+export const load: PageServerLoad = async ({ locals, platform }) => {
+	if (!locals.user) {
 		redirect(303, "/login");
-	}
-	if (devBypass && !locals.user) {
-		locals.user = {
-			id: "dev-user",
-			email: "dev@local",
-			name: "Dev User",
-			emailVerified: true,
-			image: null,
-			createdAt: new Date(),
-			updatedAt: new Date()
-		} as never;
-		locals.currentUser = { name: "Dev User", email: "dev@local" };
 	}
 
 	const d1 = platform?.env?.DB;
