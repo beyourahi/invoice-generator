@@ -199,6 +199,7 @@
 				<textarea
 					bind:this={textarea}
 					bind:value={input}
+					name="ai-prompt"
 					oninput={autoGrow}
 					onkeydown={onKeyDown}
 					placeholder="Ask the Copilot to change something…"
