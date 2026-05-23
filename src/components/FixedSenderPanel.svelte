@@ -96,7 +96,7 @@
 	<Card size="sm">
 		<CardContent class="space-y-5">
 			<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-				<Field.Field class="gap-1.5 sm:col-span-2">
+				<Field.Field class="gap-1.5">
 					<Field.FieldLabel for="from-name">Name</Field.FieldLabel>
 					<Input
 						id="from-name"
@@ -129,7 +129,7 @@
 					/>
 					<Field.FieldError>{senderEmailError}</Field.FieldError>
 				</Field.Field>
-				<Field.Field class="gap-1.5 sm:col-span-2">
+				<Field.Field class="gap-1.5">
 					<Field.FieldLabel for="from-address">Address</Field.FieldLabel>
 					<Textarea
 						id="from-address"
