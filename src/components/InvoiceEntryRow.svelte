@@ -90,6 +90,7 @@
 		</Table.Cell>
 		<Table.Cell class="w-[72px] px-1 py-1">
 			<Input
+				id="issue-{entry.id}"
 				type="tel"
 				inputmode="numeric"
 				pattern="[0-9]*"
@@ -102,6 +103,7 @@
 		</Table.Cell>
 		<Table.Cell class="w-[72px] px-1 py-1">
 			<Input
+				id="due-{entry.id}"
 				type="tel"
 				inputmode="numeric"
 				pattern="[0-9]*"
