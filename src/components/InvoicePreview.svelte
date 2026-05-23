@@ -64,7 +64,7 @@
 	const scaledHeight = $derived(`${Math.round(1123 * scale)}px`);
 	const previewScale = $derived(String(scale));
 	const currentPreset = $derived(WIDTH_PRESETS.find(p => p.value === widthPreset) ?? WIDTH_PRESETS[0]);
-	const presetMaxWidth = $derived(currentPreset.px ? `${currentPreset.px}px` : "none");
+	const presetWidth = $derived(currentPreset.px ? `${currentPreset.px}px` : "100%");
 
 	const measurePreview = (node: HTMLDivElement) => {
 		let frame = 0;
@@ -276,16 +276,16 @@
 			{:else}
 				<div
 					class={cn(
-						"overflow-x-clip overflow-y-auto",
+						"overflow-auto",
 						isFullscreen ? "h-full" : "max-h-[calc(100dvh-8rem)] lg:max-h-[calc(100dvh-6rem)]"
 					)}
 				>
 					<div
 						use:measurePreview
-						class="invoice-preview-stage mx-auto w-full overflow-hidden"
+						class="invoice-preview-stage mx-auto overflow-hidden"
 						style:--preview-height={scaledHeight}
 						style:--preview-scale={previewScale}
-						style:max-width={presetMaxWidth}
+						style:width={presetWidth}
 					>
 						{#if containerWidth > 0}
 							<iframe

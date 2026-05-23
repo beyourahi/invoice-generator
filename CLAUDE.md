@@ -189,13 +189,18 @@ To add a theme: create a new file in `$lib/themes/` implementing the full `Theme
 
 ### UI Layout
 
-**App layout** — two-column grid at `lg` breakpoint; collapses to single column with a togglable preview panel on mobile (grid-rows animation).
+**App layout** — single-column tabbed surface (`Details` / `Preview` via shadcn `Tabs.Root` in `src/routes/+page.svelte`); AI Copilot is pinned as a fixed right-side rail rendered from `src/routes/+layout.svelte` at `lg+` viewports, reserving space via `lg:pr-[26rem] xl:pr-[28rem]` on the main flex container.
 
 - **`User`** (`src/components/User.svelte`) — top-right avatar. Desktop: hover tooltip; mobile: tap opens a `Dialog`. Both surface the sign-out action.
-- **`Heading`** (`$lib/components/ui/heading/heading.svelte`) — shared heading above the grid.
-- **Left column** — `FixedSenderPanel` + `ClientCard` list + `AddClientButton`.
-- **Right column** (sticky on desktop, collapsible on mobile) — `RightRailTabs`, a Preview/AI tab switcher wrapping `InvoicePreview` (live scaled iframe of the selected/first client's first generatable invoice) and `AiSidebar` (AI Copilot chat).
-- **Below grid** (full-width) — `GenerationPanel`.
+- **`Heading`** (`$lib/components/ui/heading/heading.svelte`) — shared heading above the tabs.
+- **`Tabs.Root`** in `+page.svelte` — two tabs:
+  - **`Details`** — `FixedSenderPanel` + a `Clients` section (count badge, empty-state CTA, `ClientCard` list bound to `flipList` for add/remove FLIP motion, `AddClientButton`).
+  - **`Preview`** — `InvoicePreview` of the selected/first client's first generatable invoice.
+- **Below tabs** (full-width) — `Separator` + `GenerationPanel`.
+- **AI Copilot mount** (`+layout.svelte`, gated by `data.aiEnabled && page.route.id === "/" && !page.error`):
+  - Desktop (`lg+`): fixed `<aside>` rendering `AiSidebar`.
+  - Mobile: `AiMobileFab` + `AiMobileSheet`.
+  - Always: `AiConfirmDialog` mounts globally for Tier-B confirmations.
 
 `GenerationPanel` owns the generate loop: iterates the queue from `getGeneratableInvoices(session.clients)` (active-only), calls `buildInvoiceHtml` + `generatePdf` sequentially, tracks progress with `$state<number>` (0–100) bound to a shadcn `Progress`. On completion renders a `Table` of results with per-client download (directory picker or sequential) and ZIP buttons. Uses `svelte-sonner` toasts for success/error feedback.
 
@@ -217,7 +222,12 @@ To add a theme: create a new file in `$lib/themes/` implementing the full `Theme
 
 ### InvoicePreview
 
-`src/components/InvoicePreview.svelte` renders a live scaled preview of the first generatable entry (via `firstGeneratableInvoice(client)`) for the selected client. Uses `srcdoc={html}` on an iframe, derives a CSS scale factor from container width (`containerWidth / 794`) via a Svelte action backed by a `ResizeObserver`. Selected client is `session.selectedClientId` (falling back to `session.clients[0]`). Contextual empty states distinguish no-client, no-entries, and no-active scenarios.
+`src/components/InvoicePreview.svelte` renders a live scaled preview of the first generatable entry (via `firstGeneratableInvoice(client)`) for the selected client. Uses `srcdoc={html}` on an iframe, derives a CSS scale factor from the current preview-stage width (`stageWidth / 794`) via a Svelte action backed by a `ResizeObserver`. Selected client is `session.selectedClientId` (falling back to `session.clients[0]`). Contextual empty states distinguish no-client, no-entries, and no-active scenarios.
+
+Preview controls (above the stage):
+
+- **Width presets** — `fit | 1440 | 1280 | 768 | 375`. `fit` follows the container; numeric presets constrain the preview stage to a fixed px width so the same scale formula resizes the rendered invoice. Last choice is persisted to `localStorage`.
+- **Fullscreen toggle** — uses the Fullscreen API with WebKit vendor-prefix fallbacks (`webkitRequestFullscreen`, `webkitExitFullscreen`, `webkitFullscreenElement`); state is tracked via a `fullscreenchange` listener.
 
 ### Motion
 
@@ -268,7 +278,7 @@ An optional natural-language assistant for managing clients, invoices, and payme
   - `log.ts` — `logChatTurn` / `logToolExecution`: structured stdout logging with hashed user IDs.
   - `repositories/ai-conversations.ts`, `ai-messages.ts`, `ai-actions.ts` — D1 persistence for the three AI tables.
 - **`$lib/stores/ai.svelte.ts`** — the `ai` store (see Store Design).
-- **`src/components/ai/`** — `AiSidebar`, `AiMessage`, `AiToolBadge`, `AiConfirmDialog`, `AiAnomalyWarning`, `AiSettingsDialog`, `AiConversationsPanel`, `AiMobileFab`, `AiMobileSheet`. `AiSidebar`'s toolbar pairs a `New Chat` action button with a collapsible `History` button (its immediate right sibling) that toggles `AiConversationsPanel` (the list of past conversations) above the persistent chat thread. A `<svelte:boundary>` wraps the message list so a render error degrades to an inline retry rather than crashing the pane. There is no action-log panel — undo for applied actions stays available via per-action toasts and inline `AiToolBadge` controls.
+- **`src/components/ai/`** — `AiSidebar`, `AiMessage`, `AiToolBadge`, `AiConfirmDialog`, `AiAnomalyWarning`, `AiSettingsDialog`, `AiConversationsPanel`, `AiMobileFab`, `AiMobileSheet`, `AiLauncherIcon` (shared launcher glyph used in both the desktop sidebar header and the mobile FAB; takes a `variant: "row" | "grid"` prop). `AiSidebar`'s toolbar pairs a `New Chat` action button with a collapsible `History` button (its immediate right sibling) that toggles `AiConversationsPanel` (the list of past conversations) above the persistent chat thread. A `<svelte:boundary>` wraps the message list so a render error degrades to an inline retry rather than crashing the pane. There is no action-log panel — undo for applied actions stays available via per-action toasts and inline `AiToolBadge` controls.
 
 **Data flow**: user message → `POST /api/ai/chat` (loads context, runs the model, streams frames) → client parses frames and runs each tool via `executeToolCall` → Tier B tools wait for `AiConfirmDialog` approval → applied actions are recorded and reversible via `POST /api/ai/undo/[id]`.
 
@@ -432,7 +442,8 @@ perf:     performance improvements
 
 ### Prerequisites
 
-- **Bun** (package manager and runtime)
+- **Bun** ≥ 1.2.0 (package manager and runtime; pinned via `engines` in `package.json`)
+- **Node** ^20.19.0 || ≥ 22.12.0 (required by SvelteKit toolchain; pinned via `engines`)
 - **Wrangler** (Cloudflare Workers CLI, installed as devDependency)
 - **Git 2.5+** (for worktree support)
 
@@ -547,7 +558,7 @@ When encountering unfamiliar patterns, check in this order:
 
 This project shares conventions with the broader `~/Desktop/projects` ecosystem:
 
-- Same Svelte 5 rune patterns as `corvien`, `nordcycle`, `order-processor`, `beyourahi.com`
+- Same Svelte 5 rune patterns as `nordcycle`, `order-processor`, `beyourahi.com`, `enscented`
 - Same Tailwind CSS v4 CSS-first config as all SvelteKit projects
 - Same git worktree workflow as all projects in the workspace
 - Same Conventional Commits format as all projects
@@ -595,12 +606,12 @@ Detection order (use the first that works):
 
 ### What to Check in Screenshots
 
-- Two-column grid renders correctly at `lg` breakpoint
+- `Details` / `Preview` tabs switch cleanly; AI Copilot rail is pinned at `lg+` without overlapping the main column
 - Dark theme renders consistently (no light-mode bleed)
 - Spacing, typography, and color tokens are correct
-- `FixedSenderPanel`, `ClientCard`, `GenerationPanel` are in expected positions
+- `FixedSenderPanel`, `ClientCard` list, `GenerationPanel`, and the right-side AI rail are in expected positions
 - Interactive states (hover, focus, expanded cards) render properly
-- No layout breaks at mobile viewport
+- Mobile: AI rail collapses to `AiMobileFab` + `AiMobileSheet`; tabs reflow without overflow
 
 ### Commit Message Rules
 

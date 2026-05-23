@@ -161,7 +161,7 @@
 			</Tabs.Content>
 
 			<Tabs.Content value="preview">
-				<div class="mx-auto w-full max-w-[50rem]" in:fade={{ duration: motionDuration("fast") }}>
+				<div class="mx-auto w-full" in:fade={{ duration: motionDuration("fast") }}>
 					<InvoicePreview html={previewHtml} loading={false} emptyReason={previewEmptyReason} />
 				</div>
 			</Tabs.Content>
