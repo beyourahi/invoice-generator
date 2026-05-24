@@ -47,10 +47,10 @@
 			{#each toggles as t (t.key)}
 				<div class="flex items-start justify-between gap-3">
 					<div class="flex-1">
-						<Label for="ai-safety-{t.key}" class="text-sm font-medium text-balance">
+						<Label for="ai-safety-{t.key}" class="text-chat-text-primary text-sm font-medium text-balance">
 							{t.label}
 						</Label>
-						<p class="text-muted-foreground text-xs text-pretty">{t.hint}</p>
+						<p class="text-chat-text-muted text-xs text-pretty">{t.hint}</p>
 					</div>
 					<Switch
 						id="ai-safety-{t.key}"
