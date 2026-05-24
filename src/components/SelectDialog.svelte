@@ -71,7 +71,7 @@
 
 	const listClass = $derived(
 		cn(
-			"max-h-72 overflow-y-auto p-1.5",
+			"max-h-72 overflow-y-auto p-2",
 			columns === 2 && "sm:grid sm:grid-cols-2 sm:gap-x-1",
 			columns === 3 && "grid grid-cols-2 gap-x-1 sm:grid-cols-3"
 		)
@@ -94,7 +94,7 @@
 	</Dialog.Trigger>
 
 	<Dialog.Content class={contentClass} showCloseButton={false}>
-		<Dialog.Header class="border-border border-b px-4 py-3.5">
+		<Dialog.Header class="border-border border-b px-4 py-3">
 			<Dialog.Title class="text-left text-sm font-semibold text-balance">{title}</Dialog.Title>
 		</Dialog.Header>
 
@@ -117,7 +117,7 @@
 					use:scrollIntoViewIfSelected={isSelected}
 					onclick={() => handleSelect(option.value)}
 					class={cn(
-						"flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors",
+						"flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors",
 						"pointer-fine:hover:bg-accent pointer-fine:hover:text-accent-foreground",
 						"focus:bg-accent focus:text-accent-foreground focus:outline-none",
 						isSelected && "bg-accent/40",

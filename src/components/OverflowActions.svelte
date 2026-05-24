@@ -50,11 +50,11 @@
 		class="data-open:slide-in-from-bottom-2 data-closed:slide-out-to-bottom-1 gap-0 p-0 sm:max-w-sm"
 		showCloseButton={false}
 	>
-		<Dialog.Header class="border-border border-b px-4 py-3.5">
+		<Dialog.Header class="border-border border-b px-4 py-3">
 			<Dialog.Title class="text-left text-sm font-semibold text-balance">{label}</Dialog.Title>
 		</Dialog.Header>
 
-		<div class="flex flex-col p-1.5">
+		<div class="flex flex-col p-2">
 			{#each actions as action, idx (idx)}
 				{@const Icon = action.icon}
 				<button

@@ -79,14 +79,14 @@
 		class="data-open:slide-in-from-bottom-2 data-closed:slide-out-to-bottom-1 gap-0 p-0 sm:max-w-sm"
 		showCloseButton={false}
 	>
-		<Dialog.Header class="border-border border-b px-4 py-3.5">
+		<Dialog.Header class="border-border border-b px-4 py-3">
 			<Dialog.Title class="text-left text-sm font-semibold text-balance">Add months</Dialog.Title>
 			<Dialog.Description class="text-muted-foreground mt-0.5 text-left text-xs text-pretty">
 				Select months to schedule invoices for.
 			</Dialog.Description>
 		</Dialog.Header>
 
-		<div class="grid grid-cols-4 gap-1.5 p-3">
+		<div class="grid grid-cols-4 gap-2 p-3">
 			{#each MONTHS as month (month)}
 				{@const isScheduled = scheduledMonths.includes(month)}
 				{@const isSelected = pending.includes(month)}
