@@ -26,18 +26,18 @@
 	});
 
 	const statusClasses = $derived.by(() => {
-		if (call.undone) return "border-border bg-card text-muted-foreground";
+		if (call.undone) return "border-chat-border-subtle bg-chat-surface text-chat-text-muted";
 		switch (call.status) {
 			case "applied":
-				return "border-courier-accent/30 bg-courier-accent/10 text-courier-accent";
+				return "border-emerald-400/30 bg-emerald-400/10 text-emerald-300";
 			case "rejected":
-				return "border-border bg-card text-muted-foreground";
+				return "border-chat-border-subtle bg-chat-surface text-chat-text-muted";
 			case "failed":
-				return "border-destructive/40 bg-destructive/10 text-red-300";
+				return "border-red-400/40 bg-red-400/10 text-red-300";
 			case "pending_confirmation":
 				return "border-amber-400/30 bg-amber-400/10 text-amber-300";
 			default:
-				return "border-border bg-card text-muted-foreground";
+				return "border-chat-border-subtle bg-chat-surface text-chat-text-secondary";
 		}
 	});
 
@@ -57,29 +57,29 @@
 
 {#if isPolishProposal && call.polish}
 	<div
-		class="ai-enter border-border bg-card text-muted-foreground space-y-2.5 rounded-lg border border-solid p-3 text-xs"
+		class="chat-message-enter border-chat-border-subtle bg-chat-surface text-chat-text-secondary space-y-2.5 rounded-lg border p-3 text-xs"
 	>
-		<div class="text-muted-foreground flex items-center gap-1.5 font-medium">
+		<div class="text-chat-text-secondary flex items-center gap-1.5 font-medium">
 			<Wand2 class="size-3.5" aria-hidden="true" />
 			<span>Suggested rewrite</span>
 		</div>
 		<div class="space-y-1.5">
-			<div class="bg-destructive/5 rounded-md px-2.5 py-1.5">
-				<div class="text-muted-foreground mb-0.5 text-[10px] font-medium tracking-wide uppercase">Current</div>
-				<p class="text-muted-foreground break-words whitespace-pre-wrap">
+			<div class="rounded-md bg-red-400/5 px-2.5 py-1.5">
+				<div class="text-chat-text-muted mb-0.5 text-[10px] font-medium tracking-wide uppercase">Current</div>
+				<p class="text-chat-text-muted break-words whitespace-pre-wrap">
 					{call.polish.oldText || "(empty)"}
 				</p>
 			</div>
-			<div class="bg-courier-accent/10 rounded-md px-2.5 py-1.5">
-				<div class="text-courier-accent mb-0.5 text-[10px] font-medium tracking-wide uppercase">Proposed</div>
-				<p class="text-foreground break-words whitespace-pre-wrap">{call.polish.newText}</p>
+			<div class="rounded-md bg-emerald-400/10 px-2.5 py-1.5">
+				<div class="mb-0.5 text-[10px] font-medium tracking-wide text-emerald-300 uppercase">Proposed</div>
+				<p class="text-chat-text-primary break-words whitespace-pre-wrap">{call.polish.newText}</p>
 			</div>
 		</div>
 		<div class="flex items-center justify-end gap-2">
 			<button
 				type="button"
 				onclick={onRejectPolish}
-				class="text-muted-foreground hover:text-foreground hover:bg-muted border-border bg-card inline-flex items-center gap-1 rounded-md border border-solid px-2.5 py-1.5 font-medium transition-colors"
+				class="text-chat-text-secondary hover:text-chat-text-primary hover:bg-chat-surface-hover border-chat-border-subtle bg-chat-bg inline-flex items-center gap-1 rounded-md border px-2.5 py-1.5 font-medium transition-colors"
 			>
 				<X class="size-3" aria-hidden="true" />
 				Reject
@@ -87,7 +87,7 @@
 			<button
 				type="button"
 				onclick={onApplyPolish}
-				class="bg-primary/10 text-foreground hover:bg-muted inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 font-medium transition-colors"
+				class="bg-chat-accent-muted text-chat-text-primary hover:bg-chat-surface-hover inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 font-medium transition-colors"
 			>
 				<Check class="size-3" aria-hidden="true" />
 				Apply
@@ -95,10 +95,10 @@
 		</div>
 	</div>
 {:else}
-	<div class="ai-enter flex w-full flex-col gap-1.5">
+	<div class="chat-message-enter flex w-full flex-col gap-1.5">
 		<div
 			class={cn(
-				"flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-solid px-2.5 py-2 text-xs",
+				"flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border px-2.5 py-2 text-xs",
 				statusClasses
 			)}
 		>
@@ -121,7 +121,7 @@
 					onclick={onUndo}
 					disabled={undoing}
 					class={cn(
-						"text-muted-foreground hover:text-foreground hover:bg-muted border-border bg-card ml-auto inline-flex items-center gap-1 rounded-md border border-solid px-2 py-1 font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50",
+						"text-chat-text-secondary hover:text-chat-text-primary hover:bg-chat-surface-hover border-chat-border-subtle bg-chat-bg ml-auto inline-flex items-center gap-1 rounded-md border px-2 py-1 font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50",
 						undoing && "cursor-wait"
 					)}
 				>

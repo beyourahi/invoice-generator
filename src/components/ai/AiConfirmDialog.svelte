@@ -62,24 +62,24 @@
 		transition:fade={{ duration: motionDuration("fast") }}
 	>
 		<div
-			class="border-border bg-popover flex max-h-[85vh] w-[min(30rem,calc(100vw-2rem))] flex-col rounded-2xl border border-solid shadow-2xl"
+			class="border-chat-border bg-chat-bg flex max-h-[85vh] w-[min(30rem,calc(100vw-2rem))] flex-col rounded-2xl border shadow-[var(--chat-shadow)]"
 			transition:scale={{ duration: motionDuration("base"), start: 0.95, easing: cubicOut }}
 		>
-			<div class="border-border flex items-center gap-2 border-b border-solid px-5 py-4">
+			<div class="border-chat-border flex items-center gap-2 border-b px-5 py-4">
 				<ShieldCheck class="size-4 shrink-0 text-amber-300" aria-hidden="true" />
-				<h2 id="ai-confirm-title" class="text-foreground text-sm font-medium text-balance">
+				<h2 id="ai-confirm-title" class="text-chat-text-primary text-sm font-medium text-balance">
 					{isBatch ? `Confirm ${ai.pendingConfirmations.length} operations` : "Confirm this change"}
 				</h2>
 			</div>
 
-			<div class="ai-scroll flex-1 space-y-3 overflow-y-auto px-5 py-4">
+			<div class="chat-scrollbar flex-1 space-y-3 overflow-y-auto px-5 py-4">
 				{#if isBatch}
-					<p class="text-muted-foreground text-sm text-pretty">
+					<p class="text-chat-text-secondary text-sm text-pretty">
 						Review the proposed changes below. Toggle reject on any item to skip it.
 					</p>
-					<ul class="border-border max-h-72 space-y-2 overflow-y-auto rounded-lg border border-solid p-2">
+					<ul class="border-chat-border-subtle max-h-72 space-y-2 overflow-y-auto rounded-lg border p-2">
 						{#each ai.pendingConfirmations as req (req.toolCallId)}
-							<li class="border-border bg-card rounded-md border border-solid p-2 text-xs">
+							<li class="border-chat-border-subtle bg-chat-surface rounded-md border p-2 text-xs">
 								<div class="flex items-start gap-2">
 									<input
 										type="checkbox"
@@ -91,20 +91,20 @@
 									<div class="flex flex-1 flex-col gap-1">
 										<span
 											class={rejected.has(req.toolCallId)
-												? "text-muted-foreground line-through"
-												: "text-foreground"}
+												? "text-chat-text-muted line-through"
+												: "text-chat-text-primary"}
 										>
 											{req.humanLabel}
 										</span>
 										<span
-											class="text-muted-foreground font-mono text-[10px] tracking-wide uppercase"
+											class="text-chat-text-muted font-mono text-[10px] tracking-wide uppercase"
 										>
 											{toolLabel(req.toolName)}
 										</span>
 										{#if req.anomalies.length > 0}
 											<AiAnomalyWarning anomalies={req.anomalies} />
 										{/if}
-										<span class="text-muted-foreground text-[10px] text-pretty">
+										<span class="text-chat-text-muted text-[10px] text-pretty">
 											{req.inverseSummary}
 										</span>
 									</div>
@@ -112,28 +112,28 @@
 							</li>
 						{/each}
 					</ul>
-					<p class="text-muted-foreground text-xs text-pretty">
+					<p class="text-chat-text-muted text-xs text-pretty">
 						{ai.pendingConfirmations.length - rejected.size} will run; {rejected.size} will be rejected.
 					</p>
 				{:else}
-					<p class="text-muted-foreground text-sm text-pretty">{first.humanLabel}.</p>
+					<p class="text-chat-text-secondary text-sm text-pretty">{first.humanLabel}.</p>
 
 					{#if first.diff.length > 0}
-						<div class="border-border bg-background space-y-2.5 rounded-lg border border-solid p-3">
+						<div class="border-chat-border-subtle bg-chat-surface space-y-2.5 rounded-lg border p-3">
 							{#each first.diff as row, i (i)}
 								<div class="space-y-1">
-									<div class="text-muted-foreground font-mono text-[10px] tracking-wide uppercase">
+									<div class="text-chat-text-muted font-mono text-[10px] tracking-wide uppercase">
 										{row.label}
 									</div>
 									<div class="flex items-start gap-2 text-xs">
-										<span class="text-destructive/70 shrink-0 font-mono select-none">−</span>
-										<span class="text-muted-foreground min-w-0 break-words line-through">
+										<span class="shrink-0 font-mono text-red-300/70 select-none">−</span>
+										<span class="text-chat-text-muted min-w-0 break-words line-through">
 											{row.current}
 										</span>
 									</div>
 									<div class="flex items-start gap-2 text-xs">
-										<span class="text-courier-accent shrink-0 font-mono select-none">+</span>
-										<span class="text-foreground min-w-0 font-medium break-words">
+										<span class="shrink-0 font-mono text-emerald-300 select-none">+</span>
+										<span class="text-chat-text-primary min-w-0 font-medium break-words">
 											{row.proposed}
 										</span>
 									</div>
@@ -146,26 +146,26 @@
 						<AiAnomalyWarning anomalies={first.anomalies} />
 					{/if}
 
-					<p class="text-muted-foreground flex items-start gap-1.5 text-[11px] text-pretty">
+					<p class="text-chat-text-muted flex items-start gap-1.5 text-[11px] text-pretty">
 						<Undo2 class="mt-px size-3 shrink-0" aria-hidden="true" />
 						<span>{first.inverseSummary}</span>
 					</p>
 				{/if}
 			</div>
 
-			<div class="border-border flex items-center justify-end gap-2 border-t border-solid px-5 py-4">
+			<div class="border-chat-border flex items-center justify-end gap-2 border-t px-5 py-4">
 				<button
 					type="button"
 					onclick={isBatch ? onCancelAll : onReject}
 					use:focusOnMount
-					class="border-border bg-background text-foreground hover:bg-muted focus-visible:ring-ring inline-flex h-9 cursor-pointer items-center rounded-md border border-solid px-4 text-sm transition-colors focus:outline-none focus-visible:ring-2"
+					class="border-chat-border-subtle bg-chat-surface text-chat-text-primary hover:bg-chat-surface-hover focus-visible:ring-chat-accent inline-flex h-9 cursor-pointer items-center rounded-md border px-4 text-sm transition-colors focus:outline-none focus-visible:ring-2"
 				>
 					{isBatch ? "Reject all" : "Reject"}
 				</button>
 				<button
 					type="button"
 					onclick={isBatch ? onApplyAll : onConfirm}
-					class="bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:ring-ring inline-flex h-9 cursor-pointer items-center rounded-md px-4 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2"
+					class="bg-chat-accent text-chat-bg hover:bg-chat-text-primary focus-visible:ring-chat-accent inline-flex h-9 cursor-pointer items-center rounded-md px-4 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2"
 				>
 					{isBatch ? "Apply selected" : "Confirm"}
 				</button>
