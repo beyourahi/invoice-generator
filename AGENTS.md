@@ -337,6 +337,7 @@ Every agent response must be:
 
 - **Secrets in `.dev.vars` only** — `BETTER_AUTH_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` must live in `.dev.vars` (gitignored) or Cloudflare dashboard secrets. Never commit them. `BETTER_AUTH_URL` is a non-secret binding in `wrangler.jsonc`.
 - **No `.env` or `.dev.vars` committed** — hard requirement
+- **`E2E_BYPASS_AUTH` is dev-only** — when set to `"true"` in `.dev.vars`, `hooks.server.ts` synthesizes a test user + session for every request (including `/api/*`), skipping Google OAuth. Use only for local Wrangler preview / E2E runs. Never set in `wrangler.jsonc` or production secrets, and never reintroduce the removed `?__dev_bypass=1` URL param.
 - **Server-side scope** — `hooks.server.ts` handles auth sessions and security headers; `+page.server.ts` / `+layout.server.ts` load data; `src/routes/api/` holds the REST API for data persistence and the AI Copilot (model inference, quota, spend cap, undo). The PDF pipeline (`builder.ts`, `generator.ts`, `sequential-download.ts`, `zip.ts`) stays client-side — never move PDF generation server-side.
 - **CSP headers are applied by `hooks.server.ts`** — do not bypass or relax the Content-Security-Policy. If a new resource origin is needed (fonts, scripts), add it to the `CSP` array in `hooks.server.ts` with minimal scope.
 

@@ -465,6 +465,7 @@ Configured in `wrangler.jsonc`:
 - **AI**: Workers AI binding (required for the AI Copilot)
 - **AI_QUOTA_KV**: KV namespace backing the AI Copilot per-user daily turn quota and monthly USD spend cap (optional — both disabled if absent)
 - **vars**: `BETTER_AUTH_URL`, `AI_GATEWAY_SLUG` (AI Gateway route), `AI_COPILOT_ENABLED` (feature flag), `AI_MONTHLY_CAP_USD` (monthly AI spend cap, USD)
+- **`E2E_BYPASS_AUTH`** (dev-only, not in `wrangler.jsonc`): when set to `"true"` in `.dev.vars`, `hooks.server.ts` synthesizes a test user + session and skips Google OAuth entirely. Lets `bun run preview` exercise auth-gated UI and `/api/*` routes without OAuth. Must never be set in production.
 - **Compatibility**: `nodejs_compat` flag
 - Run `bun run cf-typegen` after any `wrangler.jsonc` changes
 
@@ -551,6 +552,8 @@ When encountering unfamiliar patterns, check in this order:
 17. **AI Copilot is gated by `AI_COPILOT_ENABLED`** — setting the var to `"false"` disables the feature in `+layout.server.ts` and `+page.server.ts`. The `AI` binding is required when enabled; `AI_QUOTA_KV` is optional (daily quota and monthly spend cap are skipped if absent).
 
 18. **Every AI tool must produce an inverse** — each executor in `$lib/ai/tools.ts` returns an `InverseRecord` so the action can be reversed via `applyInverse`. When adding or changing a tool, update its inverse in `$lib/ai/inverse.ts` in lockstep, or undo will silently break.
+
+19. **Dev auth bypass is env-gated, not URL-gated** — to exercise auth-gated flows locally, set `E2E_BYPASS_AUTH=true` in `.dev.vars` and run `bun run preview`. The bypass lives in `hooks.server.ts` and synthesizes `event.locals.user`/`session` for every request, so `/api/*` routes (which gate via `requireApiContext`) also pass. The old `?__dev_bypass=1` URL param has been removed — do not reintroduce it.
 
 ---
 

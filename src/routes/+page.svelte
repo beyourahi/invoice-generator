@@ -89,20 +89,20 @@
 {/if}
 
 <main
-	class="flex w-full min-w-0 grow flex-col items-center gap-10 px-4 pt-12 pb-8 sm:gap-12 sm:px-6 sm:pt-16 sm:pb-10 lg:gap-16 lg:px-8 lg:pt-20"
+	class="flex w-full min-w-0 grow flex-col items-center gap-12 px-4 pt-16 pb-6 sm:gap-16 sm:pt-20 sm:pb-8 lg:gap-20"
 >
 	<div use:reveal>
 		<Heading />
 	</div>
 
-	<div class="flex w-full min-w-0 flex-col gap-8 sm:gap-10 lg:gap-12">
+	<div class="container flex w-full min-w-0 flex-col gap-8 sm:gap-10 lg:gap-12">
 		<Tabs.Root bind:value={activeTab} class="gap-6">
 			<Tabs.List class="w-full self-center group-data-horizontal/tabs:h-auto sm:w-fit">
-				<Tabs.Trigger value="details" class="h-auto min-h-11 flex-1 gap-2 px-4 py-3 text-base sm:flex-initial sm:px-6">
+				<Tabs.Trigger value="details" class="h-auto min-h-11 gap-2 px-6 py-3 text-base">
 					<SquarePen aria-hidden="true" />
 					Details
 				</Tabs.Trigger>
-				<Tabs.Trigger value="preview" class="h-auto min-h-11 flex-1 gap-2 px-4 py-3 text-base sm:flex-initial sm:px-6">
+				<Tabs.Trigger value="preview" class="h-auto min-h-11 gap-2 px-6 py-3 text-base">
 					<ScanLine aria-hidden="true" />
 					Preview
 				</Tabs.Trigger>
@@ -110,14 +110,14 @@
 
 			<Tabs.Content value="details">
 				<div
-					class="grid w-full min-w-0 grid-cols-1 items-start gap-8 sm:gap-10"
+					class="grid w-full min-w-0 grid-cols-1 items-start gap-6"
 					in:fade={{ duration: motionDuration("fast") }}
 				>
 					<div class="min-w-0" use:reveal={{ delay: 0.05 }}>
 						<FixedSenderPanel />
 					</div>
 
-					<div class="min-w-0 space-y-4" use:reveal={{ delay: 0.1 }}>
+					<div class="min-w-0 space-y-3" use:reveal={{ delay: 0.1 }}>
 						<div class="flex items-center justify-between">
 							<h2 class="flex items-center gap-2 text-base font-semibold text-balance">
 								<Users size={15} aria-hidden="true" />
@@ -140,7 +140,7 @@
 								</div>
 							</button>
 						{:else}
-							<div class="space-y-4" bind:this={clientListEl}>
+							<div class="space-y-3" bind:this={clientListEl}>
 								{#each session.clients as client, i (client.id)}
 									<ClientCard
 										{client}
