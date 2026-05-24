@@ -119,3 +119,28 @@
 		transform: scaleY(0.6);
 	}
 }
+
+.chat-scrollbar::-webkit-scrollbar {
+	width: 4px;
+	background: transparent;
+}
+
+.chat-scrollbar::-webkit-scrollbar-thumb {
+	border-radius: 4px;
+	background: oklch(0.3 0 0);
+}
+
+@media (hover: hover) and (pointer: fine) {
+	.chat-scrollbar::-webkit-scrollbar-thumb:hover {
+		background: oklch(0.4 0 0);
+	}
+}
+
+.chat-scrollbar::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+.chat-scrollbar {
+	scrollbar-width: thin;
+	scrollbar-color: oklch(0.3 0 0) transparent;
+}
