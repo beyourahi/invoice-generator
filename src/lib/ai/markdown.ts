@@ -49,84 +49,90 @@ export interface MdCodeBlock {
 
 export type MdBlock = MdParagraph | MdHeading | MdList | MdCodeBlock;
 
-const URL_RE = /https?:\/\/[^\s<>()]+[^\s<>().,;:!?'"]/g;
+export type Segment =
+	| { type: "text"; value: string }
+	| { type: "bold"; value: string }
+	| { type: "italic"; value: string }
+	| { type: "break" }
+	| { type: "bullet"; value: string }
+	| { type: "link"; value: string; href: string }
+	| { type: "email"; value: string; href: string };
 
-const pushText = (nodes: MdInline[], text: string): void => {
-	if (!text) return;
-	let last = 0;
-	for (const match of text.matchAll(URL_RE)) {
-		const start = match.index ?? 0;
-		if (start > last) nodes.push({ type: "text", value: text.slice(last, start) });
-		nodes.push({ type: "link", href: match[0], label: match[0] });
-		last = start + match[0].length;
+const LINK_PATTERN =
+	/(https?:\/\/[^\s),\]]+|[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}|\b[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)*\.(?:com|org|net|io|app|co|dev|shop|store|ai|xyz|tech|me|info|biz|design|agency|site|online|world)(?:\/[^\s),\]]*)?)/g;
+
+const parseInlineLinks = (text: string): Segment[] => {
+	const result: Segment[] = [];
+	let lastIndex = 0;
+	let match: RegExpExecArray | null;
+	const re = new RegExp(LINK_PATTERN.source, "g");
+	while ((match = re.exec(text)) !== null) {
+		if (match.index > lastIndex) {
+			result.push({ type: "text", value: text.slice(lastIndex, match.index) });
+		}
+		const matched = match[0];
+		if (matched.includes("@")) {
+			result.push({ type: "email", value: matched, href: `mailto:${matched}` });
+		} else {
+			const cleaned = matched.replace(/[.,;:!?)]+$/, "");
+			const href = /^https?:\/\//.test(cleaned) ? cleaned : `https://${cleaned}`;
+			result.push({ type: "link", value: cleaned, href });
+			const trailingLen = matched.length - cleaned.length;
+			if (trailingLen > 0) {
+				re.lastIndex -= trailingLen;
+			}
+		}
+		lastIndex = re.lastIndex;
 	}
-	if (last < text.length) nodes.push({ type: "text", value: text.slice(last) });
+	if (lastIndex < text.length) {
+		result.push({ type: "text", value: text.slice(lastIndex) });
+	}
+	return result;
 };
 
-const parseInline = (raw: string): MdInline[] => {
-	const nodes: MdInline[] = [];
-	let buffer = "";
-	let i = 0;
-
-	const flush = () => {
-		pushText(nodes, buffer);
-		buffer = "";
-	};
-
-	while (i < raw.length) {
-		if (raw[i] === "`") {
-			const end = raw.indexOf("`", i + 1);
-			if (end > i) {
-				flush();
-				nodes.push({ type: "code", value: raw.slice(i + 1, end) });
-				i = end + 1;
-				continue;
-			}
-		}
-
-		if (raw[i] === "*" && raw[i + 1] === "*") {
-			const end = raw.indexOf("**", i + 2);
-			if (end > i + 1) {
-				flush();
-				nodes.push({ type: "bold", value: raw.slice(i + 2, end) });
-				i = end + 2;
-				continue;
-			}
-		}
-
-		if (raw[i] === "*" && raw[i + 1] !== "*" && raw[i + 1] !== " " && raw[i + 1] !== undefined) {
-			const end = raw.indexOf("*", i + 1);
-			if (end > i + 1 && raw[end - 1] !== " ") {
-				flush();
-				nodes.push({ type: "italic", value: raw.slice(i + 1, end) });
-				i = end + 1;
-				continue;
-			}
-		}
-
-		if (raw[i] === "[") {
-			const close = raw.indexOf("]", i + 1);
-			if (close > i && raw[close + 1] === "(") {
-				const hrefEnd = raw.indexOf(")", close + 2);
-				if (hrefEnd > close) {
-					flush();
-					nodes.push({
-						type: "link",
-						label: raw.slice(i + 1, close),
-						href: raw.slice(close + 2, hrefEnd)
-					});
-					i = hrefEnd + 1;
-					continue;
+export const parseInlineMarkdown = (text: string): Segment[] => {
+	const segments: Segment[] = [];
+	const lines = text.split("\n");
+	for (let li = 0; li < lines.length; li++) {
+		const line = lines[li];
+		if (line.startsWith("- ")) {
+			segments.push({ type: "bullet", value: line.slice(2) });
+		} else {
+			const parts = line.split(/\*\*(.*?)\*\*/g);
+			for (let pi = 0; pi < parts.length; pi++) {
+				if (parts[pi] === "") continue;
+				if (pi % 2 === 1) {
+					segments.push({ type: "bold", value: parts[pi] });
+				} else {
+					const italicParts = parts[pi].split(/(?:^|(?<=\s))_([^_\n]+?)_(?=\s|$)/g);
+					for (let ii = 0; ii < italicParts.length; ii++) {
+						if (italicParts[ii] === "") continue;
+						if (ii % 2 === 1) {
+							segments.push({ type: "italic", value: italicParts[ii] });
+						} else {
+							segments.push(...parseInlineLinks(italicParts[ii]));
+						}
+					}
 				}
 			}
 		}
-
-		buffer += raw[i];
-		i++;
+		if (li < lines.length - 1 && !line.startsWith("- ")) {
+			segments.push({ type: "break" });
+		}
 	}
+	return segments;
+};
 
-	flush();
-	return nodes;
+const segmentsToInline = (segs: Segment[]): MdInline[] => {
+	const out: MdInline[] = [];
+	for (const s of segs) {
+		if (s.type === "text") out.push({ type: "text", value: s.value });
+		else if (s.type === "bold") out.push({ type: "bold", value: s.value });
+		else if (s.type === "italic") out.push({ type: "italic", value: s.value });
+		else if (s.type === "link") out.push({ type: "link", href: s.href, label: s.value });
+		else if (s.type === "email") out.push({ type: "link", href: s.href, label: s.value });
+	}
+	return out;
 };
 
 const FENCE_BLOCK_RE = /```[\s\S]*?```/g;
@@ -142,7 +148,7 @@ export const sanitizeAssistantText = (raw: string): string => {
 			const parsed: unknown = JSON.parse(trimmed);
 			if (parsed && typeof parsed === "object") return "";
 		} catch {
-			/* not a pure JSON payload — keep the prose */
+			/* not a pure JSON payload */
 		}
 	}
 	text = text.replace(STATE_TOKEN_RE, "").replace(UUID_RE, "");
@@ -157,6 +163,8 @@ const BULLET_RE = /^\s*[-*]\s+(.*)$/;
 const ORDERED_RE = /^\s*\d+[.)]\s+(.*)$/;
 const HEADING_RE = /^\s*#{1,6}\s+(.*)$/;
 const FENCE_RE = /^\s*```/;
+
+const parseInlineToNodes = (raw: string): MdInline[] => segmentsToInline(parseInlineMarkdown(raw));
 
 export const parseMarkdown = (raw: string): MdBlock[] => {
 	const blocks: MdBlock[] = [];
@@ -196,7 +204,7 @@ export const parseMarkdown = (raw: string): MdBlock[] => {
 		const heading = line.match(HEADING_RE);
 		if (heading) {
 			flushPara();
-			blocks.push({ type: "heading", nodes: parseInline(heading[1]) });
+			blocks.push({ type: "heading", nodes: parseInlineToNodes(heading[1]) });
 			i++;
 			continue;
 		}
@@ -207,7 +215,7 @@ export const parseMarkdown = (raw: string): MdBlock[] => {
 			while (i < lines.length) {
 				const match = lines[i].match(BULLET_RE);
 				if (!match) break;
-				items.push(parseInline(match[1]));
+				items.push(parseInlineToNodes(match[1]));
 				i++;
 			}
 			blocks.push({ type: "list", ordered: false, items });
@@ -220,14 +228,14 @@ export const parseMarkdown = (raw: string): MdBlock[] => {
 			while (i < lines.length) {
 				const match = lines[i].match(ORDERED_RE);
 				if (!match) break;
-				items.push(parseInline(match[1]));
+				items.push(parseInlineToNodes(match[1]));
 				i++;
 			}
 			blocks.push({ type: "list", ordered: true, items });
 			continue;
 		}
 
-		para.push(parseInline(line));
+		para.push(parseInlineToNodes(line));
 		i++;
 	}
 
