@@ -65,13 +65,13 @@
 		></button>
 		<div
 			bind:this={panel}
-			class="bg-background absolute inset-x-0 bottom-0 flex h-[100dvh] flex-col"
+			class="bg-chat-bg absolute inset-x-0 bottom-0 flex h-[100dvh] flex-col"
 			transition:fly={{ y: 420, duration: 260, opacity: 1 }}
 		>
 			<button
 				type="button"
 				onclick={close}
-				class="text-muted-foreground hover:text-foreground hover:bg-muted absolute top-3 right-3 z-10 inline-flex size-9 items-center justify-center rounded-lg transition-colors"
+				class="text-chat-icon-muted hover:text-chat-text-primary hover:bg-chat-surface-hover absolute top-3 right-3 z-10 inline-flex size-9 items-center justify-center rounded-lg transition-colors"
 				aria-label="Close Copilot"
 			>
 				<X class="size-5" aria-hidden="true" />
