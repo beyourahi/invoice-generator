@@ -93,7 +93,7 @@
 			const raw = localStorage.getItem(WIDTH_STORAGE_KEY);
 			if (raw && isWidthPreset(raw)) return raw;
 		} catch {
-			/* ignore */
+			// SecurityError / quota: fall back to default.
 		}
 		return "fit";
 	};
@@ -103,7 +103,7 @@
 		try {
 			localStorage.setItem(WIDTH_STORAGE_KEY, value);
 		} catch {
-			/* ignore */
+			// SecurityError / quota: width preset is non-critical — drop silently.
 		}
 	};
 
@@ -125,7 +125,7 @@
 		try {
 			await request.call(el);
 		} catch {
-			/* ignore */
+			// User-gesture or permission rejection; stay windowed.
 		}
 	};
 
@@ -136,7 +136,7 @@
 		try {
 			await exit.call(doc);
 		} catch {
-			/* ignore */
+			// Already exiting; state will resync via fullscreenchange listener.
 		}
 	};
 

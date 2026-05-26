@@ -94,7 +94,7 @@ export const sendMessage = async (message: string, options: SendOptions = {}): P
 			try {
 				payload = await response.json();
 			} catch {
-				/* ignore */
+				// Non-JSON error body (e.g. plain text or empty); fall back to status message below.
 			}
 			const raw =
 				(payload as { message?: string } | null)?.message ?? `Request failed (${response.status})`;

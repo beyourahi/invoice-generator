@@ -148,7 +148,7 @@ export const sanitizeAssistantText = (raw: string): string => {
 			const parsed: unknown = JSON.parse(trimmed);
 			if (parsed && typeof parsed === "object") return "";
 		} catch {
-			/* not a pure JSON payload */
+			// Intentional: parse failure means not pure JSON; fall through.
 		}
 	}
 	text = text.replace(STATE_TOKEN_RE, "").replace(UUID_RE, "");

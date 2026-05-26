@@ -58,9 +58,8 @@ export const handle: Handle = async ({ event, resolve }) => {
 		return resolve(event);
 	}
 
-	// E2E auth bypass: env-gated test affordance for Wrangler preview runs. Synthesizes locals so
-	// auth-gated flows can be exercised without invoking real Google OAuth. Inert unless
-	// E2E_BYPASS_AUTH=true is set in .dev.vars (gitignored). Never set in wrangler.jsonc.
+	// Synthesizes event.locals to bypass Google OAuth for Wrangler preview only.
+	// Trigger: E2E_BYPASS_AUTH=true in .dev.vars (gitignored). MUST NOT appear in wrangler.jsonc.
 	if (event.platform?.env?.E2E_BYPASS_AUTH === "true") {
 		const now = new Date();
 		const userId = "e2e-test-user";
