@@ -61,7 +61,11 @@
 				<div
 					class="bg-chat-accent-subtle flex h-8 w-8 shrink-0 items-center justify-center rounded-lg md:h-9 md:w-9"
 				>
-					<div class="launcher-icon-row launcher-idle-row" style="--launcher-box-row: 4px; --launcher-gap-row: 2px; --launcher-radius-row: 1px;" aria-hidden="true">
+					<div
+						class="launcher-icon-row launcher-idle-row"
+						style="--launcher-box-row: 4px; --launcher-gap-row: 2px; --launcher-radius-row: 1px;"
+						aria-hidden="true"
+					>
 						<div></div>
 						<div></div>
 						<div></div>

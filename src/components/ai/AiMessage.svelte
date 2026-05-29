@@ -28,8 +28,7 @@
 	{#each nodes as node, i (i)}
 		{#if node.type === "text"}{node.value}{:else if node.type === "bold"}<strong
 				class="text-chat-text-primary font-semibold">{node.value}</strong
-			>{:else if node.type === "italic"}<em class="text-chat-text-secondary opacity-80"
-				>{node.value}</em
+			>{:else if node.type === "italic"}<em class="text-chat-text-secondary opacity-80">{node.value}</em
 			>{:else if node.type === "code"}<code
 				class="bg-chat-surface text-chat-text-primary rounded px-1 py-0.5 font-mono text-[0.85em]"
 				>{node.value}</code
@@ -51,7 +50,9 @@
 		)}
 	>
 		{#if isUser}
-			<div class="bg-chat-user-bubble text-chat-text-primary rounded-2xl rounded-br-md px-4 py-2.5 text-sm leading-relaxed">
+			<div
+				class="bg-chat-user-bubble text-chat-text-primary rounded-2xl rounded-br-md px-4 py-2.5 text-sm leading-relaxed"
+			>
 				<span class="break-words whitespace-pre-wrap">{message.content}</span>
 			</div>
 		{:else if message.content}

@@ -80,6 +80,6 @@
 			</div>
 		{/if}
 
-		<AiComposer bind:this={composerRef} onSend={onSend} disabled={ai.inputBusy} />
+		<AiComposer bind:this={composerRef} {onSend} disabled={ai.inputBusy} />
 	{/if}
 </section>
