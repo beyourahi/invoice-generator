@@ -134,6 +134,7 @@ Each worktree shares the same repository. Agents commit directly to their worktr
 10. PDF pipeline integrity: `active.ts → builder.ts → resolver.ts → generator.ts` chain is unbroken
 11. Generation queue derives from `getGeneratableInvoices()` / `firstGeneratableInvoice()` in `$lib/invoice/active.ts` — no caller iterates raw `session.clients` for generation
 12. `setClientActive` / `setInvoiceActive` preserve optimistic-update-with-rollback semantics
+13. No nested interactive elements — no `<button>`/`<Button>` inside a native `<button>` (clickable card headers use `div[role="button"]` + keydown), so SSR hydration cannot double-render the page
 
 ---
 
@@ -270,6 +271,7 @@ The invoice-generator shares conventions with all other SvelteKit projects in `~
 5. **Tailwind CSS v4** — no `tailwind.config.js`, no hardcoded colors, CSS-first `@theme inline`
 6. **shadcn-svelte auto-generated files** — `$lib/components/ui/` is never manually edited
 7. **Active filter is centralized** — every generation/preview path consumes `$lib/invoice/active.ts`; never iterate `session.clients → client.invoices` directly for generation
+8. **No nested interactive elements** — never put a `<button>`/`<Button>` inside a native `<button>` (invalid HTML; breaks SSR hydration and double-renders the whole page). Collapsible card headers use `div[role="button"]` + `tabindex="0"` + Enter/Space `onkeydown`, as in `ClientCard`/`PaymentMethodCard`
 
 ---
 
