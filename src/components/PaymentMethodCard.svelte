@@ -74,6 +74,13 @@
 		moveMethod(direction);
 	};
 
+	const toggleKey = (e: KeyboardEvent) => {
+		if (e.key === "Enter" || e.key === " ") {
+			e.preventDefault();
+			onToggle?.(!expanded);
+		}
+	};
+
 	const overflowActions = $derived([
 		{
 			label: "Move up",
@@ -97,10 +104,12 @@
 </script>
 
 <div class="border-border bg-card rounded-lg border">
-	<button
-		type="button"
+	<div
+		role="button"
+		tabindex="0"
 		onclick={() => onToggle?.(!expanded)}
-		class="pointer-fine:hover:bg-accent/40 flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors"
+		onkeydown={toggleKey}
+		class="pointer-fine:hover:bg-accent/40 flex w-full cursor-pointer items-center gap-3 px-3 py-2.5 text-left transition-colors"
 		aria-expanded={expanded}
 		aria-controls="method-panel-{method.id}"
 	>
@@ -157,7 +166,7 @@
 				aria-hidden="true"
 			/>
 		</div>
-	</button>
+	</div>
 
 	{#if expanded}
 		<div
