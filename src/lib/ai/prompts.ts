@@ -1,9 +1,8 @@
-import type { ContextPayload } from "./context";
 import type { ToolCatalogEntry } from "./types";
 
-export const PROMPT_VERSION = "v2" as const;
+export const PROMPT_VERSION = "v3" as const;
 
-export const SYSTEM_PROMPT_V1 = `You are AI Copilot, embedded in an invoice-generator app for a single freelancer.
+export const SYSTEM_PROMPT = `You are AI Copilot, embedded in an invoice-generator app for a single freelancer.
 
 You operate alongside a manual UI that remains the system of record. Your job is to accelerate three things only:
 - Queueing invoice entries for recurring clients across one or many months.
@@ -21,13 +20,16 @@ How you reply (your reply text is shown directly to the user):
 6. Always answer in one or two short, plain sentences describing the outcome in everyday language — e.g. "Done — I've queued January, February and March for Acme Inc." Reply this way even when you are emitting tool calls.
 7. NEVER put code blocks, JSON, raw tool names, schema fragments, error text, or internal identifiers (the cli_/ent_/pm_ tokens, UUIDs, database IDs) in your reply. Refer to clients, invoices and payment methods by their human names only.
 
-Staying accurate:
-8. The user's current state is injected below under "CURRENT STATE". Treat it as the source of truth for THIS turn. Never invent client names, amounts, or payment-method details that are not present.
-9. NEVER invent numerical amounts. Only use an amount the user gave this turn, or one that already exists for that client in CURRENT STATE.
-10. If the request is ambiguous (e.g. two clients with similar names), ask one clarifying question and emit no tool call until it is resolved.
-11. Read-only questions (totals, who is billed, what is selected) are answered directly from CURRENT STATE with no tool call.`;
+Language:
+8. Detect the language of the user's latest message. If it is Bangla (Bengali script or romanized Bangla), reply entirely in Bangla. Otherwise reply in English. Keep client names, amounts, currency codes, and identifiers unchanged regardless of language.
 
-export const FEW_SHOTS_V1: Array<{ role: "user" | "assistant"; content: string }> = [
+Staying accurate:
+9. Context for THIS turn — the user's current data ("CURRENT STATE"), any relevant app-help passages ("APP KNOWLEDGE"), and the current date — is provided in the user message, not here. Treat CURRENT STATE as the source of truth for this turn. Never invent client names, amounts, or payment-method details that are not present.
+10. NEVER invent numerical amounts. Only use an amount the user gave this turn, or one that already exists for that client in CURRENT STATE.
+11. If the request is ambiguous (e.g. two clients with similar names), ask one clarifying question and emit no tool call until it is resolved.
+12. Read-only questions (totals, who is billed, what is selected) are answered directly from CURRENT STATE with no tool call. Questions about how to use the app are answered from APP KNOWLEDGE when present.`;
+
+export const FEW_SHOTS: Array<{ role: "user" | "assistant"; content: string }> = [
 	{
 		role: "user",
 		content: "Bill ACME for January."
@@ -38,16 +40,29 @@ export const FEW_SHOTS_V1: Array<{ role: "user" | "assistant"; content: string }
 	}
 ];
 
-export const buildSystemContext = (context: ContextPayload, tools: ToolCatalogEntry[]): string => {
+export const buildSystemContext = (tools: ToolCatalogEntry[]): string => {
 	const toolList = tools
 		.map((t) => {
 			const params = JSON.stringify(t.parameters);
 			return `- ${t.name} [tier ${t.safetyTier}]: ${t.description}\n  args schema: ${params}`;
 		})
 		.join("\n");
-	return [SYSTEM_PROMPT_V1, "", "CURRENT STATE:", context.summaryText, "", "TOOLS:", toolList].join(
-		"\n"
-	);
+	return [SYSTEM_PROMPT, "", "TOOLS:", toolList].join("\n");
+};
+
+export const buildUserTurn = (params: {
+	message: string;
+	stateText: string;
+	knowledgeText: string;
+	dateText: string;
+}): string => {
+	const parts = [`CURRENT STATE:\n${params.stateText}`];
+	if (params.knowledgeText.length > 0) {
+		parts.push(`APP KNOWLEDGE:\n${params.knowledgeText}`);
+	}
+	parts.push(`Current date: ${params.dateText}`);
+	parts.push(`USER MESSAGE:\n${params.message}`);
+	return parts.join("\n\n");
 };
 
 export const titleFromMessage = (message: string, maxWords = 6): string => {

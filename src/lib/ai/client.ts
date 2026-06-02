@@ -1,6 +1,5 @@
 import type { Frame, ParsedToolCall, ToolCatalogEntry } from "./types";
-
-export const MODEL_ID = "@cf/openai/gpt-oss-120b" as const;
+import { openGatewayChat } from "./gateway";
 
 export interface RunChatEnv {
 	AI: Ai;
@@ -11,7 +10,9 @@ export interface RunChatParams {
 	systemContext: string;
 	history: Array<{ role: "user" | "assistant" | "system"; content: string }>;
 	userMessage: string;
+	conversationId: string;
 	tools: ToolCatalogEntry[];
+	images?: string[];
 	maxTokens?: number;
 	cacheKey?: string;
 }
@@ -21,6 +22,7 @@ export interface RawChatResult {
 	toolCalls: ParsedToolCall[];
 	inputTokens: number;
 	outputTokens: number;
+	servedModel?: string;
 }
 
 interface StreamToolCallDelta {
@@ -31,6 +33,7 @@ interface StreamToolCallDelta {
 
 interface StreamChoiceDelta {
 	content?: string | null;
+	reasoning?: string | null;
 	tool_calls?: StreamToolCallDelta[];
 }
 
@@ -38,6 +41,10 @@ interface StreamChunk {
 	choices?: Array<{ delta?: StreamChoiceDelta }>;
 	usage?: { prompt_tokens?: number; completion_tokens?: number } | null;
 }
+
+type ContentPart =
+	| { type: "text"; text: string }
+	| { type: "image_url"; image_url: { url: string } };
 
 const buildToolsPayload = (tools: ToolCatalogEntry[]) =>
 	tools.map((t) => ({
@@ -49,12 +56,12 @@ const buildToolsPayload = (tools: ToolCatalogEntry[]) =>
 		}
 	}));
 
-const buildGatewayOptions = (env: RunChatEnv, cacheKey?: string) => {
-	if (!env.AI_GATEWAY_SLUG || env.AI_GATEWAY_SLUG.length === 0) return undefined;
-	const gateway = cacheKey
-		? { id: env.AI_GATEWAY_SLUG, skipCache: false, cacheKey }
-		: { id: env.AI_GATEWAY_SLUG, skipCache: true };
-	return { gateway };
+const buildUserContent = (text: string, images?: string[]): string | ContentPart[] => {
+	if (!images || images.length === 0) return text;
+	return [
+		{ type: "text", text },
+		...images.map((url): ContentPart => ({ type: "image_url", image_url: { url } }))
+	];
 };
 
 export const runChatFrames = async function* (
@@ -64,14 +71,14 @@ export const runChatFrames = async function* (
 	const messages = [
 		{ role: "system", content: params.systemContext },
 		...params.history.map((m) => ({ role: m.role, content: m.content })),
-		{ role: "user", content: params.userMessage }
+		{ role: "user", content: buildUserContent(params.userMessage, params.images) }
 	];
 
 	const input: Record<string, unknown> = {
 		messages,
-		max_completion_tokens: params.maxTokens ?? 2048,
+		max_tokens: params.maxTokens ?? 1536,
 		temperature: 0.2,
-		reasoning_effort: "medium",
+		chat_template_kwargs: { thinking: false },
 		stream: true,
 		stream_options: { include_usage: true }
 	};
@@ -84,11 +91,14 @@ export const runChatFrames = async function* (
 
 	let stream: ReadableStream<Uint8Array>;
 	try {
-		stream = (await env.AI.run(
-			MODEL_ID,
-			input,
-			buildGatewayOptions(env, params.cacheKey)
-		)) as unknown as ReadableStream<Uint8Array>;
+		const gatewayResult = await openGatewayChat(env, input, {
+			conversationId: params.conversationId,
+			cacheKey: params.cacheKey
+		});
+		stream = gatewayResult.stream;
+		if (gatewayResult.servedModel) {
+			result.servedModel = gatewayResult.servedModel;
+		}
 	} catch (err) {
 		yield {
 			t: "error",

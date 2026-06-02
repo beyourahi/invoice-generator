@@ -125,6 +125,22 @@ const createAiStore = () => {
 	let anomalySettings = $state<AnomalySettings>({ ...DEFAULT_ANOMALY_SETTINGS });
 	let mobileOpen = $state(false);
 	let inputFocusNonce = $state(0);
+	let pendingImages = $state<string[]>([]);
+
+	const MAX_PENDING_IMAGES = 3;
+
+	const addPendingImage = (dataUrl: string) => {
+		if (pendingImages.length >= MAX_PENDING_IMAGES) return;
+		pendingImages = [...pendingImages, dataUrl];
+	};
+
+	const removePendingImage = (index: number) => {
+		pendingImages = pendingImages.filter((_, i) => i !== index);
+	};
+
+	const clearPendingImages = () => {
+		pendingImages = [];
+	};
 
 	const hydrate = (payload: AiHydrationPayload) => {
 		enabled = payload.enabled;
@@ -388,6 +404,15 @@ const createAiStore = () => {
 		get inputFocusNonce() {
 			return inputFocusNonce;
 		},
+		get pendingImages() {
+			return pendingImages;
+		},
+		get maxPendingImages() {
+			return MAX_PENDING_IMAGES;
+		},
+		addPendingImage,
+		removePendingImage,
+		clearPendingImages,
 		hydrate,
 		setEnabled,
 		setMobileOpen,

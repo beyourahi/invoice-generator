@@ -26,7 +26,7 @@
 	);
 
 	const onSend = async (text: string) => {
-		if (!text.trim() || ai.inputBusy) return;
+		if ((!text.trim() && ai.pendingImages.length === 0) || ai.inputBusy) return;
 		await sendMessage(text);
 	};
 

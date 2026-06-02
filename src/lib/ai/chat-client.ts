@@ -70,6 +70,7 @@ const fetchUpdatedAppState = async (): Promise<void> => {
 
 export const sendMessage = async (message: string, options: SendOptions = {}): Promise<void> => {
 	const conversationId = ai.activeConversationId;
+	const images = ai.pendingImages.length > 0 ? [...ai.pendingImages] : undefined;
 	const userMessageId = crypto.randomUUID();
 	ai.appendUserMessage(userMessageId, message);
 
@@ -85,9 +86,11 @@ export const sendMessage = async (message: string, options: SendOptions = {}): P
 		const response = await fetch("/api/ai/chat", {
 			method: "POST",
 			headers: { "content-type": "application/json" },
-			body: JSON.stringify({ conversationId, message }),
+			body: JSON.stringify({ conversationId, message, images }),
 			signal: options.signal
 		});
+
+		if (response.ok) ai.clearPendingImages();
 
 		if (!response.ok) {
 			let payload: unknown = null;

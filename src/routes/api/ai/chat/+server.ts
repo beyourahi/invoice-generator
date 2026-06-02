@@ -20,20 +20,24 @@ import { logChatTurn } from "$lib/server/log";
 import { projectAppState, decodeTokens } from "$lib/ai/context";
 import {
 	buildSystemContext,
+	buildUserTurn,
 	titleFromMessage,
 	PROMPT_VERSION,
-	FEW_SHOTS_V1
+	FEW_SHOTS
 } from "$lib/ai/prompts";
 import { runChatFrames, type RawChatResult } from "$lib/ai/client";
 import { salvageTextToolCalls } from "$lib/ai/salvage";
 import { sseStream } from "$lib/ai/streaming";
+import { windowHistory } from "$lib/ai/window";
+import { retrieveAppKnowledge, formatKnowledge } from "$lib/ai/rag";
 import { TOOLS_CATALOG } from "$lib/ai/tools-catalog";
 import { argSchemas, isKnownToolName } from "$lib/ai/schemas";
 import type { Frame, ParsedToolCall } from "$lib/ai/types";
 
 const bodySchema = z.object({
 	conversationId: z.string().nullable().optional(),
-	message: z.string().min(1).max(8000)
+	message: z.string().min(1).max(8000),
+	images: z.array(z.string().min(1).max(8_000_000)).max(3).optional()
 });
 
 const toHistory = (
@@ -130,7 +134,7 @@ export const POST: RequestHandler = async (event) => {
 	}
 	const activeConversationId = conversation.id;
 
-	const history = toHistory(await listMessages(db, activeConversationId, 100));
+	const history = windowHistory(toHistory(await listMessages(db, activeConversationId, 100)));
 
 	await appendMessage(db, activeConversationId, {
 		role: "user",
@@ -139,8 +143,22 @@ export const POST: RequestHandler = async (event) => {
 
 	const appState = await loadAppState(db, userId);
 	const context = projectAppState(appState);
-	const systemContext = buildSystemContext(context, TOOLS_CATALOG);
-	const withFewShots = history.length === 0 ? [...FEW_SHOTS_V1, ...history] : history;
+	const systemContext = buildSystemContext(TOOLS_CATALOG);
+	const withFewShots = history.length === 0 ? [...FEW_SHOTS, ...history] : history;
+	let knowledgeText = "";
+	if (env.VECTORIZE) {
+		try {
+			knowledgeText = formatKnowledge(await retrieveAppKnowledge(env, parsed.message));
+		} catch {
+			knowledgeText = "";
+		}
+	}
+	const userTurn = buildUserTurn({
+		message: parsed.message,
+		stateText: context.summaryText,
+		knowledgeText,
+		dateText: new Date().toISOString().slice(0, 10)
+	});
 	const cacheKey = await sha256Hex(`${PROMPT_VERSION}|${context.summaryText}|${parsed.message}`);
 	const turnId = crypto.randomUUID();
 
@@ -177,7 +195,9 @@ export const POST: RequestHandler = async (event) => {
 				runChatFrames(env, {
 					systemContext,
 					history: withFewShots,
-					userMessage: parsed.message,
+					userMessage: userTurn,
+					conversationId: activeConversationId,
+					images: parsed.images,
 					tools: TOOLS_CATALOG,
 					cacheKey
 				}),
@@ -209,7 +229,7 @@ export const POST: RequestHandler = async (event) => {
 				);
 				const retryHistory = [
 					...withFewShots,
-					{ role: "user" as const, content: parsed.message },
+					{ role: "user" as const, content: userTurn },
 					{
 						role: "assistant" as const,
 						content: `${first.text}\n\n[Attempted tool calls: ${JSON.stringify(
@@ -222,6 +242,7 @@ export const POST: RequestHandler = async (event) => {
 						systemContext,
 						history: retryHistory,
 						userMessage: correctiveMessage(invalid),
+						conversationId: activeConversationId,
 						tools: TOOLS_CATALOG
 					}),
 					false

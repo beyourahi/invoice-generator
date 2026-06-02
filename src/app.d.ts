@@ -20,10 +20,12 @@ declare global {
 				GOOGLE_CLIENT_ID: string;
 				GOOGLE_CLIENT_SECRET: string;
 				AI: Ai;
+				VECTORIZE: VectorizeIndex;
 				AI_QUOTA_KV?: KVNamespace;
 				AI_GATEWAY_SLUG?: string;
 				AI_COPILOT_ENABLED?: string;
 				AI_MONTHLY_CAP_USD?: string;
+				SEED_SECRET?: string;
 				E2E_BYPASS_AUTH?: string;
 			};
 			cf: CfProperties;

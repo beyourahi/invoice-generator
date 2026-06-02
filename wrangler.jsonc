@@ -27,6 +27,12 @@
 			"remote": true
 		}
 	],
+	"vectorize": [
+		{
+			"binding": "VECTORIZE",
+			"index_name": "invoice-generator-kb"
+		}
+	],
 	"vars": {
 		"BETTER_AUTH_URL": "https://invoice-generator.beyourahi.workers.dev",
 		"AI_GATEWAY_SLUG": "invoice-generator-ai",

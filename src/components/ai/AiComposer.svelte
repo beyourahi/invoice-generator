@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { ai } from "$lib/stores/ai.svelte";
 	import { cn } from "$lib/utils";
-	import { ArrowUp } from "@lucide/svelte";
+	import { ArrowUp, Paperclip } from "@lucide/svelte";
 	import { tick } from "svelte";
+	import AiImageUpload from "./AiImageUpload.svelte";
 
 	let {
 		onSend,
@@ -14,12 +15,15 @@
 
 	let value = $state("");
 	let textareaEl = $state<HTMLTextAreaElement | null>(null);
+	let imageUpload = $state<{ triggerUpload: () => void } | null>(null);
 
 	const MAX_HEIGHT = 200;
 
 	const trimmed = $derived(value.trim());
 	const charCount = $derived(trimmed.length);
-	const canSubmit = $derived(charCount > 0 && !disabled);
+	const hasImages = $derived(ai.pendingImages.length > 0);
+	const attachFull = $derived(ai.pendingImages.length >= ai.maxPendingImages);
+	const canSubmit = $derived((charCount > 0 || hasImages) && !disabled);
 
 	$effect(() => {
 		if (!textareaEl) return;
@@ -35,10 +39,14 @@
 
 	const handleSubmit = () => {
 		if (!canSubmit) return;
-		const text = trimmed;
+		const text = trimmed.length > 0 ? trimmed : "Please review the attached image.";
 		onSend(text);
 		value = "";
 		if (textareaEl) textareaEl.style.height = "auto";
+	};
+
+	const handleUploadError = (message: string) => {
+		ai.setError(message);
 	};
 
 	export const setValue = (next: string) => {
@@ -58,6 +66,8 @@
 	<div
 		class="border-chat-border bg-chat-surface relative rounded-2xl border px-3 pt-2.5 pb-9 transition-colors duration-150 md:px-4 md:pt-3 md:pb-10"
 	>
+		<AiImageUpload bind:this={imageUpload} onError={handleUploadError} />
+
 		<textarea
 			bind:this={textareaEl}
 			bind:value
@@ -78,6 +88,24 @@
 			)}
 			style="max-height: {MAX_HEIGHT}px;"
 		></textarea>
+
+		<button
+			type="button"
+			onclick={() => imageUpload?.triggerUpload()}
+			disabled={disabled || attachFull}
+			aria-label={attachFull
+				? `Attachment limit reached (${ai.maxPendingImages})`
+				: "Attach images"}
+			title={attachFull ? `Up to ${ai.maxPendingImages} images` : "Attach images"}
+			class={cn(
+				"absolute bottom-2.5 left-3 rounded-lg p-2 transition-all duration-200 md:left-4",
+				disabled || attachFull
+					? "text-chat-text-muted/50 cursor-not-allowed"
+					: "text-chat-text-muted hover:bg-chat-surface-hover hover:text-chat-text-primary active:scale-95"
+			)}
+		>
+			<Paperclip class="h-4 w-4" aria-hidden="true" />
+		</button>
 
 		<div class="absolute right-3 bottom-2.5 flex items-center gap-2">
 			<button
@@ -115,7 +143,9 @@
 			</button>
 		</div>
 
-		<span class="text-chat-text-muted/60 absolute bottom-2.5 left-4 text-[10px]">
+		<span
+			class="text-chat-text-muted/60 pointer-events-none absolute bottom-[1.15rem] left-12 text-[10px] md:left-14"
+		>
 			{#if disabled}
 				generating…
 			{:else}
