@@ -47,7 +47,7 @@ A SvelteKit app that generates batches of PDF invoices. Users configure a fixed 
 | UI Components   | shadcn-svelte                                               |
 | Authentication  | Better Auth (Google OAuth only)                             |
 | Database        | Cloudflare D1 (SQLite via Drizzle ORM)                      |
-| AI              | Cloudflare Workers AI (GPT-OSS 120B) + AI Gateway           |
+| AI              | Workers AI via AI Gateway dynamic route + qwen3 RAG (Vectorize) |
 | Validation      | Zod                                                         |
 | PDF Rendering   | html2canvas + jsPDF                                         |
 | ZIP Packaging   | fflate (`zipSync`, `level: 0`)                              |
@@ -139,7 +139,7 @@ The server layer handles authentication, data persistence, and AI Copilot infere
 
 - **`src/routes/api/clients/[id]/payment-methods/+server.ts`** — `PUT` updates the ordered list of payment method IDs for a client.
 
-- **`src/routes/api/ai/`** — AI Copilot endpoints: `chat/+server.ts` (SSE streaming turn), `conversations/+server.ts` and `[id]/+server.ts` (conversation CRUD), `messages/+server.ts` (message list), `actions/+server.ts` and `[id]/+server.ts` (action history), `undo/[id]/+server.ts` (reverse an applied action). See the AI Copilot section.
+- **`src/routes/api/ai/`** — AI Copilot endpoints: `chat/+server.ts` (SSE streaming turn), `conversations/+server.ts` and `[id]/+server.ts` (conversation CRUD), `messages/+server.ts` (message list), `actions/+server.ts` and `[id]/+server.ts` (action history), `undo/[id]/+server.ts` (reverse an applied action), `seed/+server.ts` (embeds `KNOWLEDGE_CORPUS` into Vectorize; `POST` guarded by the `x-seed-secret` header matching `SEED_SECRET`). See the AI Copilot section.
 
 **Authorization flow**: Google OAuth → any authenticated user gains full access. All data is scoped to `userId`.
 
@@ -155,7 +155,7 @@ All three stores use the **factory function + `$state` closure** pattern, export
 
 - **`$lib/stores/fixed.svelte.ts`** — Sender/bank data synced to D1. Exposes `value` getter, `hydrate(initial)`, `updateFrom(field, value)`, `addPaymentMethod(kind)`, `removePaymentMethod(id)`, `updatePaymentMethodLabel`, `updatePaymentMethodValue`, `movePaymentMethod`. All mutations call the API. Text mutations are debounced via `debounceSync`. Has a `hydrate(initial)` method called once in `+page.svelte` via `untrack`.
 
-- **`$lib/stores/ai.svelte.ts`** — AI Copilot state: conversations, messages, streaming status, the Tier-B confirmation queue, undo history, anomaly settings (persisted to `localStorage`), and mobile/tab UI state. Has a `hydrate(payload)` method called once in `+page.svelte` via `untrack`. Detailed in the AI Copilot section.
+- **`$lib/stores/ai.svelte.ts`** — AI Copilot state: conversations, messages, streaming status, the Tier-B confirmation queue, undo history, anomaly settings (persisted to `localStorage`), pending vision images (`pendingImages`, max 3, with `addPendingImage`/`removePendingImage`/`clearPendingImages`), and mobile/tab UI state. Has a `hydrate(payload)` method called once in `+page.svelte` via `untrack`. Detailed in the AI Copilot section.
 
 The factory pattern is required because Svelte 5 `$state` reactivity is scoped to its declaration.
 
@@ -256,11 +256,16 @@ An optional natural-language assistant for managing clients, invoices, and payme
 
 - **`$lib/ai/`** — Client-side AI layer:
   - `types.ts` — shared types: `Frame`, tool-call shapes, `InverseRecord`, `AnomalyResult`, `SafetyTier`.
-  - `client.ts` — `runChatFrames()` calls the Workers AI binding (`@cf/openai/gpt-oss-120b`, OpenAI Chat Completions I/O, temperature 0.2, medium reasoning effort), optionally routed through AI Gateway via `AI_GATEWAY_SLUG`.
+  - `client.ts` — `runChatFrames()` streams an OpenAI Chat Completions turn (temperature 0.2, `thinking: false`, `max_tokens` 1536) through `openGatewayChat`. Builds multimodal user content (`image_url` parts) when `images` are present.
+  - `gateway.ts` — `openGatewayChat()` routes the turn through the AI Gateway dynamic route `dynamic/copilot-chain` (fallback chain: `kimi-k2.6` → `gemma-4` → `llama-4-scout`), keyed by `AI_GATEWAY_SLUG`. Throws if the slug is unset. Exports `MODEL_CHAIN`, `DYNAMIC_ROUTE`.
+  - `embeddings.ts` — `embedDocuments` / `embedQuery` call the qwen3 embedding model (`@cf/qwen/qwen3-embedding-0.6b`, 1024 dims). Query embeddings take an instruction prefix.
+  - `rag.ts` — `retrieveAppKnowledge()` embeds the user message, queries the `VECTORIZE` index (topK 4, `MIN_SCORE` 0.4), and `formatKnowledge()` renders matches as a numbered list.
+  - `knowledge.ts` — `KNOWLEDGE_CORPUS`: the static app-help passages embedded into Vectorize by the seed endpoint.
+  - `window.ts` — `windowHistory()` keeps the last `WINDOW_SIZE` (12) messages for sliding-window context.
   - `streaming.ts` — SSE frame encode/decode (`encodeFrame`, `decodeFrame`, `streamFrames`, `sseStream`).
-  - `salvage.ts` — `salvage()` recovers tool calls the model emits as plain-text JSON instead of structured tool-call frames; returns `{ calls, cleanedText }`.
-  - `context.ts` — `projectAppState(appState)` serializes current state into a tokenized (`cli_1`, `ent_1`, `pm_1`) prompt context.
-  - `prompts.ts` — system prompt builder (`buildSystemContext`); `PROMPT_VERSION` is `v2`.
+  - `salvage.ts` — `salvageTextToolCalls()` recovers tool calls the model emits as plain-text JSON instead of structured tool-call frames; returns `{ calls, cleanedText }`.
+  - `context.ts` — `projectAppState(appState)` serializes current state into a tokenized (`cli_1`, `ent_1`, `pm_1`) prompt context; `decodeTokens` reverses the mapping on returned tool args.
+  - `prompts.ts` — static `SYSTEM_PROMPT` + `buildSystemContext(tools)` (tools only); per-turn `buildUserTurn()` injects `CURRENT STATE`, `APP KNOWLEDGE`, and the date into the user message. `FEW_SHOTS` seed an empty conversation; replies are Bangla/English by detected language. `PROMPT_VERSION` is `v3`.
   - `tools-catalog.ts` — `TOOLS_CATALOG`: 19 tools, each tagged Tier A (auto-apply) or Tier B (destructive/money-mutating — requires confirmation). Exports `TIER_MAP` and `resolvedTier()` — `updateClient`/`updateInvoiceEntry` demote from Tier A to Tier B when the patch touches `serviceAmount`, `serviceCurrency`, or `invoicePrefix`.
   - `tool-labels.ts` — `toolLabel(name)` and field-label maps; friendly display names for tools and fields shown in `AiToolBadge` and `AiConfirmDialog`.
   - `schemas.ts` — per-tool Zod arg schemas (`argSchemas`, `ArgsOf`). Server-safe (no DOM/store imports) so `chat/+server.ts` shares them with `tools.ts`.
@@ -276,11 +281,12 @@ An optional natural-language assistant for managing clients, invoices, and payme
   - `ai-spend.ts` — `checkSpendCap` / `recordSpend` / `estimateTurnCostUsd`: per-user monthly USD spend cap (default $1.00, override via `AI_MONTHLY_CAP_USD`) tracked in `AI_QUOTA_KV`; disabled when the KV binding is absent.
   - `ai-undo.ts` — `applyInverse(db, userId, inverse)`: server-side reversal of an action; throws `UndoInvalidatedError` if the target no longer exists.
   - `log.ts` — `logChatTurn` / `logToolExecution`: structured stdout logging with hashed user IDs.
+  - `chat/+server.ts` retrieves RAG context (when `VECTORIZE` is bound), builds the cache key as `sha256(PROMPT_VERSION|state|message)`, validates tool-call args against `argSchemas`, and issues one corrective retry turn on schema failure before persisting.
   - `repositories/ai-conversations.ts`, `ai-messages.ts`, `ai-actions.ts` — D1 persistence for the three AI tables.
 - **`$lib/stores/ai.svelte.ts`** — the `ai` store (see Store Design).
-- **`src/components/ai/`** — `AiSidebar` composes a chat shell from focused sub-components: `AiHeader` (toolbar pairing a `New Chat` action with an adjacent `History` toggle that opens `AiConversationsPanel`, plus Settings), `AiWelcome` (empty-state suggestion cards), `AiMessageList` (renders one `AiMessage` per turn and `AiTypingIndicator` while streaming, wrapped in a `<svelte:boundary>` so a render error degrades to inline retry rather than crashing the pane), and `AiComposer` (the textarea + send input). Remaining pieces: `AiToolBadge`, `AiConfirmDialog`, `AiAnomalyWarning`, `AiSettingsDialog`, `AiConversationsPanel`, `AiMobileFab`, `AiMobileSheet`, `AiLauncherIcon` (shared launcher glyph used in both the desktop sidebar header and the mobile FAB; takes a `variant: "row" | "grid"` prop). Chat styling lives in `$lib/styles/chat-animations.css` (imported in `app.css`) and the `chat-*` design tokens. There is no action-log panel — undo for applied actions stays available via per-action toasts and inline `AiToolBadge` controls.
+- **`src/components/ai/`** — `AiSidebar` composes a chat shell from focused sub-components: `AiHeader` (toolbar pairing a `New Chat` action with an adjacent `History` toggle that opens `AiConversationsPanel`, plus Settings), `AiWelcome` (empty-state suggestion cards), `AiMessageList` (renders one `AiMessage` per turn and `AiTypingIndicator` while streaming, wrapped in a `<svelte:boundary>` so a render error degrades to inline retry rather than crashing the pane), and `AiComposer` (the textarea + send input). Remaining pieces: `AiToolBadge`, `AiConfirmDialog`, `AiAnomalyWarning`, `AiSettingsDialog`, `AiConversationsPanel`, `AiMobileFab`, `AiMobileSheet`, `AiLauncherIcon` (shared launcher glyph used in both the desktop sidebar header and the mobile FAB; takes a `variant: "row" | "grid"` prop), `AiImageUpload` (vision attachments: re-encodes images to WebP via `OffscreenCanvas`, max 3 × 8 MB, exposes `triggerUpload`). Chat styling lives in `$lib/styles/chat-animations.css` (imported in `app.css`) and the `chat-*` design tokens. There is no action-log panel — undo for applied actions stays available via per-action toasts and inline `AiToolBadge` controls.
 
-**Data flow**: user message → `POST /api/ai/chat` (loads context, runs the model, streams frames) → client parses frames and runs each tool via `executeToolCall` → Tier B tools wait for `AiConfirmDialog` approval → applied actions are recorded and reversible via `POST /api/ai/undo/[id]`.
+**Data flow**: user message (+ optional images) → `POST /api/ai/chat` (loads context, retrieves RAG knowledge, runs the gateway model, streams frames) → client parses frames and runs each tool via `executeToolCall` → Tier B tools wait for `AiConfirmDialog` approval → applied actions are recorded and reversible via `POST /api/ai/undo/[id]`.
 
 ---
 
@@ -462,9 +468,11 @@ Configured in `wrangler.jsonc`:
 
 - **ASSETS**: static SvelteKit output
 - **DB**: D1 database binding (required for auth and data at runtime)
-- **AI**: Workers AI binding (required for the AI Copilot)
+- **AI**: Workers AI binding (required for the AI Copilot; used for both gateway chat and qwen3 embeddings)
+- **VECTORIZE**: Vectorize index `invoice-generator-kb` backing RAG app-knowledge retrieval (optional — RAG is skipped if absent; required by the seed endpoint)
 - **AI_QUOTA_KV**: KV namespace backing the AI Copilot per-user daily turn quota and monthly USD spend cap (optional — both disabled if absent)
-- **vars**: `BETTER_AUTH_URL`, `AI_GATEWAY_SLUG` (AI Gateway route), `AI_COPILOT_ENABLED` (feature flag), `AI_MONTHLY_CAP_USD` (monthly AI spend cap, USD)
+- **vars**: `BETTER_AUTH_URL`, `AI_GATEWAY_SLUG` (AI Gateway dynamic-route slug), `AI_COPILOT_ENABLED` (feature flag), `AI_MONTHLY_CAP_USD` (monthly AI spend cap, USD)
+- **`SEED_SECRET`** (secret): header token gating `POST /api/ai/seed`; without it the seed endpoint returns 401
 - **`E2E_BYPASS_AUTH`** (dev-only, not in `wrangler.jsonc`): when set to `"true"` in `.dev.vars`, `hooks.server.ts` synthesizes a test user + session and skips Google OAuth entirely. Lets `bun run preview` exercise auth-gated UI and `/api/*` routes without OAuth. Must never be set in production.
 - **Compatibility**: `nodejs_compat` flag
 - Run `bun run cf-typegen` after any `wrangler.jsonc` changes
@@ -549,13 +557,17 @@ When encountering unfamiliar patterns, check in this order:
 
 16. **Active toggles use optimistic updates with rollback** — `setClientActive` and `setInvoiceActive` capture the previous `isActive` value, mutate locally, then call the API. On failure they restore the prior state. Do not add a separate "saving" flag; the rollback path is the contract.
 
-17. **AI Copilot is gated by `AI_COPILOT_ENABLED`** — setting the var to `"false"` disables the feature in `+layout.server.ts` and `+page.server.ts`. The `AI` binding is required when enabled; `AI_QUOTA_KV` is optional (daily quota and monthly spend cap are skipped if absent).
+17. **AI Copilot is gated by `AI_COPILOT_ENABLED`** — setting the var to `"false"` disables the feature in `+layout.server.ts` and `+page.server.ts`. The `AI` binding and `AI_GATEWAY_SLUG` var are required when enabled (chat throws if the slug is unset); `VECTORIZE` (RAG) and `AI_QUOTA_KV` (daily quota + monthly spend cap) are optional and degrade gracefully if absent.
 
 18. **Every AI tool must produce an inverse** — each executor in `$lib/ai/tools.ts` returns an `InverseRecord` so the action can be reversed via `applyInverse`. When adding or changing a tool, update its inverse in `$lib/ai/inverse.ts` in lockstep, or undo will silently break.
 
 19. **Dev auth bypass is env-gated, not URL-gated** — to exercise auth-gated flows locally, set `E2E_BYPASS_AUTH=true` in `.dev.vars` and run `bun run preview`. The bypass lives in `hooks.server.ts` and synthesizes `event.locals.user`/`session` for every request, so `/api/*` routes (which gate via `requireApiContext`) also pass. The old `?__dev_bypass=1` URL param has been removed — do not reintroduce it.
 
 20. **Never nest a `<button>` inside a `<button>` in collapsible cards** — a native `<button>` wrapping inner `<Button>` actions is invalid HTML; SSR auto-closes the outer button early and desyncs Svelte's hydration walker, causing the client to append a second copy of the entire app (the whole page renders twice — only when content is present). Use `div[role="button"]` with `tabindex="0"` + Enter/Space `onkeydown`, matching `ClientCard`/`PaymentMethodCard`; inner actions `stopPropagation`.
+
+21. **The model fallback chain lives in the AI Gateway dashboard, not the code** — `gateway.ts` calls the `dynamic/copilot-chain` route; `MODEL_CHAIN` (`kimi-k2.6` → `gemma-4` → `llama-4-scout`) documents the configured order but does not set it. Changing models means editing the AI Gateway dynamic route, not the code. The route requires tool-calling and vision support across the chain.
+
+22. **RAG returns nothing until the index is seeded** — `VECTORIZE` (`invoice-generator-kb`) must be populated by `POST /api/ai/seed` (with the `x-seed-secret` header) before `retrieveAppKnowledge` returns matches. The chat turn degrades silently to no app-knowledge context if the index is empty or unbound. Re-seed whenever `KNOWLEDGE_CORPUS` changes.
 
 ---
 
