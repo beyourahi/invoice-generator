@@ -1,3 +1,20 @@
+/**
+ * Per-session client/invoice/generation store, synced to D1. Singleton built by
+ * a factory closure (Svelte 5 `$state` is declaration-scoped, so reactive fields
+ * must live inside the factory and be exposed via getters).
+ *
+ * Persistence: mutations update local `$state` immutably and persist via the API
+ * — text edits through keyed debounceSync, structural changes immediately via
+ * sync(). hydrate() runs exactly ONCE in +page.svelte under untrack(); do not add
+ * a second hydrate path. `ai*` methods mutate local state only.
+ *
+ * Derived: totalInvoiceCount (raw), generatableInvoiceCount (after the active
+ * AND gate via active.ts), allClientsValid (every client has non-blank name AND
+ * invoicePrefix — this gates the generate button).
+ *
+ * expandedClients defaults to EXPANDED when a key is absent (see isClientExpanded
+ * / toggleClientExpanded `?? true`); only an explicit false collapses a card.
+ */
 import type {
 	Client,
 	Currency,
@@ -78,6 +95,8 @@ const createSessionStore = () => {
 		expandedClients = initial.expandedClients;
 	};
 
+	// New clients are seeded server-side from the most recent client as a template
+	// (templateId), so repeated adds inherit the last-used config.
 	const addClient = async () => {
 		const template = clients[clients.length - 1];
 		const created = await sync(() =>
@@ -144,6 +163,7 @@ const createSessionStore = () => {
 		);
 	};
 
+	// Persists each month sequentially (one POST per entry) in calendar order.
 	const addInvoiceEntries = async (clientId: string, months: MonthName[]) => {
 		const sorted = [...months].sort((a, b) => MONTHS.indexOf(a) - MONTHS.indexOf(b));
 		for (const month of sorted) {
@@ -194,6 +214,9 @@ const createSessionStore = () => {
 		}
 	};
 
+	// OPTIMISTIC UPDATE WITH ROLLBACK (the contract — no separate "saving" flag):
+	// mutate locally, persist, and on API failure (sync → null) restore the prior
+	// isActive so a stale flag can't leak into the generation queue (active.ts).
 	const setClientActive = async (id: string, isActive: boolean) => {
 		const current = clients.find((c) => c.id === id);
 		if (!current || current.isActive === isActive) return;
@@ -204,6 +227,7 @@ const createSessionStore = () => {
 		}
 	};
 
+	// Same optimistic-update-with-rollback contract as setClientActive.
 	const setInvoiceActive = async (clientId: string, entryId: string, isActive: boolean) => {
 		const client = clients.find((c) => c.id === clientId);
 		const entry = client?.invoices.find((e) => e.id === entryId);

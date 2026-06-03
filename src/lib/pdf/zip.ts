@@ -1,3 +1,11 @@
+/**
+ * ZIP fallback for invoice downloads: packages all groups into a single
+ * `invoices.zip` mirroring the same `invoices/` folder tree as the directory
+ * picker (single-invoice groups at root, multi-invoice groups in a subfolder).
+ *
+ * Uses fflate zipSync at `level: 0` (store, no compression) — PDFs are already
+ * compressed, so deflating wastes CPU for ~no size win.
+ */
 import { zipSync, type Zippable } from "fflate";
 import { countFiles, INVOICES_ROOT_FOLDER, type DownloadGroup } from "$lib/pdf/sequential-download";
 import { downloadBlob } from "$lib/utils";

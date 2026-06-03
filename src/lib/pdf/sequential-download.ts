@@ -1,3 +1,14 @@
+/**
+ * Saves generated invoice PDFs to disk. Prefers the File System Access API
+ * (showDirectoryPicker → writes a real folder tree); falls back to sequential
+ * individual browser downloads (150ms apart to avoid the browser dropping rapid
+ * programmatic clicks) when the API is unavailable or the picker is denied.
+ *
+ * Layout (both paths): files live under an `invoices/` root. A group with a
+ * single invoice writes the file directly into root; a group with >1 invoice
+ * gets its own `{folderName}` subfolder. User-cancelled picker is surfaced as
+ * `cancelled: true`, not an error.
+ */
 import type { GeneratedInvoice } from "$lib/types";
 import { downloadBlob } from "$lib/utils";
 
@@ -13,6 +24,7 @@ export interface DownloadResult {
 	fileCount: number;
 }
 
+// Local shims for the File System Access API (not in the ambient TS lib).
 type DirectoryPickerStartIn =
 	| "desktop"
 	| "documents"
@@ -122,6 +134,7 @@ export const downloadGroups = async (groups: DownloadGroup[]): Promise<DownloadR
 	try {
 		root = await requestDirectory();
 	} catch (err) {
+		// User dismissed the picker — report as cancelled, not a failure.
 		if (isAbortError(err)) {
 			return { ...emptyResult(fileCount), cancelled: true };
 		}

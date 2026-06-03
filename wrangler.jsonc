@@ -3,12 +3,15 @@
 	"account_id": "75321bb4297a25f524624ba0f3f81443",
 	"name": "invoice-generator",
 	"main": ".svelte-kit/cloudflare/_worker.js",
+	// nodejs_compat is required: better-auth and parts of the AI layer rely on Node built-ins.
 	"compatibility_flags": ["nodejs_compat"],
 	"compatibility_date": "2025-05-29",
 	"assets": {
 		"binding": "ASSETS",
 		"directory": ".svelte-kit/cloudflare"
 	},
+	// DB: D1 binding consumed by hooks.server.ts (auth) and $lib/server/api requireApiContext.
+	// Required at runtime — absent, auth degrades to unauthenticated and /api/* routes return 503.
 	"d1_databases": [
 		{
 			"binding": "DB",
@@ -17,9 +20,12 @@
 			"migrations_dir": "migrations"
 		}
 	],
+	// AI: Workers AI binding used for BOTH the gateway chat turn and qwen3 RAG embeddings.
 	"ai": {
 		"binding": "AI"
 	},
+	// AI_QUOTA_KV: optional — backs the Copilot daily turn quota + monthly USD spend cap.
+	// When absent, both limits are disabled (see $lib/server/ai-quota.ts, ai-spend.ts).
 	"kv_namespaces": [
 		{
 			"binding": "AI_QUOTA_KV",
@@ -27,12 +33,16 @@
 			"remote": true
 		}
 	],
+	// VECTORIZE: optional RAG index for app-knowledge retrieval. Empty until seeded via
+	// POST /api/ai/seed; chat degrades silently to no app-knowledge context when unbound.
 	"vectorize": [
 		{
 			"binding": "VECTORIZE",
 			"index_name": "invoice-generator-kb"
 		}
 	],
+	// Non-secret vars only. Secrets (BETTER_AUTH_SECRET, GOOGLE_CLIENT_ID/SECRET, SEED_SECRET)
+	// are set via `wrangler secret put`. AI_COPILOT_ENABLED="false" disables the Copilot.
 	"vars": {
 		"BETTER_AUTH_URL": "https://invoice-generator.beyourahi.workers.dev",
 		"AI_GATEWAY_SLUG": "invoice-generator-ai",

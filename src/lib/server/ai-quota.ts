@@ -1,3 +1,9 @@
+/**
+ * Per-user daily AI Copilot turn limit, backed by AI_QUOTA_KV.
+ * INVARIANT: when the KV binding is absent the quota is DISABLED — every call
+ * returns allowed=true with count=0, so a missing binding silently uncaps usage.
+ * Keys are scoped by UTC calendar day; the day boundary is UTC midnight, not local.
+ */
 export interface QuotaResult {
 	allowed: boolean;
 	count: number;
@@ -22,6 +28,12 @@ const nextUtcMidnight = (now: Date): Date => {
 	return next;
 };
 
+/**
+ * Atomically-ish read-then-increment the day counter. SIDE EFFECT: writes KV
+ * (24h TTL) only when the turn is allowed; a rejected turn does not consume budget.
+ * NOTE: not transactional — concurrent turns can race past the limit by a small margin.
+ * @returns allowed=false when count is already at/over limit (no write performed).
+ */
 export const checkAndIncrementQuota = async (
 	kv: KVNamespace | undefined,
 	userId: string,
@@ -46,6 +58,7 @@ export const checkAndIncrementQuota = async (
 	return { allowed: true, count: next, limit, resetsAt };
 };
 
+/** Read-only quota probe — no increment, no KV write. Same disabled-when-no-KV contract. */
 export const getQuotaUsage = async (
 	kv: KVNamespace | undefined,
 	userId: string,

@@ -1,3 +1,14 @@
+/**
+ * Builders that produce the InverseRecord (reverse tool call + optional state
+ * snapshot) stored with every executed tool so the action can be undone.
+ * CRITICAL INVARIANT: every executor in ./tools.ts must call a matching builder
+ * here, in lockstep — a missing/incorrect inverse breaks undo silently.
+ * Some inverse `tool` names (restoreClient, deleteInvoiceEntries, restoreInvoiceEntry,
+ * restorePaymentMethod, noop) are SERVER-ONLY undo operations resolved by
+ * applyInverse — they are NOT in the model-facing catalog or client executors.
+ * @see $lib/server/ai-undo.ts (applies these), ./executor.ts (records them).
+ */
+
 import type { Client, InvoiceEntry, SavedPaymentMethod } from "$lib/types";
 import type { InverseRecord } from "./types";
 
@@ -25,6 +36,7 @@ export interface PaymentMethodSnapshot {
 	values: Record<string, string>;
 }
 
+/** Deep-ish copy (cloned address + invoices arrays) of a client, taken BEFORE mutation for restore-on-undo. */
 export const snapshotClient = (client: Client): ClientSnapshot => ({
 	name: client.name,
 	invoicePrefix: client.invoicePrefix,
@@ -117,6 +129,7 @@ export const inverseForRemoveInvoiceEntry = (
 	snapshot
 });
 
+/** Toggle inverse: replay the same tool with the captured `previous` isActive value. */
 export const inverseForSetActive = (
 	tool: "setClientActive" | "setInvoiceActive",
 	args: Record<string, unknown>,
@@ -126,6 +139,7 @@ export const inverseForSetActive = (
 	args: { ...args, isActive: previous }
 });
 
+/** Toggle is its own inverse — replaying it flips the attachment back. */
 export const inverseForTogglePaymentMethod = (
 	clientId: string,
 	paymentMethodId: string

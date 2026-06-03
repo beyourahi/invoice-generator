@@ -1,3 +1,8 @@
+<!--
+	Renders one chat turn. User messages show as a plain bubble; assistant messages are parsed
+	through the in-house markdown AST (no markdown library) and sanitized first. Also renders the
+	streaming wave placeholder before content arrives and any AiToolBadge calls below the bubble.
+-->
 <script lang="ts">
 	import type { AiMessage } from "$lib/stores/ai.svelte";
 	import type { MdBlock, MdInline } from "$lib/ai/markdown";

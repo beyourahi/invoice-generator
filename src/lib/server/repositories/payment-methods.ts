@@ -1,3 +1,8 @@
+/**
+ * D1 persistence for the user's reusable payment_methods, plus link cleanup across clients.
+ * All queries are userId-scoped. Method `values` is a JSON key→value column; updates merge a
+ * single key rather than replacing the whole map.
+ */
 import { and, asc, eq, sql, max } from "drizzle-orm";
 import type { Database } from "../db";
 import { paymentMethods, clientPaymentMethods, clients } from "../schema";
@@ -25,6 +30,8 @@ const nextPosition = async (db: Database, userId: string): Promise<number> => {
 	return typeof current === "number" ? current + 1 : 0;
 };
 
+/** Creates a method seeded from the registry. Label auto-disambiguates against existing methods
+ * of the same kind ("Bank", then "Bank 2", "Bank 3", …) using a live COUNT. */
 export const createPaymentMethod = async (
 	db: Database,
 	userId: string,
@@ -61,6 +68,8 @@ export interface MethodPatch {
 	value?: { key: string; value: string };
 }
 
+/** patch.value merges ONE key into the existing JSON values map (does not replace it).
+ * @returns null if the method is not owned by userId. */
 export const updatePaymentMethod = async (
 	db: Database,
 	userId: string,
@@ -96,6 +105,8 @@ export const deletePaymentMethod = async (db: Database, userId: string, id: stri
 		.run();
 };
 
+/** Rewrites each method's position to its index in orderedIds, as a single batched transaction.
+ * IDs not in the list keep their old position (and may now collide/interleave). */
 export const reorderPaymentMethods = async (db: Database, userId: string, orderedIds: string[]) => {
 	const stmts = orderedIds.map((id, position) =>
 		db
@@ -107,6 +118,9 @@ export const reorderPaymentMethods = async (db: Database, userId: string, ordere
 	await db.batch(stmts as [(typeof stmts)[number], ...(typeof stmts)[number][]]);
 };
 
+/** Removes a method's link from every client of the user. Used to keep client selections
+ * consistent before/after deleting a method (the DB FK cascade covers row deletion; this
+ * handles the link table for the still-present case). */
 export const purgeMethodFromAllClients = async (db: Database, userId: string, methodId: string) => {
 	const userClientIds = await db
 		.select({ id: clients.id })

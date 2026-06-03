@@ -1,3 +1,12 @@
+/**
+ * Server-side reversal of an applied AI Copilot action ("undo").
+ * Each executed tool stores an InverseRecord (a reverse tool call + optional snapshot);
+ * applyInverse re-executes that reverse call against D1.
+ * INVARIANT: the inverse vocabulary here must stay in lockstep with $lib/ai/inverse.ts —
+ * every tool that produces an inverse must have a matching case below, or undo breaks silently.
+ * INVARIANT: snapshot-based restore inverses regenerate fresh row IDs (the original rows are
+ * gone), so restored entities are not identity-equal to the deleted originals.
+ */
 import type { Database } from "./db";
 import type { Currency, MonthName, PaymentMethodKind } from "$lib/types";
 import {
@@ -19,6 +28,8 @@ import { listClientsByUser } from "./repositories/clients";
 import { clients, invoiceEntries, paymentMethods } from "./schema";
 import { and, eq, sql } from "drizzle-orm";
 
+/** Thrown when an undo cannot proceed because the target row no longer exists or the
+ * inverse is malformed. Callers map this to a user-facing "can't undo" state rather than a crash. */
 export class UndoInvalidatedError extends Error {
 	constructor(message: string) {
 		super(message);
@@ -26,6 +37,8 @@ export class UndoInvalidatedError extends Error {
 	}
 }
 
+/** Allowlist of inverse tool names accepted by validateInverse/applyInverse. Persisted
+ * action.inverse.tool is untrusted input; only these names may execute. */
 export const KNOWN_INVERSE_TOOLS = new Set([
 	"noop",
 	"deleteClient",
@@ -49,12 +62,17 @@ export const KNOWN_INVERSE_TOOLS = new Set([
 	"polishText"
 ]);
 
+/** Restore-style inverses that recreate a deleted row and therefore REQUIRE a snapshot
+ * payload; validateInverse rejects them if snapshot is absent. */
 const SNAPSHOT_REQUIRED_INVERSES = new Set([
 	"restoreClient",
 	"restoreInvoiceEntry",
 	"restorePaymentMethod"
 ]);
 
+/** Structural gate run on the persisted inverse before applyInverse. Verifies the tool is
+ * allowlisted, args is a plain object, and snapshot is present for restore inverses.
+ * Does NOT validate arg field shapes — applyInverse coerces those per-case. */
 export const validateInverse = (inverse: unknown): boolean => {
 	if (!inverse || typeof inverse !== "object" || Array.isArray(inverse)) return false;
 	const record = inverse as Record<string, unknown>;
@@ -178,6 +196,9 @@ const insertEntryFromSnapshot = async (
 		.run();
 };
 
+/** Recreates a deleted payment method (reusing its original id when present in the snapshot)
+ * and re-links it to the clients that referenced it, appending to each client's current method
+ * list rather than replacing it. Skips clients that no longer exist. */
 const insertPaymentMethodFromSnapshot = async (
 	db: Database,
 	userId: string,
@@ -222,6 +243,12 @@ const currentClientMethodIds = async (db: Database, clientId: string): Promise<s
 	return rows.map((r) => r.paymentMethodId);
 };
 
+/**
+ * Executes the reverse tool call recorded for an action. SIDE EFFECT: writes to D1.
+ * INVARIANT: every case must exist for each inverse tool emitted by $lib/ai/inverse.ts.
+ * Each case re-validates the target's existence first and throws UndoInvalidatedError if gone.
+ * @throws UndoInvalidatedError on missing target, bad args, or unknown tool.
+ */
 export const applyInverse = async (
 	db: Database,
 	userId: string,
@@ -408,6 +435,8 @@ export const applyInverse = async (
 			return;
 		}
 
+		// Reverses an AI text-polish by writing proposedText (the pre-polish value) back to
+		// whichever target field the polish touched; target string selects client/payment/fixed.
 		case "polishText": {
 			const target = asString(args.target);
 			const proposedText = asString(args.proposedText) ?? "";
@@ -440,6 +469,7 @@ export const applyInverse = async (
 	}
 };
 
+/** Fetches the user's payment methods and clients together for anomaly checks during undo. */
 export const loadStateSlice = async (db: Database, userId: string) => {
 	const [methods, clientList] = await Promise.all([
 		listMethodsByUser(db, userId),

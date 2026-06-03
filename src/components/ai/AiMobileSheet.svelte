@@ -1,3 +1,7 @@
+<!--
+	Mobile-only (<lg) full-height bottom sheet hosting the bare AiSidebar. Implements a manual
+	focus trap (Tab/Shift+Tab cycling, Escape to close) and restores focus to the FAB on close.
+-->
 <script lang="ts">
 	import { fade, fly } from "svelte/transition";
 	import { tick } from "svelte";
@@ -41,6 +45,7 @@
 		}
 	};
 
+	// Move focus into the sheet on open; restore it to the FAB on close (wasOpen avoids stealing focus on mount).
 	$effect(() => {
 		if (ai.mobileOpen) {
 			wasOpen = true;

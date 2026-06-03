@@ -1,3 +1,12 @@
+/**
+ * Per-tool Zod arg schemas — the runtime validation boundary for everything the
+ * model emits. `executor.ts` (client) and the chat server route both safeParse
+ * against these before executing or persisting a tool call.
+ * INVARIANT: MUST stay server-safe — no DOM, store, or browser-only imports —
+ * so the Worker chat route can share this module. Keep the keys in lockstep with
+ * the executors in ./tools.ts and the JSON-schema mirror in ./tools-catalog.ts.
+ */
+
 import { z } from "zod";
 import { MONTHS } from "$lib/invoice/months";
 import type { MonthName, PaymentMethodKind } from "$lib/types";
@@ -26,6 +35,7 @@ const POLISH_TARGETS = [
 
 const monthEnum = z.enum(MONTH_VALUES as unknown as [MonthName, ...MonthName[]]);
 
+/** Source of truth for tool arg validation; keyed by tool name. Update-patch schemas `.refine` to reject empty patches. */
 export const argSchemas = {
 	createClient: z
 		.object({

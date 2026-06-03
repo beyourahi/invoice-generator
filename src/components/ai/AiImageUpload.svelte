@@ -1,3 +1,8 @@
+<!--
+	Vision attachment picker: re-encodes images to WebP via OffscreenCanvas (falling back to the
+	raw data URL when canvas/bitmap is unavailable or for GIFs), enforces max 3 × 8 MB, and stores
+	data URLs on the ai store. Hidden file input driven by the exported triggerUpload() (Composer's clip button).
+-->
 <script lang="ts">
 	import { ai } from "$lib/stores/ai.svelte";
 	import { Loader2, X } from "@lucide/svelte";
@@ -74,6 +79,7 @@
 		const input = event.target as HTMLInputElement;
 		const files = Array.from(input.files ?? []);
 		input.value = "";
+		// Subtract in-flight encodes (processing) so concurrent selections can't exceed the cap.
 		const slots = ai.maxPendingImages - ai.pendingImages.length - processing;
 		if (files.length > slots) {
 			onError(`You can attach up to ${ai.maxPendingImages} images.`);

@@ -1,3 +1,8 @@
+<!--
+	SvelteKit error boundary page. Rendered for any uncaught load/render error or
+	thrown `error(status, ...)`. Shows `page.status` and `page.error.message`
+	(set by `handleError` in src/hooks.{server,client}.ts) with a link home.
+-->
 <script lang="ts">
 	import { page } from "$app/state";
 	import { resolve } from "$app/paths";

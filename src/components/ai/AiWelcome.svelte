@@ -1,3 +1,7 @@
+<!--
+	Empty-state shown before the first message: animated glyph, headline, and suggestion cards.
+	Clicking a card prefills the composer (via onSuggestionClick) rather than sending immediately.
+-->
 <script lang="ts">
 	let {
 		onSuggestionClick

@@ -1,3 +1,12 @@
+/**
+ * Assembles the complete HTML document string for a single invoice by filling
+ * theme templates via token substitution (see resolver.ts). The output is fed
+ * to the client-side PDF pipeline (pdf/generator.ts).
+ *
+ * Invoice ID format: `{PREFIX}-{MM}{ISSUE_DAY}-{YEAR}` (e.g. `ACME-0101-2026`),
+ * where MM is the two-digit month from MONTH_TO_NUMBER. Service description
+ * supports a literal `{MONTH}` token (case-sensitive, single replace).
+ */
 import type { Client, Fixed, InvoiceEntry, SavedPaymentMethod } from "$lib/types";
 import type { Theme } from "$lib/themes/registry";
 import { getMethodDef } from "$lib/payments/registry";
@@ -53,6 +62,8 @@ const renderPaymentMethod = (method: SavedPaymentMethod, theme: Theme): string =
 	});
 };
 
+// Renders methods in the client's selected order; method IDs with no matching
+// saved method (e.g. deleted) are silently dropped. Empty methods render "".
 const renderPaymentSection = (client: Client, fixed: Fixed, theme: Theme): string => {
 	const methodsById = new Map(fixed.paymentMethods.map((m) => [m.id, m]));
 	return client.payment.methodIds
@@ -72,6 +83,7 @@ export const buildInvoiceHtml = (
 	const mm = MONTH_TO_NUMBER[entry.month];
 	const invoiceId = `${client.invoicePrefix}-${mm}${entry.issueDay}-${client.year}`;
 	const amount = formatAmount(client.service.amount, client.service.currency);
+	// Single literal `{MONTH}` substitution, applied before HTML-escaping below.
 	const description = client.service.description.replace("{MONTH}", entry.month);
 
 	const clientDetails = [
@@ -105,6 +117,7 @@ export const buildInvoiceHtml = (
 	});
 };
 
+// Duplicates the ID format built inline in buildInvoiceHtml; keep both in sync.
 export const getInvoiceId = (client: Client, entry: InvoiceEntry): string => {
 	const mm = MONTH_TO_NUMBER[entry.month];
 	return `${client.invoicePrefix}-${mm}${entry.issueDay}-${client.year}`;

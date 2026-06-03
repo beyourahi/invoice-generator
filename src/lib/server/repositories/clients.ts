@@ -1,3 +1,8 @@
+/**
+ * D1 persistence for clients, their invoice entries, and their payment-method links.
+ * All mutations are userId-scoped via ownsClient (or a userId predicate) — there is no
+ * separate authz layer. Ordering is by an explicit `position` column with createdAt tiebreak.
+ */
 import { and, asc, eq, max, sql } from "drizzle-orm";
 import type { Database } from "../db";
 import { clients, clientPaymentMethods, invoiceEntries, paymentMethods } from "../schema";
@@ -7,6 +12,8 @@ import { toClient, toInvoiceEntry } from "../dto";
 
 const currentYear = () => new Date().getFullYear();
 
+/** Builds a parameterized `column IN (...)` clause. CALLER MUST ensure values is non-empty —
+ * an empty list produces invalid `IN ()` SQL. Callers here guard with a length check first. */
 const sqlInArray = <T>(column: T, values: string[]) => {
 	return sql`${column} IN (${sql.join(
 		values.map((v) => sql`${v}`),
@@ -48,6 +55,9 @@ export interface ClientListing {
 	expanded: Record<string, boolean>;
 }
 
+/** Loads all of a user's clients with their entries and method links in 3 batched queries
+ * (avoids N+1), then groups in memory. @returns clients fully projected via toClient plus a
+ * per-client expanded map (mirrors the DB `expanded` flag) for UI hydration. */
 export const listClientsByUser = async (db: Database, userId: string): Promise<ClientListing> => {
 	const clientRows = await db
 		.select()
@@ -137,6 +147,12 @@ const cloneFromTemplate = async (
 	};
 };
 
+/**
+ * Creates a blank client, or clones service/payment/entry shapes from an existing client when
+ * templateId is given. IDENTITY FIELDS ARE NOT COPIED: name, prefix, phone, email, address
+ * always start empty even when cloning — only service config, year, payment-method links, and
+ * entry month/day shapes carry over. A bad/foreign templateId is treated as no template (blank).
+ */
 export const createClient = async (
 	db: Database,
 	userId: string,
@@ -210,6 +226,8 @@ export interface ClientPatch {
 	isActive?: boolean;
 }
 
+/** Partial update: only defined patch keys are written (undefined = leave unchanged), so a
+ * field cannot be cleared by omission. @returns false if the client is not owned by userId. */
 export const updateClient = async (
 	db: Database,
 	userId: string,
@@ -246,6 +264,9 @@ export const deleteClient = async (db: Database, userId: string, id: string) => 
 		.run();
 };
 
+/** Replaces the client's entire ordered method-link set (delete-all then re-insert). Silently
+ * drops any methodId not owned by the user; final list order follows the input array.
+ * @returns false if the client is not owned by userId. */
 export const setClientPaymentMethods = async (
 	db: Database,
 	userId: string,
@@ -281,6 +302,9 @@ export const setClientPaymentMethods = async (
 	return true;
 };
 
+/** Appends one entry. When month is omitted, defaults to the month AFTER the most recent entry
+ * (wrapping Dec→Jan) or January if none exist; issueDay/dueDay inherit from the last entry.
+ * @returns null if the client is not owned by userId. */
 export const addInvoiceEntry = async (
 	db: Database,
 	userId: string,

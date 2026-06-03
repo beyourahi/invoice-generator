@@ -1,3 +1,15 @@
+/**
+ * Client-side tool executors — the bodies that actually carry out each tool the
+ * model emits. Each runs against the SAME REST API + session/fixed stores as the
+ * manual UI, and returns `{ inverse, summary }`: the inverse enables undo, the
+ * summary is surfaced as a toast.
+ * INVARIANT: every executor must produce a correct InverseRecord (./inverse.ts)
+ * in lockstep — undo breaks silently otherwise.
+ * Args are pre-validated by ./schemas.ts; `ensure*` helpers throw "… not found"
+ * (mapped to friendly copy by ./errors.ts) when state has drifted. Runs in the
+ * browser only — do not import from a server route. @see ./executor.ts (caller).
+ */
+
 import { api } from "$lib/api/client";
 import { session } from "$lib/stores/session.svelte";
 import { fixed } from "$lib/stores/fixed.svelte";
@@ -60,6 +72,12 @@ const ensureMethod = (id: string): SavedPaymentMethod => {
 	return m;
 };
 
+/**
+ * Applies a client field patch through session.updateClient, allow-listing only
+ * known fields with correct types. `isActive` is stripped here — activation has a
+ * separate optimistic-rollback path (session.setClientActive) and must not ride
+ * along on the generic update.
+ */
 const fillRemainingFields = async (clientId: string, patch: Record<string, unknown>) => {
 	if (Object.keys(patch).length === 0) return;
 	const target = ensureClient(clientId);
@@ -125,6 +143,8 @@ export const executors: {
 		};
 	},
 
+	// Months are persisted one-by-one in calendar order (the API creates one entry per POST);
+	// createdIds drives the inverse so undo deletes exactly the entries this call added.
 	async addInvoiceEntries(args) {
 		ensureClient(args.clientId);
 		const sorted = [...args.months].sort((a, b) => MONTHS.indexOf(a) - MONTHS.indexOf(b));

@@ -1,3 +1,13 @@
+/**
+ * Non-blocking anomaly detection run against a proposed tool call before it
+ * executes. Each detector inspects one tool's args vs. current AppState and
+ * returns a warning, never a hard block. In executor.ts, ANY anomaly escalates
+ * the effective safety tier to B (forces a confirmation) even for a Tier-A tool.
+ * Each detector is individually toggleable via AnomalySettings (user-controlled,
+ * persisted to localStorage by the ai store).
+ * @see ./executor.ts (escalation), ./tools-catalog.ts (base tiers).
+ */
+
 import type { AppState } from "$lib/server/dto";
 import type { Client, MonthName } from "$lib/types";
 import { MONTHS } from "$lib/invoice/months";
@@ -36,6 +46,7 @@ interface ToolArgs {
 	data?: { paymentMethodIds?: string[]; methodIds?: string[] };
 }
 
+/** Flags an updateClient amount outside 0.5×–2× the client's current amount; needs ≥3 existing invoices as a baseline. */
 const detectAmountOutlier = (
 	toolName: string,
 	args: ToolArgs,
@@ -134,6 +145,7 @@ const detectCurrencyMismatch = (
 	return null;
 };
 
+/** Runs every enabled detector and collects all triggered warnings (a call may trip more than one). */
 export const detectAnomalies = (
 	toolName: string,
 	args: unknown,

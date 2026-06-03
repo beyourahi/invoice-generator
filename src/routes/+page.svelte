@@ -1,3 +1,14 @@
+<!--
+	Home page — the single authenticated surface. Tabbed shell (Details / Preview)
+	plus a full-width GenerationPanel below. Seeds the three client stores from
+	server-loaded data ONCE inside untrack() (see below). Toaster is lazy-imported
+	in onMount to keep it out of the SSR/initial bundle.
+
+	HYDRATION TRAP (whole-app double-render): never nest a native <button> inside
+	another <button> in collapsible cards. SSR auto-closes the outer button early,
+	desyncing Svelte's hydration walker and re-appending the entire app. ClientCard/
+	PaymentMethodCard use div[role="button"] + tabindex + Enter/Space instead.
+-->
 <script lang="ts">
 	import { buildInvoiceHtml } from "$lib/invoice/builder";
 	import { firstGeneratableInvoice } from "$lib/invoice/active";
@@ -45,6 +56,9 @@
 		await play();
 	};
 
+	// INVARIANT: the ONLY store-hydration site. untrack() seeds stores from server
+	// data without registering them as reactive deps of this render. Do not add a
+	// second hydrate call anywhere — it would clobber live local edits.
 	untrack(() => {
 		fixed.hydrate(data.appState.fixed);
 		session.hydrate({

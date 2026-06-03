@@ -1,3 +1,4 @@
+<!-- Animated wave-bar placeholder shown while awaiting the assistant's first streamed tokens. -->
 <div class="mb-3 flex justify-start" role="status" aria-label="Generating response">
 	<div class="chat-message-enter">
 		<div

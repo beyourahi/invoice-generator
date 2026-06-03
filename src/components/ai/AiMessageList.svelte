@@ -1,3 +1,8 @@
+<!--
+	Scrolling message log. Auto-sticks to the bottom on new content unless the user has scrolled
+	up (>48px from bottom). Wrapped in <svelte:boundary> so a render error degrades to an inline
+	retry instead of crashing the whole rail.
+-->
 <script lang="ts">
 	import type { AiMessage } from "$lib/stores/ai.svelte";
 	import AiMessageComponent from "./AiMessage.svelte";
@@ -25,6 +30,7 @@
 		userScrolledUp = distanceFromBottom > 48;
 	};
 
+	// Re-runs on count, streaming state, and last-message content (tracked) to follow streamed tokens.
 	$effect(() => {
 		const len = messages.length;
 		const pending = showTypingIndicator;

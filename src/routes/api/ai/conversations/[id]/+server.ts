@@ -4,6 +4,8 @@ import type { RequestHandler } from "./$types";
 import { requireApiContext, parseJson, ok } from "$lib/server/api";
 import { deleteConversation, renameConversation } from "$lib/server/repositories/ai-conversations";
 
+// Single AI conversation. PATCH renames (404 if not owned/found); DELETE removes it
+// (idempotent, no 404). Both user-scoped via requireApiContext; 400 if id missing.
 const renameSchema = z.object({
 	title: z.string().min(1).max(120)
 });

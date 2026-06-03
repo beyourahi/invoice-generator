@@ -1,3 +1,9 @@
+<!--
+	Login page. Single "Continue with Google" button driving Better Auth's social
+	OAuth (the only sign-in method). On success the client redirects to the
+	`?redirect=` target (default /); the $effect also force-redirects if an
+	authenticated session is detected on mount.
+-->
 <script lang="ts">
 	import { authClient } from "$lib/auth-client";
 	import { browser } from "$app/environment";

@@ -349,9 +349,11 @@ const generateAll = async () => { ... };
 function generateAll() { ... }
 ```
 
-### Zero Comments
+### Documentation Comments (agent-first)
 
-No inline, block, or JSDoc comments in shipped code. Names and structure must be self-documenting.
+Code carries agent-facing documentation: module-level purpose blocks, contracts for non-obvious exported symbols (inputs, outputs, side effects, error modes), stated invariants, and notes on non-obvious coupling. Use TSDoc/JSDoc (`/** */`) in `.ts` and in `.svelte` `<script>` blocks; HTML comments (`<!-- -->`) at the top of `.svelte` markup.
+
+The bar is high-signal only: every comment must carry information not already obvious from identifier names, the type signature, or a few lines of surrounding code. Do not restate the next line, narrate the obvious, duplicate what TypeScript types already encode, or add decorative banners. Inline comments survive only for the unpredictable — workarounds, ordering constraints, performance hacks, subtle correctness arguments, references to external specs/issues. When a line does not clear the bar, leave it out. Never reword or remove load-bearing directives (`@ts-*`, `eslint-disable*`, `svelte-ignore`, license headers).
 
 ### Tailwind CSS v4
 

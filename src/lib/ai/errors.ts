@@ -1,3 +1,12 @@
+/**
+ * Maps raw technical error strings to friendly, user-facing copy for the chat UI.
+ * Two-stage: a KNOWN pattern list (first match wins, order-sensitive), then a
+ * `looksTechnical` heuristic that swallows anything with raw artifacts (braces,
+ * URLs, UUIDs, state tokens, stack frames, or >200 chars) into a GENERIC message.
+ * Short, clean strings pass through verbatim.
+ * @see ./markdown.ts looksTechnical-style sanitization of reply bodies.
+ */
+
 const KNOWN: Array<{ match: RegExp; message: string }> = [
 	{
 		match:
@@ -40,6 +49,7 @@ const looksTechnical = (text: string): boolean =>
 
 const GENERIC = "Something went wrong while doing that. Please try again.";
 
+/** Accepts an Error, string, or anything; never throws; always returns displayable copy. */
 export const friendlyErrorMessage = (raw: unknown): string => {
 	const text = raw instanceof Error ? raw.message : typeof raw === "string" ? raw.trim() : "";
 	if (!text) return GENERIC;

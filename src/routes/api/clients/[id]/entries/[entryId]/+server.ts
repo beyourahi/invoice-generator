@@ -4,6 +4,8 @@ import { ok, parseJson, requireApiContext } from "$lib/server/api";
 import { updateEntrySchema } from "$lib/server/validation";
 import { deleteInvoiceEntry, updateInvoiceEntry } from "$lib/server/repositories/clients";
 
+// Single invoice entry under a client. PATCH partial-updates; DELETE removes.
+// Both 404 if the (client, entry) pair is not owned/found; 400 if either id missing.
 export const PATCH: RequestHandler = async (event) => {
 	const ctx = requireApiContext(event);
 	const clientId = event.params.id;

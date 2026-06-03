@@ -1,3 +1,13 @@
+/**
+ * Typed fetch wrapper for the app's REST API plus two persistence helpers.
+ *  - api.*: throw on non-2xx (message = response body or status line); 204 and
+ *    non-JSON 200 resolve to undefined.
+ *  - sync(fn): swallow + log errors, returning T | null — used for fire-and-go
+ *    mutations whose failure is handled by store-level rollback, not a throw.
+ *  - debounceSync(key, ms, fn): keyed, trailing-edge debounced fire-and-forget
+ *    for high-frequency text-field saves; a newer call for the same key cancels
+ *    the pending one. Errors are logged, never surfaced.
+ */
 type Method = "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
 
 const send = async <T>(method: Method, path: string, body?: unknown): Promise<T> => {

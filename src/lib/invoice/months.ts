@@ -1,3 +1,8 @@
+/**
+ * Calendar-month constants. MONTHS is in calendar order (used for sorting and
+ * pickers); MONTH_TO_NUMBER maps each name to its two-digit number ("January" →
+ * "01") for invoice ID construction in builder.ts.
+ */
 import type { MonthName } from "$lib/types";
 
 export const MONTHS: MonthName[] = [

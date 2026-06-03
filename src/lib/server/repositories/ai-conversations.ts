@@ -1,3 +1,8 @@
+/**
+ * D1 persistence for ai_conversations (AI Copilot chat threads), scoped to userId.
+ * Ordering convention: lists and "most recent" use updatedAt desc, so touchUpdatedAt /
+ * renameConversation re-float a thread to the top.
+ */
 import { and, desc, eq, sql } from "drizzle-orm";
 import type { Database } from "../db";
 import { aiConversations } from "../schema";
@@ -86,6 +91,7 @@ export const getMostRecentConversation = async (
 	};
 };
 
+/** @returns false if no row matched (wrong id or not owned by userId) — used to surface a 404. */
 export const renameConversation = async (
 	db: Database,
 	userId: string,
@@ -111,6 +117,8 @@ export const deleteConversation = async (
 		.run();
 };
 
+/** Bumps updatedAt (DB unixepoch()) to re-sort the thread to the top of recency-ordered lists.
+ * NOTE: not userId-scoped — caller must have already established ownership. */
 export const touchUpdatedAt = async (db: Database, id: string): Promise<void> => {
 	await db
 		.update(aiConversations)

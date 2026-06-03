@@ -1,3 +1,8 @@
+<!--
+	Composes the Copilot chat shell (header + body + composer). Body switches between history,
+	the welcome empty-state, and the message list. `bare` drops the bordered card chrome for the
+	mobile sheet. Status dot derives from store error/busy/streaming flags.
+-->
 <script lang="ts">
 	import { ai } from "$lib/stores/ai.svelte";
 	import { createNewConversation, sendMessage } from "$lib/ai/chat-client";

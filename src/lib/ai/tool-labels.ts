@@ -1,3 +1,9 @@
+/**
+ * Friendly display names for tool names and patch field keys, shown in
+ * AiToolBadge and AiConfirmDialog. Presentation-only; never affects execution.
+ * Both lookups fall back gracefully (toolLabel → "Update", fieldLabel → the raw key).
+ */
+
 const TOOL_LABELS: Record<string, string> = {
 	createClient: "Create client",
 	updateClient: "Update client",

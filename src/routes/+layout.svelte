@@ -1,3 +1,11 @@
+<!--
+	Root layout. Owns the global app shell, cross-route View Transitions, and the
+	AI Copilot mount. Copilot is gated to the home route only: `data.aiEnabled`
+	(feature flag) AND route id `/` AND no active error. Desktop (lg+) renders a
+	fixed right-rail <aside> with AiSidebar; mobile gets AiMobileFab +
+	AiMobileSheet; AiConfirmDialog mounts globally for Tier-B confirmations.
+	When the rail shows, the main column reserves space via lg:pr-[26rem].
+-->
 <script lang="ts">
 	import "../app.css";
 	import type { Snippet } from "svelte";
@@ -13,6 +21,7 @@
 
 	let { children, data }: { children: Snippet; data: LayoutData } = $props();
 
+	// Wires cross-route View Transitions; no-ops when the API is unavailable or motion is reduced.
 	onNavigate(handleViewTransition);
 
 	const showCopilot = $derived(data.aiEnabled && page.route.id === "/" && !page.error);

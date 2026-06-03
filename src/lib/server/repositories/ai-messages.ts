@@ -1,3 +1,8 @@
+/**
+ * D1 persistence for ai_messages (turns within a conversation), ordered by createdAt asc.
+ * Scoped by conversationId, NOT userId — ownership is enforced one level up via the
+ * conversation lookup. toolCalls/toolResults are JSON columns hydrated back to typed arrays.
+ */
 import { asc, eq } from "drizzle-orm";
 import type { Database } from "../db";
 import { aiMessages } from "../schema";

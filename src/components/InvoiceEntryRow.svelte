@@ -1,3 +1,7 @@
+<!--
+	One invoice schedule entry (month + issue/due day + active toggle). Renders as a table
+	row at sm+ (`as="row"`) or a stacked card on mobile (`as="card"`).
+-->
 <script lang="ts">
 	import { session } from "$lib/stores/session.svelte";
 	import { MONTHS } from "$lib/invoice/months";
@@ -20,11 +24,14 @@
 		as = "row"
 	}: { clientId: string; clientActive: boolean; entry: InvoiceEntry; as?: "row" | "card" } = $props();
 
+	// inactive = visually dimmed (either gate off). suppressed = client off, so the entry's own
+	// toggle is disabled (can't activate an entry under an inactive client) with an explanatory tooltip.
 	const inactive = $derived(!clientActive || !entry.isActive);
 	const suppressed = $derived(!clientActive);
 	const switchTone =
 		"data-[state=checked]:bg-status-active-track data-[state=unchecked]:bg-status-inactive-track status-transition";
 
+	// Strip non-digits and write back to the DOM value so the field never shows rejected chars.
 	const handleNumericInput = (field: "issueDay" | "dueDay", e: Event) => {
 		const target = e.currentTarget as HTMLInputElement;
 		const filtered = target.value.replace(/\D/g, "");

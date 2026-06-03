@@ -1,3 +1,7 @@
+<!--
+	Copilot toolbar: connection-status dot, history toggle, new-conversation, and (mobile sheet
+	only) close. New-conversation only appears once there are messages; close only when bare+onClose.
+-->
 <script lang="ts">
 	import { X, Plus, Clock } from "@lucide/svelte";
 

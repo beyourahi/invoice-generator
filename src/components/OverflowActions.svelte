@@ -1,3 +1,8 @@
+<!--
+	Mobile-only overflow menu (dialog of actions) replacing the inline action icons on
+	ClientCard / PaymentMethodCard at small breakpoints. Trigger and items stopPropagation
+	because the menu sits inside those cards' clickable headers.
+-->
 <script lang="ts">
 	import type { Component, ComponentProps } from "svelte";
 	import * as Dialog from "$lib/components/ui/dialog";

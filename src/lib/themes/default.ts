@@ -1,3 +1,14 @@
+/**
+ * The only invoice theme. Templates use `{TOKEN}` placeholders resolved by
+ * builder.ts via resolveTokens. The full CSS is inlined into the `{CSS}` token
+ * (no external stylesheet) so the rasterized iframe is self-contained.
+ *
+ * The payment-link button is a hand-built inline <svg> (rounded rect + <text>)
+ * rather than an HTML/CSS button: html2canvas's CSS cascade is unreliable for
+ * button-like elements, and SVG <text fill> rasterizes deterministically. The
+ * wrapping `div[data-href]` is what pdf/generator.ts turns into a clickable
+ * jsPDF link annotation. Do NOT replace this with an HTML/CSS button or an <a>.
+ */
 import type { Theme } from "./registry";
 
 const html = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Invoice {INVOICE_ID}</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"><style>{CSS}</style></head><body><div class="invoice"><header class="header-section"><h1 class="invoice-title"><span>I</span><span>N</span><span>V</span><span>O</span><span>I</span><span>C</span><span>E</span></h1><div class="invoice-meta"><div class="meta-item"><div class="meta-label">Invoice No.</div><div>{INVOICE_ID}</div></div><div class="meta-item"><div class="meta-label">Issue Date</div><div>{MONTH} {ISSUE_DAY}, {YEAR}</div></div><div class="meta-item"><div class="meta-label">Due Date</div><div>{MONTH} {DUE_DAY}, {YEAR}</div></div></div></header><section class="parties"><div class="party"><div class="party-label">From</div><div class="party-name">{FROM_NAME}</div><div class="party-details"><div>{FROM_PHONE}</div><div>{FROM_EMAIL}</div><div>{FROM_ADDRESS}</div></div></div><div class="party"><div class="party-label">Bill To</div><div class="party-name">{CLIENT_NAME}</div><div class="party-details">{CLIENT_DETAILS}</div></div></section><section class="items-section"><div class="items-header"><span class="items-header-label">Description</span><span class="items-header-label">Amount</span></div><div class="item-row"><span class="item-description">{DESCRIPTION}</span><span class="item-amount">{AMOUNT}</span></div></section><div class="bottom-section"><section class="payment-section">{PAYMENT_SECTION}</section><div class="totals"><div class="totals-label">Total</div><div class="totals-value">{TOTAL}</div><div class="currency-note">All amounts in {CURRENCY}</div></div></div></div></body></html>`;

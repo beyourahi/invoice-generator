@@ -1,3 +1,16 @@
+/**
+ * Sender identity + payment methods store, synced to D1. Exported as a singleton
+ * built by a factory closure: Svelte 5 `$state` reactivity is scoped to its
+ * declaration, so the reactive `state` must live inside the factory and be
+ * exposed via getters — a module-level `$state` would not be reactive to callers.
+ *
+ * Mutation contract: every mutation updates local `state` immutably AND persists
+ * via the API. Text fields go through debounceSync (trailing-edge, keyed) to
+ * coalesce keystrokes; structural changes fire immediately via sync(). hydrate()
+ * seeds from server data and is called exactly ONCE in +page.svelte under
+ * untrack() — do not add a second hydrate path. The `ai*` methods mutate local
+ * state only (the AI tool layer owns the corresponding persistence).
+ */
 import type { Fixed, PaymentMethodKind, SavedPaymentMethod } from "$lib/types";
 import { api, debounceSync, sync } from "$lib/api/client";
 

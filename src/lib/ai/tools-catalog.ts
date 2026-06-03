@@ -1,3 +1,12 @@
+/**
+ * The 19-tool catalog advertised to the model (JSON-schema params + base safety
+ * tier) plus tier-resolution helpers. Tier A = auto-apply; Tier B = destructive
+ * or money-mutating, requires user confirmation in the UI.
+ * COUPLING: each tool here must have a matching Zod schema in ./schemas.ts and an
+ * executor in ./tools.ts; descriptions/params are sent verbatim to the model.
+ * @see ./prompts.ts buildSystemContext (renders this into the system message).
+ */
+
 import type { ToolCatalogEntry, SafetyTier } from "./types";
 
 const monthEnum = [
@@ -322,8 +331,10 @@ export const TIER_MAP: Record<string, SafetyTier> = Object.fromEntries(
 	TOOLS_CATALOG.map((t) => [t.name, t.safetyTier])
 );
 
+/** Patch fields that force a Tier-A update tool to behave as Tier B (money/identity-sensitive). */
 export const TIER_B_PATCH_FIELDS = new Set(["serviceAmount", "serviceCurrency", "invoicePrefix"]);
 
+/** True when updateClient/updateInvoiceEntry touches a TIER_B_PATCH_FIELDS key — the runtime tier demotion rule. */
 export const isDemotedToTierB = (toolName: string, args: unknown): boolean => {
 	if (toolName === "updateClient" || toolName === "updateInvoiceEntry") {
 		const patch = (args as { patch?: Record<string, unknown> })?.patch;
@@ -335,6 +346,7 @@ export const isDemotedToTierB = (toolName: string, args: unknown): boolean => {
 	return false;
 };
 
+/** Effective base tier for a call: catalog tier, demoted to B for sensitive update patches. Anomalies (executor.ts) can escalate further. */
 export const resolvedTier = (toolName: string, args: unknown): SafetyTier => {
 	if (isDemotedToTierB(toolName, args)) return "B";
 	return TIER_MAP[toolName] ?? "A";

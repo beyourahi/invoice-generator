@@ -1,3 +1,11 @@
+/**
+ * Retrieval step for the Copilot: turns the user message into app-help context
+ * pulled from the VECTORIZE index, formatted for injection into the user turn.
+ * INVARIANT: returns nothing until the index is seeded via POST /api/ai/seed;
+ * the chat turn degrades silently to no APP KNOWLEDGE if the index is empty/unbound.
+ * @see ./knowledge.ts (corpus), ./prompts.ts buildUserTurn (consumes formatKnowledge output).
+ */
+
 import { embedQuery, type EmbeddingEnv } from "./embeddings";
 
 export interface RagEnv extends EmbeddingEnv {
@@ -15,6 +23,11 @@ const QUERY_INSTRUCTION =
 
 const MIN_SCORE = 0.4;
 
+/**
+ * Embeds `query`, runs a topK similarity search, drops matches below MIN_SCORE
+ * and any with empty metadata text. Returns [] for blank queries.
+ * @throws propagates embedQuery failure; VECTORIZE.query errors bubble to caller.
+ */
 export const retrieveAppKnowledge = async (
 	env: RagEnv,
 	query: string,

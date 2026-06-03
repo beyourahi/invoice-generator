@@ -1,3 +1,12 @@
+/**
+ * Catalog of every supported payment method, keyed by PaymentMethodKind. Each
+ * def's `display` decides how builder.ts renders it on the invoice:
+ *   - "fields": labeled key-value rows (bank, mobile wallets, custom)
+ *   - "link":   a single payment-link button; `linkFieldKey` names the field
+ *               holding the URL, `linkLabel` the button text (wise/payoneer/paypal)
+ *
+ * Fields marked `optional` are excluded from the isMethodComplete check.
+ */
 import type {
 	PaymentFieldDef,
 	PaymentMethodDef,
@@ -172,6 +181,7 @@ export const createSavedMethod = (kind: PaymentMethodKind): SavedPaymentMethod =
 	};
 };
 
+// True only when every NON-optional field has a non-blank value.
 export const isMethodComplete = (method: SavedPaymentMethod): boolean => {
 	const def = getMethodDef(method.kind);
 	return def.fields.every((field) => {

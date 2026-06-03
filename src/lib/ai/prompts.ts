@@ -1,5 +1,15 @@
+/**
+ * Prompt assembly for the Copilot turn. `SYSTEM_PROMPT` + `buildSystemContext`
+ * (tools only) form the system message; `buildUserTurn` injects the per-turn
+ * CURRENT STATE / APP KNOWLEDGE / date into the USER message (deliberately NOT
+ * the system message, so the cacheable system prefix stays stable).
+ * @see src/routes/api/ai/chat/+server.ts (assembles the turn and hashes
+ *      PROMPT_VERSION|state|message as the Gateway cache key).
+ */
+
 import type { ToolCatalogEntry } from "./types";
 
+/** Bump when SYSTEM_PROMPT/turn-shaping changes — participates in the chat cache key so old cached turns are invalidated. */
 export const PROMPT_VERSION = "v3" as const;
 
 export const SYSTEM_PROMPT = `You are AI Copilot, embedded in an invoice-generator app for a single freelancer.
@@ -29,6 +39,7 @@ Staying accurate:
 11. If the request is ambiguous (e.g. two clients with similar names), ask one clarifying question and emit no tool call until it is resolved.
 12. Read-only questions (totals, who is billed, what is selected) are answered directly from CURRENT STATE with no tool call. Questions about how to use the app are answered from APP KNOWLEDGE when present.`;
 
+/** Seed exchange prepended to empty conversations to demonstrate the "ask one clarifying question on ambiguity" behavior. */
 export const FEW_SHOTS: Array<{ role: "user" | "assistant"; content: string }> = [
 	{
 		role: "user",
@@ -40,6 +51,7 @@ export const FEW_SHOTS: Array<{ role: "user" | "assistant"; content: string }> =
 	}
 ];
 
+/** System message = SYSTEM_PROMPT + a rendered tool list (name, tier, description, JSON arg schema). Tools only — no per-turn state. */
 export const buildSystemContext = (tools: ToolCatalogEntry[]): string => {
 	const toolList = tools
 		.map((t) => {

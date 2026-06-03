@@ -1,3 +1,4 @@
+<!-- Small icon + uppercase label rendered above a form section heading. -->
 <script lang="ts">
 	import type { Component, ComponentProps } from "svelte";
 	import type { Icon as LucideIcon } from "@lucide/svelte";

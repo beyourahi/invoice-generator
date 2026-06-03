@@ -1,3 +1,8 @@
+<!--
+	Live scaled preview of the first generatable invoice for the selected client, rendered
+	into an isolated iframe via srcdoc. Width presets + fullscreen are previewer chrome only —
+	they never affect the generated PDF (which is always A4). Parent supplies the html + empty reason.
+-->
 <script lang="ts">
 	import { cn } from "$lib/utils";
 	import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "$lib/components/ui/card";
@@ -60,12 +65,15 @@
 	let widthPreset = $state<WidthPreset>("fit");
 	let previewFrame = $state<HTMLIFrameElement | null>(null);
 
+	// 794 = A4 width in px at the invoice's render DPI. Scale fits the page to the stage, capped at 1:1.
 	const scale = $derived(containerWidth > 0 ? Math.min(containerWidth / 794, 1) : 1);
 	const scaledHeight = $derived(`${Math.round(1123 * scale)}px`);
 	const previewScale = $derived(String(scale));
 	const currentPreset = $derived(WIDTH_PRESETS.find(p => p.value === widthPreset) ?? WIDTH_PRESETS[0]);
 	const presetWidth = $derived(currentPreset.px ? `${currentPreset.px}px` : "100%");
 
+	// Svelte action: tracks the stage width via ResizeObserver to drive the scale factor.
+	// rAF on attach avoids reading a zero width before first layout. Disconnects on destroy.
 	const measurePreview = (node: HTMLDivElement) => {
 		let frame = 0;
 
@@ -112,6 +120,8 @@
 		saveWidthPreset(value);
 	};
 
+	// Fullscreen API with WebKit vendor-prefix fallbacks throughout; state stays in sync via the
+	// fullscreenchange listeners in onMount rather than being assumed from the request promise.
 	const getFullscreenElement = (): Element | null => {
 		if (typeof document === "undefined") return null;
 		const doc = document as FullscreenDocument;
@@ -161,6 +171,8 @@
 		};
 	});
 
+	// Fade the iframe in whenever the html changes (re-runs because `void html` is tracked).
+	// Skipped entirely under reduced motion. Tween is killed on cleanup / re-run.
 	$effect(() => {
 		void html;
 		const frame = previewFrame;
@@ -287,6 +299,7 @@
 						style:--preview-scale={previewScale}
 						style:width={presetWidth}
 					>
+						<!-- Mount the iframe only after a width is measured, so the initial scale is correct. -->
 						{#if containerWidth > 0}
 							<iframe
 								bind:this={previewFrame}

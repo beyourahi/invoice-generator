@@ -4,6 +4,9 @@ import { ok, requireApiContext } from "$lib/server/api";
 import { addInvoiceEntry } from "$lib/server/repositories/clients";
 import { createEntrySchema } from "$lib/server/validation";
 
+// POST /api/clients/[id]/entries — adds an invoice entry to a client. Body is
+// optional; when present it must validate (400) and supplies the initial month.
+// 404 if the client is not owned/found. Auth + D1 via requireApiContext.
 export const POST: RequestHandler = async (event) => {
 	const ctx = requireApiContext(event);
 	const id = event.params.id;

@@ -1,3 +1,11 @@
+/**
+ * `use:reveal` — entrance animation action. Fades/translates a node in once,
+ * optionally scroll-triggered (`onScroll`). GSAP loads lazily and async, so the
+ * node is set to opacity:0 synchronously up front to prevent a flash before the
+ * tween starts; if motion is reduced, navigating, or GSAP fails to load, the
+ * inline opacity is cleared and no animation runs. Tween + ScrollTrigger are
+ * killed on destroy (and `cancelled` guards the in-flight async load).
+ */
 import type { Action } from "svelte/action";
 import { getGsap } from "$lib/motion/gsap";
 import { prefersReducedMotion } from "$lib/motion/reduced-motion.svelte";

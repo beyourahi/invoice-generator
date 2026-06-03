@@ -1,3 +1,4 @@
+<!-- Active/inactive pill driven by semantic status color tokens; active dot pulses. -->
 <script lang="ts">
 	import { cn } from "$lib/utils";
 

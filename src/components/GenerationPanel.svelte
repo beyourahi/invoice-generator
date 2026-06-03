@@ -1,3 +1,8 @@
+<!--
+	Owns the bulk-generation flow: renders each active invoice to a PDF Blob sequentially,
+	then lists the results grouped by client with per-group (directory picker / sequential)
+	and all-at-once (ZIP) download actions.
+-->
 <script lang="ts">
 	import { buildInvoiceHtml, getFileName, getInvoiceId } from "$lib/invoice/builder";
 	import { getGeneratableInvoices } from "$lib/invoice/active";
@@ -37,6 +42,8 @@
 			session.generationState !== "generating"
 	);
 
+	// Groups generated invoices by client while preserving first-seen order; multi-invoice
+	// clients become a named subfolder on download. busyClientId/busyAll gate concurrent downloads.
 	const clientGroups = $derived.by((): ClientGroup[] => {
 		const groups: ClientGroup[] = [];
 		const indexById: Record<string, number> = {};
@@ -67,6 +74,9 @@
 		toast.error(message, description ? { description } : undefined);
 	};
 
+	// Queue comes only from getGeneratableInvoices (active client AND active entry) —
+	// never raw session.clients. The for...of loop is intentionally sequential and blocking:
+	// html2canvas paints synchronously, so parallelising would thrash the single hidden iframe.
 	const generateAll = async () => {
 		const queue = getGeneratableInvoices(session.clients);
 		if (queue.length === 0) {

@@ -1,3 +1,12 @@
+/**
+ * Drizzle schema for the entire D1 database: Better Auth tables (users, sessions, accounts,
+ * verifications, rate_limits), app tables (fixed_settings, payment_methods, clients,
+ * client_payment_methods, invoice_entries), and AI Copilot tables (ai_conversations,
+ * ai_messages, ai_actions).
+ * INVARIANT: column names are snake_case as REQUIRED by the Better Auth Drizzle adapter
+ * (usePlural + snake columns); renaming them breaks auth. All app/AI tables cascade-delete
+ * from users.id, so removing a user purges all their data.
+ */
 import { relations } from "drizzle-orm";
 import {
 	sqliteTable,
@@ -85,6 +94,9 @@ export const rateLimits = sqliteTable(
 	(table) => [index("idx_rate_limits_key").on(table.key)]
 );
 
+// One row per user (PK = user_id). Holds the fixed sender identity plus the persisted
+// selected-client UI state. selected_client_id is a soft reference (no FK) — a deleted client
+// leaves a dangling id that the loader tolerates.
 export const fixedSettings = sqliteTable("fixed_settings", {
 	userId: text("user_id")
 		.primaryKey()
@@ -155,6 +167,9 @@ export const clients = sqliteTable(
 	]
 );
 
+// Join table: ordered many-to-many between clients and payment_methods (composite PK).
+// Cascade on both FKs means deleting either side removes the link. `position` carries the
+// per-client display/PDF order.
 export const clientPaymentMethods = sqliteTable(
 	"client_payment_methods",
 	{
@@ -239,6 +254,9 @@ export const aiMessages = sqliteTable(
 	]
 );
 
+// Audit/undo log for AI Copilot tool executions. `inverse` (JSON) stores the reverse tool call
+// consumed by ai-undo.applyInverse. conversation_id/message_id use ON DELETE SET NULL so the
+// action history survives deletion of its originating conversation.
 export const aiActions = sqliteTable(
 	"ai_actions",
 	{

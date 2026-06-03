@@ -1,3 +1,8 @@
+<!--
+	Chat history list shown in place of the message view when the rail's history toggle is open.
+	Switch/rename/delete a conversation; deleting preserves action history. Rename/delete use
+	native prompt/confirm and stopPropagation so they don't trigger the row's switch handler.
+-->
 <script lang="ts">
 	import { ai } from "$lib/stores/ai.svelte";
 	import { deleteConversation, renameConversation, switchConversation } from "$lib/ai/chat-client";

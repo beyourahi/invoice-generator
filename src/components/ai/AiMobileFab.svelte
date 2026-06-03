@@ -1,3 +1,7 @@
+<!--
+	Mobile-only (<lg) floating button that opens the Copilot sheet. Hidden while the sheet is
+	already open or PDF generation is running (avoids overlapping the generation progress UI).
+-->
 <script lang="ts">
 	import { ai } from "$lib/stores/ai.svelte";
 	import { session } from "$lib/stores/session.svelte";

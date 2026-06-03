@@ -17,6 +17,7 @@
 		data-sveltekit-preload-data="hover"
 		class="bg-background text-foreground min-h-dvh font-sans antialiased"
 	>
+		<!-- display:contents wrapper keeps SvelteKit's mount node out of the layout/flex flow. -->
 		<div style="display: contents">%sveltekit.body%</div>
 	</body>
 </html>

@@ -1,3 +1,14 @@
+/**
+ * Bidirectional state-tokenization for the prompt context.
+ * `projectAppState` serializes the user's data into a compact human-readable
+ * summary using short opaque tokens (cli_N, ent_N, pm_N) in place of real
+ * UUIDs — this keeps prompt tokens cheap and stops the model leaking raw IDs.
+ * `decodeTokens` reverses the mapping on tool-call args the model returns.
+ * INVARIANT: tool execution must run decoded args (real IDs); the tokenMap from
+ * projectAppState is the only valid decode source for the same turn.
+ * @see ./prompts.ts buildUserTurn (embeds summaryText), src/routes/api/ai/chat/+server.ts.
+ */
+
 import type { AppState } from "$lib/server/dto";
 import type { Client, InvoiceEntry, SavedPaymentMethod } from "$lib/types";
 import { formatAmount } from "$lib/format/currency";
@@ -49,6 +60,7 @@ export interface ContextPayload {
 	tokenMap: Record<string, string>;
 }
 
+/** Last 4 chars of a whitespace-stripped value; used to hint payment methods without exposing full account numbers. */
 const last4 = (raw: string | undefined): string => {
 	if (!raw) return "";
 	const stripped = raw.replace(/\s+/g, "");
@@ -147,6 +159,11 @@ const renderSummary = (payload: Omit<ContextPayload, "summaryText" | "tokenMap">
 
 const STATE_TOKEN_RE = /^(?:cli|ent|pm)_\d+$/;
 
+/**
+ * Recursively walks arbitrary tool-call args, replacing any string that is
+ * exactly a state token with its real ID from `tokenMap`. Non-token strings,
+ * numbers, and unmapped tokens pass through unchanged.
+ */
 export const decodeTokens = <T>(value: T, tokenMap: Record<string, string>): T => {
 	if (typeof value === "string") {
 		return (STATE_TOKEN_RE.test(value) && tokenMap[value] ? tokenMap[value] : value) as T;
@@ -164,6 +181,12 @@ export const decodeTokens = <T>(value: T, tokenMap: Record<string, string>): T =
 	return value;
 };
 
+/**
+ * Builds the per-turn context payload. Assigns tokens in iteration order
+ * (payment methods first, then clients/invoices) and returns the `tokenMap`
+ * needed to decode the model's reply via decodeTokens. `summaryText` is the
+ * human-readable block injected as CURRENT STATE.
+ */
 export const projectAppState = (appState: AppState): ContextPayload => {
 	const tokenMap: Record<string, string> = {};
 

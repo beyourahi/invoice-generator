@@ -4,6 +4,15 @@
 import type { CurrentUser } from "$lib/types";
 import type { Auth } from "$lib/server/auth";
 
+/**
+ * SvelteKit App namespace augmentation.
+ * - Locals: populated per-request by hooks.server.ts (null when unauthenticated/D1 absent).
+ * - Platform.env: the Cloudflare Worker bindings (see wrangler.jsonc). Optional members
+ *   (AI_QUOTA_KV, AI_GATEWAY_SLUG, AI_*, SEED_SECRET, E2E_BYPASS_AUTH) degrade gracefully
+ *   when unset; DB/AI/VECTORIZE are required at runtime for auth + AI Copilot.
+ * - PageData.aiEnabled: feature flag derived from AI_COPILOT_ENABLED in +layout.server.ts.
+ * - Error.errorId: UUID correlation id surfaced by both handleError hooks.
+ */
 declare global {
 	namespace App {
 		interface Locals {

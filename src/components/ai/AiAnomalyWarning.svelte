@@ -1,3 +1,4 @@
+<!-- Non-blocking amber list of detected anomalies; renders nothing when there are none. -->
 <script lang="ts">
 	import type { AnomalyResult } from "$lib/ai/types";
 	import { AlertTriangle } from "@lucide/svelte";

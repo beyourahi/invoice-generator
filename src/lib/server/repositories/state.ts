@@ -1,3 +1,7 @@
+/**
+ * Aggregates the full per-user AppState (sender settings, payment methods, clients, selection)
+ * in parallel. Consumed by +page.server.ts to hydrate the client stores on page load.
+ */
 import type { Database } from "../db";
 import { listClientsByUser } from "./clients";
 import { listMethodsByUser } from "./payment-methods";

@@ -1,3 +1,8 @@
+/**
+ * D1 persistence for ai_actions — the audit/undo log of every AI Copilot tool execution.
+ * Each row carries the inverse needed to reverse it; status tracks its lifecycle
+ * (applied → undone/undo_failed, or rejected/failed). All queries are scoped to userId.
+ */
 import { and, desc, eq, sql } from "drizzle-orm";
 import type { Database } from "../db";
 import { aiActions } from "../schema";
@@ -134,6 +139,8 @@ export const getActionById = async (
 	return row ? toRow(row) : null;
 };
 
+/** Marks an action reversed. SIDE EFFECT: sets status="undone" and stamps undoneAt via the
+ * SQLite unixepoch() function (DB clock, not JS Date), keeping it consistent with row defaults. */
 export const markUndone = async (db: Database, userId: string, id: string): Promise<void> => {
 	await db
 		.update(aiActions)

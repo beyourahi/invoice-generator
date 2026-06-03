@@ -4,6 +4,8 @@ import { ok, parseJson, requireApiContext } from "$lib/server/api";
 import { setClientMethodsSchema } from "$lib/server/validation";
 import { setClientPaymentMethods } from "$lib/server/repositories/clients";
 
+// PUT /api/clients/[id]/payment-methods — replaces the client's ordered list of
+// selected payment-method ids (body.methodIds). 404 if client not owned/found.
 export const PUT: RequestHandler = async (event) => {
 	const ctx = requireApiContext(event);
 	const id = event.params.id;

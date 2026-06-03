@@ -1,3 +1,13 @@
+/**
+ * Browser-side controller wiring the ai store to the chat/undo/conversation REST
+ * endpoints. `sendMessage` is the main loop: POST the turn, stream frames into
+ * the store, THEN run the collected tool calls through executeToolCall, and on
+ * any applied change reload the action history + invalidateAll() so the manual UI
+ * reflects the mutation. Confirmation/polish approvals are bridged to the UI via
+ * promises parked in the store's pending queues (resolved by AiConfirmDialog).
+ * @see ./executor.ts, $lib/stores/ai.svelte.ts, src/routes/api/ai/*.
+ */
+
 import { ai } from "$lib/stores/ai.svelte";
 import {
 	executeToolCall,
@@ -24,6 +34,7 @@ interface RawAssistantMessage {
 	createdAt: string;
 }
 
+// Parks a promise in the store's confirmation queue; AiConfirmDialog resolves it on user choice.
 const requestConfirmation = (req: ConfirmationRequest): Promise<boolean> =>
 	new Promise((resolve) => {
 		ai.enqueueConfirmation({
@@ -59,6 +70,7 @@ const requestPolishApproval =
 			});
 		});
 
+// Re-runs load functions so manual-UI stores re-hydrate from D1 after an AI mutation.
 const fetchUpdatedAppState = async (): Promise<void> => {
 	try {
 		const mod = await import("$app/navigation");
@@ -68,6 +80,13 @@ const fetchUpdatedAppState = async (): Promise<void> => {
 	}
 };
 
+/**
+ * Drives one full chat turn. Tool calls are collected during streaming but
+ * executed only AFTER the stream ends (sequentially), so confirmations don't
+ * race the text stream. Pending images are cleared once the request is accepted.
+ * Aborting via options.signal cancels the fetch; errors are funneled to the
+ * store as friendly messages rather than thrown.
+ */
 export const sendMessage = async (message: string, options: SendOptions = {}): Promise<void> => {
 	const conversationId = ai.activeConversationId;
 	const images = ai.pendingImages.length > 0 ? [...ai.pendingImages] : undefined;
@@ -220,6 +239,7 @@ const fireToast = async (input: {
 	}
 };
 
+/** Reverses an applied action server-side via applyInverse; marks the store entry undone/failed and re-syncs app state. Returns success. */
 export const triggerUndo = async (actionId: string): Promise<boolean> => {
 	try {
 		const response = await fetch(`/api/ai/undo/${actionId}`, {
@@ -277,6 +297,8 @@ export const createNewConversation = async (): Promise<void> => {
 	}
 };
 
+// Loads a conversation's persisted messages and reconstructs tool-call display state by
+// joining stored toolCalls with their toolResults (status/actionId); defaults missing results to "applied".
 export const switchConversation = async (id: string): Promise<void> => {
 	if (ai.activeConversationId === id) return;
 	ai.setActiveConversation(id);
@@ -366,6 +388,7 @@ export const respondToPolish = (toolCallId: string, approved: boolean): void => 
 	if (req) req.resolve(approved);
 };
 
+/** Bulk-resolves every queued confirmation (e.g. on dialog dismiss); iterates a copy since resolve mutates the queue. */
 export const respondToAllConfirmations = (approved: boolean): void => {
 	for (const req of [...ai.pendingConfirmations]) {
 		req.resolve(approved);

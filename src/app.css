@@ -1,3 +1,14 @@
+/**
+ * Global stylesheet + Tailwind v4 CSS-first config (there is no tailwind.config.js).
+ *
+ * Token architecture: :root holds the shadcn LIGHT palette and .dark overrides it — but the
+ * app is DARK-ONLY (app.html hardcodes <html class="dark">), so the :root light values are
+ * effectively never used at runtime and exist only to satisfy the shadcn token contract.
+ * `@theme inline` maps the --* CSS variables onto Tailwind color/font/radius/shadow utilities.
+ * Semantic groups: --status-* (active/inactive badges), --chat-* (AI Copilot surface),
+ * --motion-* + ::view-transition (route transitions). Reduced-motion fallbacks sit inline
+ * next to each animation rather than in one central block.
+ */
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "./lib/styles/chat-animations.css";
@@ -737,6 +748,8 @@ textarea,
 	}
 }
 
+/* --preview-scale and --preview-height are set at runtime by InvoicePreview.svelte's
+   ResizeObserver action (scale = stageWidth / 794, the A4 pixel width). */
 .invoice-preview-stage {
 	display: flex;
 	justify-content: center;

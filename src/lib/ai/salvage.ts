@@ -1,3 +1,14 @@
+/**
+ * Recovers tool calls a model emitted as plain-text JSON instead of structured
+ * tool-call frames (a known failure mode of some chain models). Scans the reply
+ * text for balanced JSON regions, parses each, and extracts any recognizable
+ * tool-call shape (`{tool|name, args|arguments|parameters}` or OpenAI
+ * `{function:{name,arguments}}`, optionally wrapped in `{tool_calls:[…]}`).
+ * Returns the recovered calls plus the reply text with the consumed JSON region
+ * (and stray code fences) stripped. Used as a fallback after native parsing.
+ * @see ./client.ts (structured path), src/routes/api/ai/chat/+server.ts.
+ */
+
 import type { ParsedToolCall } from "./types";
 
 export interface SalvageResult {
@@ -11,6 +22,7 @@ interface JsonRegion {
 	end: number;
 }
 
+/** Finds top-level balanced `{…}`/`[…]` spans, string-aware (ignores braces inside quoted strings). */
 const extractJsonRegions = (text: string): JsonRegion[] => {
 	const regions: JsonRegion[] = [];
 	for (let i = 0; i < text.length; i++) {
@@ -94,6 +106,7 @@ const collectCalls = (parsed: unknown): ParsedToolCall[] => {
 	return [];
 };
 
+/** Returns the first JSON region that yields at least one tool call; otherwise `{calls: [], cleanedText: text}` unchanged. */
 export const salvageTextToolCalls = (text: string): SalvageResult => {
 	if (!text || (!text.includes("{") && !text.includes("["))) {
 		return { calls: [], cleanedText: text };

@@ -1,3 +1,8 @@
+<!--
+	Editor for the fixed sender identity (name/phone/email/address) and the saved
+	payment-method list that every invoice draws from. Add/remove/reorder of methods
+	is animated via GSAP Flip; the picker opens an existing method instead of duplicating.
+-->
 <script lang="ts">
 	import { tick } from "svelte";
 	import { fixed } from "$lib/stores/fixed.svelte";
@@ -22,6 +27,7 @@
 	let pickerValue = $state<string>("");
 	let methodListEl = $state<HTMLDivElement | null>(null);
 
+	// flipList snapshots positions, then plays the FLIP tween after the store mutation reflows the list.
 	const removeMethodAnimated = async (id: string) => {
 		if (!methodListEl) {
 			fixed.removePaymentMethod(id);
@@ -62,6 +68,8 @@
 		node?.scrollIntoView({ behavior: "smooth", block: "nearest" });
 	};
 
+	// Selecting a kind that already exists opens/focuses it rather than adding a duplicate.
+	// pendingKind guards against re-entrant adds while an async addPaymentMethod is in flight.
 	const handlePickerChange = async (raw: string) => {
 		const kind = (raw || null) as PaymentMethodKind | null;
 		pickerValue = "";

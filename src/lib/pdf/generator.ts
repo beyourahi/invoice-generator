@@ -1,3 +1,16 @@
+/**
+ * CLIENT-SIDE ONLY invoice PDF renderer. Injects a full HTML document into a
+ * hidden off-screen <iframe>, waits for fonts, rasterizes the iframe body via
+ * html2canvas at 2× scale (A4 = 794×1123px), then writes the bitmap into a
+ * jsPDF A4 page (210×297mm) and returns a Blob.
+ *
+ * CRITICAL INVARIANTS:
+ *  - generatePdf is SEQUENTIAL/BLOCKING by design — html2canvas paints
+ *    synchronously. Callers must await each call; do NOT parallelize.
+ *  - Links are NOT real <a> tags (html2canvas ignores UA link-color overrides).
+ *    Templates emit `div[data-href]`; extractLinks reads those rects and jsPDF
+ *    pdf.link() adds clickable annotations positioned in mm over the bitmap.
+ */
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 
@@ -42,6 +55,8 @@ export const generatePdf = async (html: string): Promise<Blob> => {
 		`height: ${A4_HEIGHT_PX}px`,
 		"border: none",
 		"z-index: -1",
+		// visibility:hidden is INTENTIONAL. Never use display:none here — it
+		// removes the body from layout and html2canvas captures a blank frame.
 		"visibility: hidden"
 	].join("; ");
 
@@ -58,6 +73,8 @@ export const generatePdf = async (html: string): Promise<Blob> => {
 	const iframeDoc = iframe.contentDocument;
 	if (!iframeDoc) throw new Error("iframe document unavailable");
 
+	// Fonts must be loaded and one frame painted before capture, or html2canvas
+	// snapshots fallback metrics / pre-layout state.
 	await iframeDoc.fonts.ready;
 	await waitForFrame();
 

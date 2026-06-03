@@ -1,3 +1,9 @@
+/**
+ * Shared Zod schemas for /api/* request bodies, fed to parseJson (api.ts).
+ * Enum sources (payment kinds, months) are derived from the single source of truth in
+ * $lib/payments/registry and $lib/invoice/months so validation cannot drift from the domain.
+ * Patch schemas .refine() to reject empty bodies; day fields allow 0–2 digits (partial input).
+ */
 import { z } from "zod";
 import { PAYMENT_METHOD_KINDS } from "$lib/payments/registry";
 import { MONTHS } from "$lib/invoice/months";

@@ -1,3 +1,10 @@
+/**
+ * SSE transport for the chat turn: encode/decode `Frame` objects to/from
+ * `data: …\n\n` events. `sseStream` (server) produces the Response; `streamFrames`
+ * (client) parses it back into a Frame async-iterable.
+ * @see ./types.ts (Frame union), src/routes/api/ai/chat/+server.ts (producer).
+ */
+
 import type { Frame } from "./types";
 
 export type { Frame } from "./types";
@@ -41,6 +48,12 @@ export const streamFrames = async function* (
 	}
 };
 
+/**
+ * Wraps a producer in a ReadableStream Response with SSE headers. A producer
+ * throw is converted into a final `error` frame rather than tearing the stream;
+ * `push` after client disconnect is silently swallowed (controller closed).
+ * `x-accel-buffering: no` disables proxy buffering so frames flush immediately.
+ */
 export const sseStream = (produce: (push: (frame: Frame) => void) => Promise<void>): Response => {
 	const encoder = new TextEncoder();
 	const stream = new ReadableStream<Uint8Array>({

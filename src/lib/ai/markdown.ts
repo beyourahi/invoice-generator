@@ -1,3 +1,12 @@
+/**
+ * Minimal hand-rolled markdown parser (no external library) for rendering AI
+ * reply text in AiMessage.svelte. Supports bold, italic, inline code, auto-linked
+ * URLs/emails/bare domains, headings, bullet/ordered lists, and fenced code blocks.
+ * Two surfaces: `parseInlineMarkdown` → flat Segment[]; `parseMarkdown` → block AST.
+ * `sanitizeAssistantText` is the pre-render guard that strips internal artifacts.
+ * @see src/components/ai/AiMessage.svelte (consumer), ./errors.ts (sibling sanitizer).
+ */
+
 export interface MdText {
 	type: "text";
 	value: string;
@@ -61,6 +70,11 @@ export type Segment =
 const LINK_PATTERN =
 	/(https?:\/\/[^\s),\]]+|[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}|\b[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)*\.(?:com|org|net|io|app|co|dev|shop|store|ai|xyz|tech|me|info|biz|design|agency|site|online|world)(?:\/[^\s),\]]*)?)/g;
 
+/**
+ * Splits text into link/email/plain segments. Trailing sentence punctuation is
+ * trimmed off URL matches and the regex cursor rewound, so "see x.com." keeps
+ * the period as text rather than swallowing it into the href.
+ */
 const parseInlineLinks = (text: string): Segment[] => {
 	const result: Segment[] = [];
 	let lastIndex = 0;
@@ -139,6 +153,12 @@ const FENCE_BLOCK_RE = /```[\s\S]*?```/g;
 const STATE_TOKEN_RE = /\b(?:cli|ent|pm)_\d+\b/g;
 const UUID_RE = /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi;
 
+/**
+ * Pre-render scrub of assistant text: removes fenced code blocks, returns ""
+ * if the whole reply is a JSON object/array (a leaked raw tool call), and
+ * strips state tokens (cli_/ent_/pm_) and UUIDs so internal identifiers never
+ * reach the user. Collapses runs of whitespace.
+ */
 export const sanitizeAssistantText = (raw: string): string => {
 	if (!raw) return "";
 	let text = raw.replace(FENCE_BLOCK_RE, " ");
@@ -166,6 +186,7 @@ const FENCE_RE = /^\s*```/;
 
 const parseInlineToNodes = (raw: string): MdInline[] => segmentsToInline(parseInlineMarkdown(raw));
 
+/** Line-oriented block parser: fenced code, headings, bullet/ordered lists, and paragraphs (consecutive non-blank lines). */
 export const parseMarkdown = (raw: string): MdBlock[] => {
 	const blocks: MdBlock[] = [];
 	const lines = raw.replace(/\r\n/g, "\n").split("\n");

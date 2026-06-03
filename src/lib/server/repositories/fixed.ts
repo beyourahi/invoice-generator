@@ -1,3 +1,7 @@
+/**
+ * D1 persistence for the single per-user fixed_settings row (sender identity + selected client).
+ * The row is created lazily via ensureRow before any write, so new users need no seed step.
+ */
 import { eq, sql } from "drizzle-orm";
 import type { Database } from "../db";
 import { fixedSettings } from "../schema";
@@ -9,6 +13,8 @@ export interface FromPatch {
 	address?: string;
 }
 
+/** Idempotently inserts the user's fixed_settings row (PK = userId) if absent, so subsequent
+ * UPDATEs always hit a row. onConflictDoNothing makes concurrent callers safe. */
 const ensureRow = async (db: Database, userId: string) => {
 	await db
 		.insert(fixedSettings)

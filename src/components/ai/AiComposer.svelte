@@ -1,3 +1,8 @@
+<!--
+	Chat input: auto-growing textarea (capped at MAX_HEIGHT), image attachments, and send.
+	Submit is allowed with text OR images alone; Enter sends, Shift+Enter inserts a newline.
+	Exposes setValue() so AiWelcome suggestion cards can prefill the box.
+-->
 <script lang="ts">
 	import { ai } from "$lib/stores/ai.svelte";
 	import { cn } from "$lib/utils";
@@ -25,6 +30,7 @@
 	const attachFull = $derived(ai.pendingImages.length >= ai.maxPendingImages);
 	const canSubmit = $derived((charCount > 0 || hasImages) && !disabled);
 
+	// Reset-then-set height so the textarea shrinks as well as grows with content.
 	$effect(() => {
 		if (!textareaEl) return;
 		void value;
@@ -32,6 +38,7 @@
 		textareaEl.style.height = `${Math.min(textareaEl.scrollHeight, MAX_HEIGHT)}px`;
 	});
 
+	// Store bumps inputFocusNonce to programmatically refocus the composer (e.g. after a turn).
 	$effect(() => {
 		if (ai.inputFocusNonce === 0) return;
 		tick().then(() => textareaEl?.focus());

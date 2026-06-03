@@ -1,3 +1,10 @@
+/**
+ * Static app-help passages embedded into the VECTORIZE index by POST /api/ai/seed,
+ * then retrieved per-turn by retrieveAppKnowledge to ground "how do I…" questions.
+ * COUPLING: re-seed the index whenever this corpus changes, or RAG serves stale text.
+ * @see ./rag.ts, ./embeddings.ts
+ */
+
 export interface KnowledgeChunk {
 	id: string;
 	text: string;

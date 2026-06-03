@@ -1,3 +1,7 @@
+<!--
+	Toggles for the five anomaly detectors. Each switch maps to a key on ai.anomalySettings
+	(persisted to localStorage by the store); an enabled detector can force a Tier-B confirmation.
+-->
 <script lang="ts">
 	import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "$lib/components/ui/dialog";
 	import { Switch } from "$lib/components/ui/switch";

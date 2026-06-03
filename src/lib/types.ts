@@ -1,3 +1,4 @@
+/** Central domain types shared across the invoice pipeline, stores, and API. */
 export type Currency = "BDT" | "USD";
 export type GenerationState = "idle" | "generating" | "done" | "error";
 
@@ -59,6 +60,9 @@ export type MonthName =
 export interface InvoiceEntry {
 	id: string;
 	month: MonthName;
+	// Day-of-month strings, used verbatim in the invoice ID and date display
+	// (e.g. "01"); not parsed to numbers. isActive AND client.isActive gates
+	// generation — see invoice/active.ts.
 	issueDay: string;
 	dueDay: string;
 	isActive: boolean;

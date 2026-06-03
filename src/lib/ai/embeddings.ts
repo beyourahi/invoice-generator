@@ -1,3 +1,10 @@
+/**
+ * qwen3 text-embedding wrappers over the Workers AI binding, used by RAG
+ * (query embedding) and the seed endpoint (document embedding).
+ * @see ./rag.ts — consumes embedQuery to search VECTORIZE.
+ * INVARIANT: vector dimensionality (EMBEDDING_DIMS) must match the VECTORIZE index config.
+ */
+
 export const EMBEDDING_MODEL = "@cf/qwen/qwen3-embedding-0.6b" as const;
 export const EMBEDDING_DIMS = 1024;
 
@@ -10,6 +17,10 @@ interface EmbeddingOutput {
 	shape?: number[];
 }
 
+/**
+ * Embeds a batch of corpus passages for indexing (no instruction prefix).
+ * @throws if the model returns fewer/more vectors than inputs (shape mismatch guard).
+ */
 export const embedDocuments = async (env: EmbeddingEnv, texts: string[]): Promise<number[][]> => {
 	if (texts.length === 0) return [];
 	const res = (await env.AI.run(EMBEDDING_MODEL, { text: texts })) as EmbeddingOutput;
@@ -19,6 +30,11 @@ export const embedDocuments = async (env: EmbeddingEnv, texts: string[]): Promis
 	return res.data;
 };
 
+/**
+ * Embeds a single search query. qwen3 expects an `instruction` prefix on the
+ * query side (asymmetric retrieval) — document embeddings must NOT pass one.
+ * @throws if the model returns no vector.
+ */
 export const embedQuery = async (
 	env: EmbeddingEnv,
 	text: string,

@@ -12,6 +12,7 @@ import { listRecent } from "$lib/server/repositories/ai-actions";
 import { DEFAULT_ANOMALY_SETTINGS } from "$lib/ai/types";
 import type { AiHydrationPayload } from "$lib/stores/ai.svelte";
 
+// Zero-state AI payload used when AI is disabled or D1/user is unavailable.
 const emptyAi = (enabled: boolean): AiHydrationPayload => ({
 	enabled,
 	activeConversation: null,
@@ -21,6 +22,21 @@ const emptyAi = (enabled: boolean): AiHydrationPayload => ({
 	anomalySettings: { ...DEFAULT_ANOMALY_SETTINGS }
 });
 
+/**
+ * Home page load — the only authenticated route. Hydrates both the app state
+ * stores and the AI Copilot store from D1.
+ *
+ * CONTRACT:
+ *  - inputs: locals.user (auth identity), platform.env.DB (D1), AI_COPILOT_ENABLED var.
+ *  - outputs: { user, currentUser, appState, ai }. appState/ai default to empty
+ *    shells when D1 is absent so the page still renders (PDF pipeline is client-side).
+ *  - SIDE EFFECTS: read-only D1 queries.
+ *  - ERROR MODES: 303 redirect to /login when unauthenticated.
+ *
+ * The AI block is skipped entirely when aiEnabled is false. Conversation/message/
+ * action timestamps are serialized to ISO strings here because the wire payload
+ * must be JSON-safe (Date does not survive load → client).
+ */
 export const load: PageServerLoad = async ({ locals, platform }) => {
 	if (!locals.user) {
 		redirect(303, "/login");

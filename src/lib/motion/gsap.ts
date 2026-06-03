@@ -1,3 +1,13 @@
+/**
+ * The ONLY module permitted to import GSAP. getGsap() performs a browser-guarded
+ * dynamic import() of gsap + ScrollTrigger + Flip, registers the plugins and sets
+ * defaults exactly once, then memoizes the bundle (concurrent callers share the
+ * one in-flight `loading` promise).
+ *
+ * INVARIANT: never write a top-level `import ... from "gsap"` anywhere — GSAP
+ * touches window/document at module-eval time, which breaks SSR on Cloudflare
+ * Workers. Returns null on the server. peekGsap() is the sync, non-loading peek.
+ */
 import { browser } from "$app/environment";
 import { DURATION, EASE } from "$lib/motion/tokens";
 

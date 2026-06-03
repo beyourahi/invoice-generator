@@ -1,3 +1,8 @@
+<!--
+	Top-right signed-in avatar with sign-out. Mobile (<sm): tap opens a Dialog. Desktop (sm+):
+	hover expands a name/email pill beside a dedicated sign-out button. The fixed offset shifts
+	left at lg+ to clear the AI Copilot rail.
+-->
 <script lang="ts">
 	import { authClient } from "$lib/auth-client";
 	import { goto } from "$app/navigation";

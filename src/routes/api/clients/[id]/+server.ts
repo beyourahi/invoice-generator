@@ -4,6 +4,8 @@ import { ok, parseJson, requireApiContext } from "$lib/server/api";
 import { updateClientSchema } from "$lib/server/validation";
 import { deleteClient, updateClient } from "$lib/server/repositories/clients";
 
+// Single client. PATCH applies a partial update (404 if not owned/found);
+// DELETE removes it (idempotent, no 404). User-scoped; 400 if id missing.
 export const PATCH: RequestHandler = async (event) => {
 	const ctx = requireApiContext(event);
 	const id = event.params.id;

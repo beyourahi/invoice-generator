@@ -1,3 +1,9 @@
+/**
+ * Shared motion constants. These values are a CROSS-APP COHESION CONTRACT shared
+ * across the workspace's projects — do not change them. DURATION (seconds) feeds
+ * GSAP; DURATION_MS (milliseconds) mirrors it for Svelte transitions; keep the
+ * two in lockstep. EASE values are GSAP ease strings.
+ */
 export const DURATION = {
 	fast: 0.15,
 	base: 0.25,

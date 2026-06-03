@@ -1,3 +1,15 @@
+/**
+ * The `ai` Copilot store — factory function + $state closure exported as a
+ * singleton (Svelte 5 $state reactivity is scoped to its declaration, hence the
+ * factory). Holds conversations, messages, streaming status, the Tier-B
+ * confirmation + polish queues, undo history, anomaly settings (persisted to
+ * localStorage, NOT D1), pending vision images (max 3), and mobile/rail UI state.
+ * INVARIANT: hydrate() is called ONCE in +page.svelte via untrack — do not add a
+ * second hydrate path. NOTE: hydrate deliberately ignores payload.anomalySettings
+ * and reads localStorage instead (client-owned setting).
+ * @see $lib/ai/chat-client.ts (primary mutator).
+ */
+
 import { api, sync } from "$lib/api/client";
 import type {
 	AnomalyResult,
@@ -142,6 +154,8 @@ const createAiStore = () => {
 		pendingImages = [];
 	};
 
+	// Active conversation is hoisted to the front of the list so it sorts first in the picker.
+	// anomalySettings comes from localStorage, intentionally overriding payload.anomalySettings.
 	const hydrate = (payload: AiHydrationPayload) => {
 		enabled = payload.enabled;
 		activeConversationId = payload.activeConversation?.id ?? null;
@@ -184,6 +198,7 @@ const createAiStore = () => {
 		error = msg;
 	};
 
+	// Streaming and input-busy are tied together: an in-flight turn locks the composer.
 	const setStreaming = (v: boolean) => {
 		streaming = v;
 		inputBusy = v;
@@ -319,6 +334,7 @@ const createAiStore = () => {
 		historyActions = list;
 	};
 
+	// Marks the history row undone AND flips the matching message tool-call badge (joined by actionId).
 	const markHistoryActionUndone = (id: string) => {
 		historyActions = historyActions.map((a) =>
 			a.id === id ? { ...a, status: "undone", undoneAt: new Date().toISOString() } : a

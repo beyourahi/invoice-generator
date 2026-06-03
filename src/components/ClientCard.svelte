@@ -1,3 +1,7 @@
+<!--
+	Collapsible card editing one client: identity fields, service line, payment-method
+	selection, and the invoice schedule. Header doubles as select + expand trigger.
+-->
 <script lang="ts">
 	import { fixed } from "$lib/stores/fixed.svelte";
 	import { session, type ClientPatch } from "$lib/stores/session.svelte";
@@ -85,6 +89,7 @@
 			.toLowerCase();
 	});
 
+	// When exactly one payment method exists and none is attached yet, auto-attach it.
 	$effect(() => {
 		if (savedMethods.length === 1 && client.payment.methodIds.length === 0) {
 			session.ensurePaymentMethodSelected(client.id, savedMethods[0].id);
@@ -100,6 +105,11 @@
 	)}
 >
 	<CardHeader class="px-0 py-0">
+		<!--
+			div[role="button"] not a native <button>: this header wraps inner action
+			buttons (Switch, remove, expand). A <button> inside a <button> is invalid HTML —
+			SSR closes the outer button early, desyncing hydration and rendering the app twice.
+		-->
 		<div
 			role="button"
 			tabindex="0"
@@ -146,6 +156,7 @@
 					{paymentSummary}
 				</span>
 			</div>
+			<!-- stopPropagation so toggling active does not also select/expand the card. -->
 			<div
 				role="presentation"
 				onclick={e => e.stopPropagation()}

@@ -1,3 +1,11 @@
+/**
+ * Server-side driver for one chat turn: builds the OpenAI Chat Completions
+ * request (system + windowed history + multimodal user content), streams it
+ * through the AI Gateway, and yields parsed `Frame`s while accumulating the
+ * final `RawChatResult` (full text, assembled tool calls, token usage).
+ * Runs on the Worker, not the browser. @see ./gateway.ts, ./streaming.ts.
+ */
+
 import type { Frame, ParsedToolCall, ToolCatalogEntry } from "./types";
 import { openGatewayChat } from "./gateway";
 
@@ -56,6 +64,7 @@ const buildToolsPayload = (tools: ToolCatalogEntry[]) =>
 		}
 	}));
 
+/** Plain string when no images; otherwise a multimodal content-part array (text + image_url). */
 const buildUserContent = (text: string, images?: string[]): string | ContentPart[] => {
 	if (!images || images.length === 0) return text;
 	return [
@@ -64,6 +73,21 @@ const buildUserContent = (text: string, images?: string[]): string | ContentPart
 	];
 };
 
+/**
+ * Yields `text`/`tool_call`/`error` frames during the turn and RETURNS the
+ * accumulated RawChatResult as the generator's return value (consume via the
+ * for-await done value, not a yielded frame).
+ *
+ * Streaming protocol notes:
+ * - Defaults: temperature 0.2, max_tokens 1536, thinking disabled, usage included.
+ * - `tools` are only attached when non-empty (omitting them changes model behavior).
+ * - Tool-call deltas arrive fragmented across chunks; `toolAccum` reassembles by
+ *   `index`, concatenating `arguments` text. Tool-call frames are emitted only
+ *   AFTER the stream closes (args must be complete before JSON.parse).
+ * - Malformed argument JSON degrades to `{}` rather than throwing.
+ * - Gateway-open failure and mid-stream read failure both surface as a single
+ *   `error` frame, then the partial result is returned.
+ */
 export const runChatFrames = async function* (
 	env: RunChatEnv,
 	params: RunChatParams

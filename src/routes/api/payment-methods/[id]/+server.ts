@@ -8,6 +8,10 @@ import {
 	updatePaymentMethod
 } from "$lib/server/repositories/payment-methods";
 
+// Single payment method. PATCH updates label and, when both valueKey+valueValue
+// are present, the value pair (404 if not found). DELETE first purges the method
+// id from every client's selected list, THEN deletes it — ordering matters to
+// avoid dangling references. User-scoped; 400 if id missing.
 export const PATCH: RequestHandler = async (event) => {
 	const ctx = requireApiContext(event);
 	const body = await parseJson(event, updateMethodSchema);

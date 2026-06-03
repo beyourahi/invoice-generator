@@ -1,3 +1,8 @@
+<!--
+	Dialog-based single-select replacing native <select> for consistent styling and mobile UX.
+	Options render as a roving-focus listbox (arrow-key wraparound); the selected item scrolls
+	into view on open. `columns` controls the grid layout and dialog width.
+-->
 <script lang="ts">
 	import * as Dialog from "$lib/components/ui/dialog";
 	import { cn } from "$lib/utils";

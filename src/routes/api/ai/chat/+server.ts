@@ -34,6 +34,7 @@ import { TOOLS_CATALOG } from "$lib/ai/tools-catalog";
 import { argSchemas, isKnownToolName } from "$lib/ai/schemas";
 import type { Frame, ParsedToolCall } from "$lib/ai/types";
 
+// images: base64 data URLs, max 3, each ≤ ~8 MB (vision attachments).
 const bodySchema = z.object({
 	conversationId: z.string().nullable().optional(),
 	message: z.string().min(1).max(8000),
@@ -65,6 +66,9 @@ const decodeCallTokens = (
 	tokenMap: Record<string, string>
 ): ParsedToolCall[] => calls.map((call) => ({ ...call, args: decodeTokens(call.args, tokenMap) }));
 
+// Gates each model-emitted tool call against the per-tool Zod arg schema.
+// Unknown tool name or arg-schema failure → valid:false (triggers one retry turn).
+// On success, call.args is replaced with the parsed/coerced data.
 const validateToolCalls = (calls: ParsedToolCall[]): ValidatedCall[] =>
 	calls.map((call) => {
 		if (!isKnownToolName(call.name)) {
@@ -89,6 +93,31 @@ const correctiveMessage = (invalid: ValidatedCall[]): string =>
 		"Re-issue the corrected tool call(s) now. Argument names and types must exactly match each tool's argument schema. If you cannot produce a valid call, reply with a short plain-text explanation instead."
 	].join("\n");
 
+/**
+ * POST /api/ai/chat — runs one Copilot turn and streams the result as SSE.
+ *
+ * CONTRACT:
+ *  - body: { conversationId?, message, images? } (see bodySchema). Auth + D1 via requireApiContext.
+ *  - response: text/event-stream of Frames (text deltas, tool_call, error, end).
+ *  - SIDE EFFECTS: creates the conversation if absent; appends the user message
+ *    then the assistant message to D1; records token spend; touches updatedAt;
+ *    structured-logs the turn.
+ *  - ERROR MODES: 401/503 (requireApiContext), 503 if AI binding missing, 400 on
+ *    body parse failure, 429 on daily-quota or monthly-spend-cap (returned as JSON,
+ *    NOT thrown — quota check must increment before model runs). Mid-stream model
+ *    failures arrive as an SSE error frame, not an HTTP status.
+ *
+ * FLOW NOTES:
+ *  - RAG app-knowledge is retrieved only when VECTORIZE is bound, and fails open
+ *    (empty knowledge) so chat never breaks on a RAG error.
+ *  - State is tokenized (cli_/ent_/pm_) before going to the model; returned tool
+ *    args are decoded back via context.tokenMap before validation/streaming.
+ *  - cacheKey = sha256(PROMPT_VERSION|state|message) — versioned so prompt changes invalidate.
+ *  - On schema-invalid tool calls, issues exactly ONE corrective retry turn (with
+ *    streamText disabled) before persisting whatever it gets. salvageTextToolCalls
+ *    recovers tool calls the model emitted as plain-text JSON.
+ *  - FEW_SHOTS are prepended only for an empty (first-turn) conversation.
+ */
 export const POST: RequestHandler = async (event) => {
 	const start = Date.now();
 	const { db, userId } = requireApiContext(event);

@@ -5,6 +5,13 @@ import { insertAction, listRecent } from "$lib/server/repositories/ai-actions";
 import { validateInverse } from "$lib/server/ai-undo";
 import { logToolExecution } from "$lib/server/log";
 
+/**
+ * AI action history collection.
+ *   GET  — recent applied/rejected/failed tool actions for the user (limit, default 50, max 200).
+ *   POST — records a client-executed tool action (with its inverse for undo) and
+ *          structured-logs the execution. Auth + D1 via requireApiContext.
+ * Timestamps serialized to ISO on the wire.
+ */
 const insertSchema = z.object({
 	conversationId: z.string().nullable().optional(),
 	messageId: z.string().nullable().optional(),

@@ -1,3 +1,8 @@
+<!--
+	Dialog for adding multiple invoice months at once. Already-scheduled months are shown
+	locked (struck-through, non-toggleable); the rest accumulate in `pending` until confirmed.
+	`variant` switches between the dashed empty-state trigger and the inline "Add months" button.
+-->
 <script lang="ts">
 	import * as Dialog from "$lib/components/ui/dialog";
 	import Button from "$lib/components/ui/button.svelte";

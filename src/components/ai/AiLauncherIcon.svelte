@@ -1,3 +1,7 @@
+<!--
+	Decorative animated Copilot glyph. `grid` (2×2 boxes) for the mobile FAB, `row` (4 bars) for
+	the sidebar header and welcome screen. Purely CSS-animated; aria-hidden as it carries no meaning.
+-->
 <script lang="ts">
 	let { variant = "grid", class: className = "" }: { variant?: "grid" | "row"; class?: string } = $props();
 </script>

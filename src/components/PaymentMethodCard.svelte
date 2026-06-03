@@ -1,3 +1,8 @@
+<!--
+	Collapsible card configuring one saved payment method's label and fields. Expansion,
+	reorder, and removal are controlled by the parent (FixedSenderPanel) via callbacks so
+	the parent can animate the list; standalone fallbacks call the stores directly.
+-->
 <script lang="ts">
 	import type { PaymentMethodKind, SavedPaymentMethod } from "$lib/types";
 	import { fixed } from "$lib/stores/fixed.svelte";
@@ -59,6 +64,7 @@
 	});
 
 	const valueFrom = (e: Event) => (e.currentTarget as FieldElement).value;
+	// Mobile-wallet numbers use type=tel for the numeric mobile keypad without number-spinner quirks.
 	const inputType = (kind: PaymentMethodKind, type?: string): string => {
 		if (kind === "bkash" || kind === "nagad" || kind === "rocket") return "tel";
 		return type ?? "text";
@@ -104,6 +110,11 @@
 </script>
 
 <div class="border-border bg-card rounded-lg border">
+	<!--
+		div[role="button"] not a native <button>: same hydration invariant as ClientCard —
+		this header wraps inner action buttons, and a nested <button> breaks SSR hydration.
+		The move/remove wrappers stopPropagation so they don't also toggle expansion.
+	-->
 	<div
 		role="button"
 		tabindex="0"

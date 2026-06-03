@@ -1,3 +1,11 @@
+/**
+ * Single source of truth for the "active" filter that gates PDF generation.
+ *
+ * INVARIANT: an invoice is generatable iff `client.isActive AND entry.isActive`
+ * (strict AND gate). Every generation path — GenerationPanel, InvoicePreview,
+ * and the session store's derived count — MUST consume these helpers. No caller
+ * may iterate raw `client.invoices` for generation; doing so bypasses the gate.
+ */
 import type { Client, InvoiceEntry } from "$lib/types";
 
 export interface GeneratableInvoice {

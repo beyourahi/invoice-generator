@@ -4,6 +4,8 @@ import { requireApiContext, ok } from "$lib/server/api";
 import { getConversation } from "$lib/server/repositories/ai-conversations";
 import { listMessages } from "$lib/server/repositories/ai-messages";
 
+// GET /api/ai/messages?conversationId=… — lists up to 500 messages for a conversation.
+// Ownership enforced: 404 if the conversation is not the user's. 400 if conversationId missing.
 export const GET: RequestHandler = async (event) => {
 	const { db, userId } = requireApiContext(event);
 	const conversationId = event.url.searchParams.get("conversationId");

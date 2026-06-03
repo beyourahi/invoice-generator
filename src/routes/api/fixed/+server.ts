@@ -3,6 +3,8 @@ import { ok, parseJson, requireApiContext } from "$lib/server/api";
 import { fromPatchSchema, setSelectedSchema } from "$lib/server/validation";
 import { setSelectedClientId, upsertFrom } from "$lib/server/repositories/fixed";
 
+// Fixed sender settings. PATCH upserts a partial of the sender identity fields;
+// PUT persists the currently selected client id. Auth + D1 via requireApiContext.
 export const PATCH: RequestHandler = async (event) => {
 	const ctx = requireApiContext(event);
 	const patch = await parseJson(event, fromPatchSchema);

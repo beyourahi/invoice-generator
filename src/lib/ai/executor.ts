@@ -1,3 +1,17 @@
+/**
+ * Orchestrates a single tool call end-to-end on the client: validate args →
+ * resolve safety tier → detect anomalies → gate Tier-B (or anomaly-escalated)
+ * calls behind confirmation → run the executor → record the action (with inverse)
+ * for undo → emit result frames via ctx.onResult.
+ *
+ * Tier model (see ./tools-catalog.ts, ./safety.ts):
+ * - READ_ONLY tools (getAppStateSummary) execute immediately, never recorded.
+ * - polishText has its own approval path (requestPolishApproval) and is always Tier A.
+ * - Otherwise effectiveTier = B if base tier is B OR any anomaly fired; B forces confirmation.
+ * Rejected/failed calls are still recorded (with a noop inverse) for history.
+ * @see ./tools.ts (executors), ./inverse.ts (inverse builders), $lib/stores/ai.svelte.ts.
+ */
+
 import { api } from "$lib/api/client";
 import type { AppState } from "$lib/server/dto";
 import { session } from "$lib/stores/session.svelte";
@@ -57,6 +71,7 @@ export interface ExecutionOutcome {
 	error: string | null;
 }
 
+/** Live read of current store state for anomaly detection. Not a deep clone — read-only use only. */
 const snapshotAppState = (): AppState => ({
 	fixed: fixed.value,
 	clients: session.clients,
@@ -231,6 +246,7 @@ const currentPolishText = (target: string, clientId?: string, paymentMethodId?: 
 	}
 };
 
+/** Persists the action (including inverse + status) to /api/ai/actions for the undo history; swallows failure and returns null. */
 const recordAction = async (params: {
 	conversationId: string | null;
 	messageId: string | null;
@@ -268,6 +284,12 @@ const recordAction = async (params: {
 
 const isKnownTool = (name: string): name is keyof typeof argSchemas => name in argSchemas;
 
+/**
+ * Validates + runs one tool call, driving confirmation/anomaly UI through `ctx`
+ * callbacks and reporting progress via `ctx.onResult`. Never throws — every
+ * failure path returns an ExecutionOutcome with status "failed". Unknown or
+ * schema-invalid tools fail fast before any side effect.
+ */
 export const executeToolCall = async (
 	call: ParsedToolCall,
 	ctx: ExecutionContext

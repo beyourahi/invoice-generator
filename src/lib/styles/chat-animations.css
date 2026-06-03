@@ -1,3 +1,9 @@
+/**
+ * AI Copilot animation library: keyframes + `chat-*` utility classes consumed by the
+ * src/components/ai/* components (message entrance, typing dots, generating wave, orb float,
+ * custom scrollbar). Imported via src/app.css. Every animation has a prefers-reduced-motion
+ * fallback below. Distinct from the `ai-*` / `launcher-*` animations, which live in app.css.
+ */
 @keyframes chat-message-in {
 	from {
 		opacity: 0;

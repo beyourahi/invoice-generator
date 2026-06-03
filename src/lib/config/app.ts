@@ -1,3 +1,7 @@
+/**
+ * Static app metadata consumed for <title>/<meta> tags. `siblings` are related
+ * tools cross-linked in the UI.
+ */
 import type { AppConfig } from "$lib/types";
 
 export const APP_CONFIG: AppConfig = {

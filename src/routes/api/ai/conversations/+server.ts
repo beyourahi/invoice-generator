@@ -4,6 +4,8 @@ import { requireApiContext, parseJson, ok } from "$lib/server/api";
 import { createConversation, listConversations } from "$lib/server/repositories/ai-conversations";
 import { titleFromMessage } from "$lib/ai/prompts";
 
+// AI conversations collection. GET lists the user's 50 most recent conversations;
+// POST creates one (optional title, else derived from a placeholder). Auth + D1 via requireApiContext.
 export const GET: RequestHandler = async (event) => {
 	const { db, userId } = requireApiContext(event);
 	const rows = await listConversations(db, userId, 50);

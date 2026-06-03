@@ -1,3 +1,8 @@
+<!--
+	Status chip for one tool call (working / applied / rejected / failed / awaiting confirmation),
+	with inline Undo for applied+reversible actions. Polish proposals render instead as an
+	accept/reject diff card (old vs new text).
+-->
 <script lang="ts">
 	import type { AiToolCall } from "$lib/stores/ai.svelte";
 	import { triggerUndo, respondToPolish } from "$lib/ai/chat-client";

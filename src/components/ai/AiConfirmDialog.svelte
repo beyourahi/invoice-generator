@@ -1,3 +1,8 @@
+<!--
+	Globally-mounted modal that gates Tier-B (destructive / money-mutating) tool calls awaiting
+	confirmation. Single pending call shows a diff + undo summary; multiple show a batch list where
+	each item can be individually rejected. Each resolved call calls back into the executor's promise.
+-->
 <script lang="ts">
 	import { tick } from "svelte";
 	import { fade, scale } from "svelte/transition";
@@ -12,6 +17,7 @@
 	const first = $derived(ai.pendingConfirmations[0] ?? null);
 	const isBatch = $derived(ai.pendingConfirmations.length > 1);
 
+	// In batch mode, `rejected` holds toolCallIds to skip; on Apply, each call resolves true unless rejected.
 	const rejected = $state(new Set<string>());
 
 	const onApplyAll = () => {

@@ -7,6 +7,8 @@ import {
 } from "$lib/server/repositories/payment-methods";
 import type { PaymentMethodKind } from "$lib/types";
 
+// Payment methods collection. POST creates a method of the given kind;
+// PUT reorders the user's methods by body.orderedIds. Auth + D1 via requireApiContext.
 export const POST: RequestHandler = async (event) => {
 	const ctx = requireApiContext(event);
 	const body = await parseJson(event, createMethodSchema);
