@@ -70,6 +70,8 @@ export interface AiMessage {
 	toolCalls: AiToolCall[];
 	createdAt: string;
 	streaming: boolean;
+	/** Data-URL previews when the user attached images to this turn (max 3). */
+	images?: string[];
 }
 
 export interface AiConversation {
@@ -209,7 +211,7 @@ const createAiStore = () => {
 		persistAnomalySettings(anomalySettings);
 	};
 
-	const appendUserMessage = (id: string, content: string) => {
+	const appendUserMessage = (id: string, content: string, images?: string[]) => {
 		messages = [
 			...messages,
 			{
@@ -218,7 +220,8 @@ const createAiStore = () => {
 				content,
 				toolCalls: [],
 				createdAt: new Date().toISOString(),
-				streaming: false
+				streaming: false,
+				...(images && images.length > 0 ? { images } : {})
 			}
 		];
 	};

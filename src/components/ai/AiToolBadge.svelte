@@ -62,7 +62,7 @@
 
 {#if isPolishProposal && call.polish}
 	<div
-		class="chat-message-enter border-chat-border-subtle bg-chat-surface text-chat-text-secondary space-y-2.5 rounded-lg border p-3 text-xs"
+		class="chat-message-enter border-chat-border-subtle bg-chat-surface text-chat-text-secondary space-y-2.5 rounded-lg border border-solid p-3 text-xs"
 	>
 		<div class="text-chat-text-secondary flex items-center gap-1.5 font-medium">
 			<Wand2 class="size-3.5" aria-hidden="true" />
@@ -84,7 +84,7 @@
 			<button
 				type="button"
 				onclick={onRejectPolish}
-				class="text-chat-text-secondary hover:text-chat-text-primary hover:bg-chat-surface-hover border-chat-border-subtle bg-chat-bg inline-flex items-center gap-1 rounded-md border px-2.5 py-1.5 font-medium transition-colors"
+				class="text-chat-text-secondary hover:text-chat-text-primary hover:bg-chat-surface-hover border-chat-border-subtle bg-chat-bg inline-flex items-center gap-1 rounded-md border border-solid px-2.5 py-1.5 font-medium transition-colors"
 			>
 				<X class="size-3" aria-hidden="true" />
 				Reject
@@ -103,7 +103,7 @@
 	<div class="chat-message-enter flex w-full flex-col gap-1.5">
 		<div
 			class={cn(
-				"flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border px-2.5 py-2 text-xs",
+				"flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-solid px-2.5 py-2 text-xs",
 				statusClasses
 			)}
 		>
@@ -126,7 +126,7 @@
 					onclick={onUndo}
 					disabled={undoing}
 					class={cn(
-						"text-chat-text-secondary hover:text-chat-text-primary hover:bg-chat-surface-hover border-chat-border-subtle bg-chat-bg ml-auto inline-flex items-center gap-1 rounded-md border px-2 py-1 font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50",
+						"text-chat-text-secondary hover:text-chat-text-primary hover:bg-chat-surface-hover border-chat-border-subtle bg-chat-bg ml-auto inline-flex items-center gap-1 rounded-md border border-solid px-2 py-1 font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50",
 						undoing && "cursor-wait"
 					)}
 				>

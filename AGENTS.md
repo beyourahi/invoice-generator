@@ -103,7 +103,7 @@ Each worktree shares the same repository. Agents commit directly to their worktr
 - Dark-only design — never introduce light-mode styles
 - CSS variables for colors — never hardcode hex/rgb/oklch
 - Arrow functions only — no function declarations
-- Zero comments in shipped code
+- **Agent-first documentation** — carry high-signal docs: module-purpose blocks, contracts for non-obvious exported symbols, stated invariants, and non-obvious-coupling notes. TSDoc/JSDoc (`/** */`) in `.ts` and `.svelte` `<script>`; HTML comments at the top of `.svelte` markup. No decorative banners or restating what the code already says.
 - **Motion** — GSAP is the motion engine, used only through `$lib/motion`. Never statically import GSAP (it must not load during SSR on Cloudflare Workers); it loads via a `browser`-guarded dynamic `import()` in `$lib/motion/gsap.ts`. All motion respects `prefers-reduced-motion`; clean up every tween, timeline, and ScrollTrigger on destroy.
 
 ---
@@ -128,8 +128,8 @@ Each worktree shares the same repository. Agents commit directly to their worktr
 4. No relative imports (`../../../`) in any changed file
 5. No hardcoded hex/rgb colors in Tailwind classes
 6. No `function` declarations (arrow functions only)
-7. No comments in shipped code
-8. `$lib/components/ui/` files are unmodified (shadcn-svelte auto-generated)
+7. Agent-first docs present where warranted (module-purpose blocks, contracts for non-obvious exports, invariants); no decorative or redundant comments
+8. `$lib/components/ui/` files are unmodified (shadcn-svelte auto-generated; the hand-authored `footer/footer.svelte` is the sole exception)
 9. `tmp_screenshots/` and `.playwright-mcp/` do not exist in the working tree
 10. PDF pipeline integrity: `active.ts → builder.ts → resolver.ts → generator.ts` chain is unbroken
 11. Generation queue derives from `getGeneratableInvoices()` / `firstGeneratableInvoice()` in `$lib/invoice/active.ts` — no caller iterates raw `session.clients` for generation
@@ -267,9 +267,9 @@ The invoice-generator shares conventions with all other SvelteKit projects in `~
 1. **Svelte 5 runes** — no legacy `export let` or `$:` reactive statements anywhere
 2. **Path aliases** — no relative imports from route files (`$lib`, `$src` only)
 3. **Arrow functions** — no `function` keyword declarations in `.ts` or `.svelte` files
-4. **Zero comments** — no inline, block, or JSDoc comments in shipped code
+4. **Agent-first documentation** — high-signal docs only (module-purpose blocks, contracts for non-obvious exports, invariants, non-obvious coupling); never decorative banners or comments that restate the code
 5. **Tailwind CSS v4** — no `tailwind.config.js`, no hardcoded colors, CSS-first `@theme inline`
-6. **shadcn-svelte auto-generated files** — `$lib/components/ui/` is never manually edited
+6. **shadcn-svelte auto-generated files** — `$lib/components/ui/` is never manually edited, except the hand-authored `footer/footer.svelte`
 7. **Active filter is centralized** — every generation/preview path consumes `$lib/invoice/active.ts`; never iterate `session.clients → client.invoices` directly for generation
 8. **No nested interactive elements** — never put a `<button>`/`<Button>` inside a native `<button>` (invalid HTML; breaks SSR hydration and double-renders the whole page). Collapsible card headers use `div[role="button"]` + `tabindex="0"` + Enter/Space `onkeydown`, as in `ClientCard`/`PaymentMethodCard`
 

@@ -52,7 +52,7 @@
 <section
 	class={cn(
 		"bg-chat-bg flex h-full min-h-[30rem] flex-col overflow-hidden",
-		!bare && "border-chat-border rounded-xl border shadow-[var(--chat-shadow)]"
+		!bare && "border-chat-border rounded-2xl border border-solid shadow-[var(--chat-shadow)]"
 	)}
 	aria-label="AI Copilot"
 >
@@ -62,29 +62,30 @@
 		{onToggleHistory}
 		{hasMessages}
 		{historyOpen}
+		historyCount={ai.conversations.length}
 		{status}
 		showCloseButton={bare && !!onClose}
 	/>
 
 	{#if historyOpen}
-		<div class="border-chat-border-subtle flex-1 overflow-hidden border-b">
+		<div class="border-chat-border-subtle border-b border-solid px-3 py-3 md:px-4">
 			<AiConversationsPanel />
 		</div>
-	{:else if !hasMessages}
-		<div class="chat-message-enter flex min-h-0 flex-1 overflow-y-auto">
+	{/if}
+
+	{#if !hasMessages}
+		<div class="flex min-h-0 flex-1 flex-col overflow-y-auto">
 			<AiWelcome {onSuggestionClick} />
 		</div>
 	{:else}
 		<AiMessageList messages={ai.messages} isStreaming={ai.inputBusy} />
 	{/if}
 
-	{#if !historyOpen}
-		{#if ai.error}
-			<div role="alert" class="px-4 py-2 text-center text-xs text-pretty text-red-400/80">
-				{ai.error}
-			</div>
-		{/if}
-
-		<AiComposer bind:this={composerRef} {onSend} disabled={ai.inputBusy} />
+	{#if ai.error}
+		<div role="alert" class="px-4 py-2 text-center text-xs text-pretty text-red-400/80">
+			{ai.error}
+		</div>
 	{/if}
+
+	<AiComposer bind:this={composerRef} {onSend} disabled={ai.inputBusy} />
 </section>

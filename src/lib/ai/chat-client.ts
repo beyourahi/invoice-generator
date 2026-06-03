@@ -91,7 +91,7 @@ export const sendMessage = async (message: string, options: SendOptions = {}): P
 	const conversationId = ai.activeConversationId;
 	const images = ai.pendingImages.length > 0 ? [...ai.pendingImages] : undefined;
 	const userMessageId = crypto.randomUUID();
-	ai.appendUserMessage(userMessageId, message);
+	ai.appendUserMessage(userMessageId, message, images);
 
 	const assistantId = crypto.randomUUID();
 	ai.startAssistantMessage(assistantId);

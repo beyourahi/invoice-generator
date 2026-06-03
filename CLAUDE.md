@@ -111,7 +111,9 @@ The server layer handles authentication, data persistence, and AI Copilot infere
 
 - **`$lib/auth-client.ts`** — Better Auth Svelte client (`createAuthClient`). Exports `authClient`, `signIn`, `signOut`, `useSession`.
 
-- **`$lib/config/app.ts`** — `APP_CONFIG` object. App metadata used for `<title>` and `<meta>` tags.
+- **`$lib/config/app.ts`** — `APP_CONFIG` object. App metadata used for `<title>`/`<meta>` tags; its `author` and `siblings` fields also feed the global footer links.
+
+- **`$lib/data/changelog.ts`** — `CHANGELOG_ENTRIES`: hand-curated, customer-facing product update entries backing `/changelog`. Plain-language (no commit hashes/jargon); the array IS the render order (newest first). Prepend a new entry in the same change that ships a user-facing feature.
 
 - **`$lib/hooks/use-current-user.ts`** — `getCurrentUser(user)` → `CurrentUser | null`.
 
@@ -126,6 +128,8 @@ The server layer handles authentication, data persistence, and AI Copilot infere
 - **`src/routes/login/+page.svelte`** — Google sign-in button. Redirects to `/` after successful OAuth.
 
 - **`src/routes/login/+page.server.ts`** — Redirects to `/` if already authenticated.
+
+- **`src/routes/changelog/+page.svelte`** — Public `/changelog` route. Has **no `+page.server.ts`**, so it inherits no auth guard and is reachable unauthenticated (the guard lives only in `+page.server.ts` for `/`). Renders `CHANGELOG_ENTRIES` from `$lib/data/changelog.ts` grouped by date (source order is render order — newest first, no re-sort). Dates are formatted absolutely (SSR-safe).
 
 - **`src/routes/api/logout/+server.ts`** — `POST`/`GET` both delete the session cookie and redirect to `/login`.
 
@@ -201,6 +205,7 @@ To add a theme: create a new file in `$lib/themes/` implementing the full `Theme
   - Desktop (`lg+`): fixed `<aside>` rendering `AiSidebar`.
   - Mobile: `AiMobileFab` + `AiMobileSheet`.
   - Always: `AiConfirmDialog` mounts globally for Tier-B confirmations.
+- **`Footer`** (`$lib/components/ui/footer/footer.svelte`) — rendered globally below `{@render children()}` in `+layout.svelte` (every route, full-width). Links to `/changelog`, the author URL (`APP_CONFIG.author.url`), and an external tools page. This is the only `$lib/components/ui/` component that is hand-authored, not shadcn-generated.
 
 `GenerationPanel` owns the generate loop: iterates the queue from `getGeneratableInvoices(session.clients)` (active-only), calls `buildInvoiceHtml` + `generatePdf` sequentially, tracks progress with `$state<number>` (0–100) bound to a shadcn `Progress`. On completion renders a `Table` of results with per-client download (directory picker or sequential) and ZIP buttons. Uses `svelte-sonner` toasts for success/error feedback.
 
@@ -363,7 +368,7 @@ The bar is high-signal only: every comment must carry information not already ob
 
 ### shadcn-svelte Components
 
-Components in `$lib/components/ui/` are auto-generated. Never modify them. Create wrappers elsewhere.
+Components in `$lib/components/ui/` are auto-generated. Never modify them. Create wrappers elsewhere. The sole hand-authored exception is `footer/footer.svelte` (a plain app component that happens to live there).
 Add components: `bunx shadcn-svelte@latest add <component>`
 
 ---

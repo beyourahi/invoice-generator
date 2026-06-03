@@ -41,7 +41,7 @@
 				href={node.href}
 				target="_blank"
 				rel="noopener noreferrer"
-				class="text-chat-text-primary decoration-chat-accent/50 hover:decoration-chat-accent underline underline-offset-2 transition-colors"
+				class="text-chat-text-primary decoration-chat-accent/50 hover:decoration-chat-accent font-medium underline underline-offset-2 transition-colors"
 				>{node.label}</a
 			>{/if}
 	{/each}
@@ -55,16 +55,29 @@
 		)}
 	>
 		{#if isUser}
-			<div
-				class="bg-chat-user-bubble text-chat-text-primary rounded-2xl rounded-br-md px-4 py-2.5 text-sm leading-relaxed"
-			>
-				<span class="break-words whitespace-pre-wrap">{message.content}</span>
-			</div>
+			{#if message.images && message.images.length > 0}
+				<div class="flex flex-wrap justify-end gap-1.5">
+					{#each message.images as image, i (i)}
+						<img
+							src={image}
+							alt="Attachment {i + 1}"
+							class="border-chat-border-subtle max-h-44 rounded-2xl rounded-br-md border border-solid object-cover"
+						/>
+					{/each}
+				</div>
+			{/if}
+			{#if message.content}
+				<div
+					class="bg-chat-user-bubble text-chat-text-primary rounded-2xl rounded-br-md px-4 py-2.5 text-sm leading-relaxed"
+				>
+					<span class="break-words whitespace-pre-wrap">{message.content}</span>
+				</div>
+			{/if}
 		{:else if message.content}
 			<div
-				class="border-chat-border-subtle bg-chat-bot-bubble text-chat-text-secondary rounded-2xl rounded-bl-md border px-4 py-2.5 text-sm leading-relaxed"
+				class="border-chat-border-subtle bg-chat-bot-bubble text-chat-text-secondary rounded-2xl rounded-bl-md border border-solid px-4 py-2.5 text-sm"
 			>
-				<div class="space-y-2.5">
+				<div class="space-y-2.5 leading-relaxed">
 					{#each blocks as block, bi (bi)}
 						{#if block.type === "paragraph"}
 							<p class="text-pretty">
@@ -95,7 +108,7 @@
 			</div>
 		{:else if message.streaming}
 			<div
-				class="bg-chat-bot-bubble border-chat-border-subtle flex items-end gap-[3px] rounded-2xl rounded-bl-md border px-4 py-3"
+				class="bg-chat-bot-bubble border-chat-border-subtle flex items-end gap-[3px] rounded-2xl rounded-bl-md border border-solid px-4 py-3"
 				role="status"
 				aria-label="Generating response"
 			>
@@ -118,7 +131,7 @@
 			</div>
 		{/if}
 
-		{#if message.content && timeLabel}
+		{#if (message.content || (message.images && message.images.length > 0)) && timeLabel}
 			<span class="text-chat-text-muted px-1 text-[10px] tabular-nums">{timeLabel}</span>
 		{/if}
 	</div>

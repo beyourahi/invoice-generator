@@ -32,7 +32,7 @@
 	<meta name="description" content="Client-side batch invoice PDF generator for recurring billing." />
 </svelte:head>
 
-<div class={["flex min-h-dvh flex-col", showCopilot && "lg:pr-[26rem] xl:pr-[28rem]"]}>
+<div class={["flex min-h-dvh flex-col", showCopilot && "lg:pr-[calc(26rem+1.5rem)] xl:pr-[calc(28rem+1.5rem)]"]}>
 	<div class="flex grow flex-col">
 		{@render children()}
 	</div>

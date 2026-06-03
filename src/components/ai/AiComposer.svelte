@@ -1,12 +1,13 @@
 <!--
-	Chat input: auto-growing textarea (capped at MAX_HEIGHT), image attachments, and send.
-	Submit is allowed with text OR images alone; Enter sends, Shift+Enter inserts a newline.
-	Exposes setValue() so AiWelcome suggestion cards can prefill the box.
+	Chat input: auto-growing textarea (capped at MAX_HEIGHT), image attachments (picker + drag/drop),
+	and send. Submit is allowed with text OR images alone; Enter sends, Shift+Enter inserts a newline.
+	Exposes setValue() so AiWelcome suggestion cards can prefill the box. Drops are delegated to the
+	upload child's addFile so all attachments share one validated/re-encode path.
 -->
 <script lang="ts">
 	import { ai } from "$lib/stores/ai.svelte";
 	import { cn } from "$lib/utils";
-	import { ArrowUp, Paperclip } from "@lucide/svelte";
+	import { ArrowUp, ImagePlus } from "@lucide/svelte";
 	import { tick } from "svelte";
 	import AiImageUpload from "./AiImageUpload.svelte";
 
@@ -20,7 +21,8 @@
 
 	let value = $state("");
 	let textareaEl = $state<HTMLTextAreaElement | null>(null);
-	let imageUpload = $state<{ triggerUpload: () => void } | null>(null);
+	let imageUpload = $state<{ triggerUpload: () => void; addFile: (file: File) => Promise<void> } | null>(null);
+	let dragging = $state(false);
 
 	const MAX_HEIGHT = 200;
 
@@ -56,6 +58,25 @@
 		ai.setError(message);
 	};
 
+	const handleDrop = (event: DragEvent) => {
+		event.preventDefault();
+		dragging = false;
+		const files = Array.from(event.dataTransfer?.files ?? []);
+		for (const file of files) void imageUpload?.addFile(file);
+	};
+
+	const handleDragOver = (event: DragEvent) => {
+		event.preventDefault();
+		dragging = true;
+	};
+
+	const handleDragLeave = (event: DragEvent) => {
+		const target = event.currentTarget as HTMLElement;
+		if (!target.contains(event.relatedTarget as Node)) {
+			dragging = false;
+		}
+	};
+
 	export const setValue = (next: string) => {
 		value = next;
 		tick().then(() => {
@@ -71,8 +92,23 @@
 
 <div class="px-3 pt-2 pb-3 md:px-4 md:pb-4">
 	<div
-		class="border-chat-border bg-chat-surface relative rounded-2xl border px-3 pt-2.5 pb-9 transition-colors duration-150 md:px-4 md:pt-3 md:pb-10"
+		class={cn(
+			"border-chat-border bg-chat-surface relative rounded-2xl border border-solid px-3 pt-2.5 pb-9 transition-colors duration-150 md:px-4 md:pt-3 md:pb-10",
+			dragging && "border-chat-accent/30 bg-chat-accent/5"
+		)}
+		ondrop={handleDrop}
+		ondragover={handleDragOver}
+		ondragleave={handleDragLeave}
+		role="presentation"
 	>
+		{#if dragging}
+			<div
+				class="border-chat-accent/30 bg-chat-accent/5 absolute inset-0 z-10 flex items-center justify-center rounded-2xl border-2 border-dashed"
+			>
+				<span class="text-chat-text-secondary text-sm">drop an image here</span>
+			</div>
+		{/if}
+
 		<AiImageUpload bind:this={imageUpload} onError={handleUploadError} />
 
 		<textarea
@@ -96,23 +132,23 @@
 			style="max-height: {MAX_HEIGHT}px;"
 		></textarea>
 
-		<button
-			type="button"
-			onclick={() => imageUpload?.triggerUpload()}
-			disabled={disabled || attachFull}
-			aria-label={attachFull ? `Attachment limit reached (${ai.maxPendingImages})` : "Attach images"}
-			title={attachFull ? `Up to ${ai.maxPendingImages} images` : "Attach images"}
-			class={cn(
-				"absolute bottom-2.5 left-3 rounded-lg p-2 transition-all duration-200 md:left-4",
-				disabled || attachFull
-					? "text-chat-text-muted/50 cursor-not-allowed"
-					: "text-chat-text-muted hover:bg-chat-surface-hover hover:text-chat-text-primary active:scale-95"
-			)}
-		>
-			<Paperclip class="h-4 w-4" aria-hidden="true" />
-		</button>
-
 		<div class="absolute right-3 bottom-2.5 flex items-center gap-2">
+			<button
+				type="button"
+				onclick={() => imageUpload?.triggerUpload()}
+				disabled={disabled || attachFull}
+				aria-label={attachFull ? `Attachment limit reached (${ai.maxPendingImages})` : "Attach an image"}
+				title={attachFull ? `Up to ${ai.maxPendingImages} images` : "Attach an image"}
+				class={cn(
+					"relative rounded-lg p-2 transition-all duration-200",
+					hasImages
+						? "bg-chat-accent-muted text-chat-text-primary"
+						: "text-chat-text-muted hover:text-chat-text-secondary",
+					(disabled || attachFull) && "cursor-not-allowed opacity-50"
+				)}
+			>
+				<ImagePlus class="h-4 w-4" aria-hidden="true" />
+			</button>
 			<button
 				type="button"
 				onclick={handleSubmit}
@@ -123,7 +159,7 @@
 					disabled
 						? "bg-chat-accent-muted/40 text-chat-text-muted cursor-not-allowed"
 						: canSubmit
-							? "bg-chat-accent-muted text-chat-text-primary hover:bg-chat-surface-hover active:scale-95"
+							? "bg-chat-accent-muted text-chat-text-primary hover:bg-chat-surface-hover"
 							: "text-chat-text-muted cursor-not-allowed"
 				)}
 			>
@@ -148,9 +184,7 @@
 			</button>
 		</div>
 
-		<span
-			class="text-chat-text-muted/60 pointer-events-none absolute bottom-[1.15rem] left-12 text-[10px] md:left-14"
-		>
+		<span class="text-chat-text-muted/60 absolute bottom-2.5 left-4 text-[10px]">
 			{#if disabled}
 				generating…
 			{:else}

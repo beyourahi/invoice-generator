@@ -11,6 +11,7 @@
 		onToggleHistory,
 		hasMessages,
 		historyOpen,
+		historyCount,
 		status = "online",
 		showCloseButton = false
 	}: {
@@ -19,6 +20,7 @@
 		onToggleHistory: () => void;
 		hasMessages: boolean;
 		historyOpen: boolean;
+		historyCount: number;
 		status?: "online" | "connecting" | "error";
 		showCloseButton?: boolean;
 	} = $props();
@@ -32,22 +34,28 @@
 	);
 </script>
 
-<div class="border-chat-border flex items-center justify-between border-b px-4 py-3 md:px-5 md:py-4">
+<div class="border-chat-border flex items-center justify-between border-b border-solid px-4 py-3 md:px-5 md:py-4">
 	<div class="flex items-center gap-3">
 		<div class="h-2 w-2 rounded-full {statusConfig.dot}"></div>
 		<span class="text-chat-text-muted text-xs whitespace-nowrap">{statusConfig.label}</span>
 	</div>
 	<div class="flex items-center gap-1">
-		{#if !historyOpen}
-			<button
-				type="button"
-				onclick={onToggleHistory}
-				class="hover:bg-chat-surface-hover rounded-xl p-2.5 transition-colors md:p-2"
-				aria-label="Chat history"
-			>
-				<Clock class="text-chat-icon-muted h-5 w-5 md:h-4 md:w-4" />
-			</button>
-		{/if}
+		<button
+			type="button"
+			onclick={onToggleHistory}
+			aria-expanded={historyOpen}
+			class="hover:bg-chat-surface-hover relative rounded-xl p-2.5 transition-colors md:p-2"
+			aria-label="Chat history"
+		>
+			<Clock class="text-chat-icon-muted h-5 w-5 md:h-4 md:w-4" />
+			{#if historyCount > 0}
+				<span
+					class="bg-chat-accent text-chat-bg absolute -top-0.5 -right-0.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full px-1 text-[9px] font-bold tabular-nums"
+				>
+					{historyCount}
+				</span>
+			{/if}
+		</button>
 		{#if hasMessages}
 			<button
 				type="button"

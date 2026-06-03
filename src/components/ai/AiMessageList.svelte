@@ -27,7 +27,7 @@
 		if (!scrollContainer) return;
 		const { scrollTop, scrollHeight, clientHeight } = scrollContainer;
 		const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
-		userScrolledUp = distanceFromBottom > 48;
+		userScrolledUp = distanceFromBottom > 24;
 	};
 
 	// Re-runs on count, streaming state, and last-message content (tracked) to follow streamed tokens.
@@ -56,14 +56,14 @@
 		{/each}
 		{#snippet failed(_error, reset)}
 			<div class="chat-message-enter flex flex-col items-center gap-2 py-6 text-center" role="alert">
-				<p class="text-sm font-medium text-red-400/80">The Copilot hit a display error.</p>
+				<p class="text-sm font-medium text-red-300">The Copilot hit a display error.</p>
 				<p class="text-chat-text-muted max-w-xs text-xs text-pretty">
 					Something went wrong showing this conversation. Retry to reload it.
 				</p>
 				<button
 					type="button"
 					onclick={reset}
-					class="border-chat-border bg-chat-surface text-chat-text-primary hover:bg-chat-surface-hover mt-1 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors"
+					class="border-chat-border bg-chat-surface text-chat-text-primary hover:bg-chat-surface-hover mt-1 rounded-lg border border-solid px-3 py-1.5 text-xs font-medium transition-colors"
 				>
 					Retry
 				</button>
