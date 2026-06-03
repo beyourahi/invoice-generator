@@ -103,9 +103,7 @@
 {#if ai.pendingImages.length > 0 || processing > 0}
 	<div class="flex flex-wrap items-center gap-2 px-1 pt-1 pb-2.5">
 		{#each ai.pendingImages as image, index (image)}
-			<div
-				class="border-chat-border-subtle relative size-12 shrink-0 overflow-hidden rounded-lg border"
-			>
+			<div class="border-chat-border-subtle relative size-12 shrink-0 overflow-hidden rounded-lg border">
 				<img src={image} alt="Attachment {index + 1}" class="size-full object-cover" />
 				<button
 					type="button"

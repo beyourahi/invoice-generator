@@ -100,9 +100,7 @@
 			type="button"
 			onclick={() => imageUpload?.triggerUpload()}
 			disabled={disabled || attachFull}
-			aria-label={attachFull
-				? `Attachment limit reached (${ai.maxPendingImages})`
-				: "Attach images"}
+			aria-label={attachFull ? `Attachment limit reached (${ai.maxPendingImages})` : "Attach images"}
 			title={attachFull ? `Up to ${ai.maxPendingImages} images` : "Attach images"}
 			class={cn(
 				"absolute bottom-2.5 left-3 rounded-lg p-2 transition-all duration-200 md:left-4",

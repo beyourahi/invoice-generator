@@ -39,22 +39,22 @@ A SvelteKit app that generates batches of PDF invoices. Users configure a fixed 
 
 ## Tech Stack
 
-| Layer           | Technology                                                  |
-| --------------- | ----------------------------------------------------------- |
-| Framework       | SvelteKit 2.x (Svelte 5 with runes)                         |
-| Language        | TypeScript (strict mode)                                    |
-| Styling         | Tailwind CSS v4 (CSS-first config, OKLCH colors)            |
-| UI Components   | shadcn-svelte                                               |
-| Authentication  | Better Auth (Google OAuth only)                             |
-| Database        | Cloudflare D1 (SQLite via Drizzle ORM)                      |
+| Layer           | Technology                                                      |
+| --------------- | --------------------------------------------------------------- |
+| Framework       | SvelteKit 2.x (Svelte 5 with runes)                             |
+| Language        | TypeScript (strict mode)                                        |
+| Styling         | Tailwind CSS v4 (CSS-first config, OKLCH colors)                |
+| UI Components   | shadcn-svelte                                                   |
+| Authentication  | Better Auth (Google OAuth only)                                 |
+| Database        | Cloudflare D1 (SQLite via Drizzle ORM)                          |
 | AI              | Workers AI via AI Gateway dynamic route + qwen3 RAG (Vectorize) |
-| Validation      | Zod                                                         |
-| PDF Rendering   | html2canvas + jsPDF                                         |
-| ZIP Packaging   | fflate (`zipSync`, `level: 0`)                              |
-| Animations      | GSAP 3 (motion, view transitions); shadcn Progress/Skeleton |
-| Deployment      | Cloudflare Workers                                          |
-| Package Manager | Bun                                                         |
-| Linting         | ESLint 10 flat config + Prettier                            |
+| Validation      | Zod                                                             |
+| PDF Rendering   | html2canvas + jsPDF                                             |
+| ZIP Packaging   | fflate (`zipSync`, `level: 0`)                                  |
+| Animations      | GSAP 3 (motion, view transitions); shadcn Progress/Skeleton     |
+| Deployment      | Cloudflare Workers                                              |
+| Package Manager | Bun                                                             |
+| Linting         | ESLint 10 flat config + Prettier                                |
 
 ---
 
