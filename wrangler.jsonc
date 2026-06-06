@@ -21,8 +21,10 @@
 		}
 	],
 	// AI: Workers AI binding used for BOTH the gateway chat turn and qwen3 RAG embeddings.
+	// `remote: true` so `wrangler dev` (local) reaches real Workers AI.
 	"ai": {
-		"binding": "AI"
+		"binding": "AI",
+		"remote": true
 	},
 	// AI_QUOTA_KV: optional — backs the Copilot daily turn quota + monthly USD spend cap.
 	// When absent, both limits are disabled (see $lib/server/ai-quota.ts, ai-spend.ts).
@@ -38,7 +40,8 @@
 	"vectorize": [
 		{
 			"binding": "VECTORIZE",
-			"index_name": "invoice-generator-kb"
+			"index_name": "invoice-generator-kb",
+			"remote": true
 		}
 	],
 	// Non-secret vars only. Secrets (BETTER_AUTH_SECRET, GOOGLE_CLIENT_ID/SECRET, SEED_SECRET)

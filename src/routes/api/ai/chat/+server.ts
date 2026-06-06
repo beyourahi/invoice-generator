@@ -31,6 +31,7 @@ import { sseStream } from "$lib/ai/streaming";
 import { windowHistory } from "$lib/ai/window";
 import { retrieveAppKnowledge, formatKnowledge } from "$lib/ai/rag";
 import { TOOLS_CATALOG } from "$lib/ai/tools-catalog";
+import { toolLabel } from "$lib/ai/tool-labels";
 import { argSchemas, isKnownToolName } from "$lib/ai/schemas";
 import type { Frame, ParsedToolCall } from "$lib/ai/types";
 
@@ -41,12 +42,22 @@ const bodySchema = z.object({
 	images: z.array(z.string().min(1).max(8_000_000)).max(3).optional()
 });
 
+// A tool-only assistant turn persists with empty content; convey what it did
+// (from its tool calls) so the model doesn't re-fire the prior instruction.
+const summarizeToolOnlyTurn = (m: AiMessageRow): string => {
+	const labels = (m.toolCalls ?? []).map((c) => toolLabel(c.name)).filter(Boolean);
+	return labels.length > 0 ? `[Performed: ${labels.join(", ")}]` : m.content;
+};
+
 const toHistory = (
 	rows: AiMessageRow[]
 ): Array<{ role: "user" | "assistant" | "system"; content: string }> =>
 	rows
 		.filter((m) => m.role === "user" || m.role === "assistant")
-		.map((m) => ({ role: m.role as "user" | "assistant", content: m.content }));
+		.map((m) => ({
+			role: m.role as "user" | "assistant",
+			content: m.content.trim().length > 0 ? m.content : summarizeToolOnlyTurn(m)
+		}));
 
 const sha256Hex = async (input: string): Promise<string> => {
 	const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(input));
@@ -92,6 +103,26 @@ const correctiveMessage = (invalid: ValidatedCall[]): string =>
 		"",
 		"Re-issue the corrected tool call(s) now. Argument names and types must exactly match each tool's argument schema. If you cannot produce a valid call, reply with a short plain-text explanation instead."
 	].join("\n");
+
+/** Retry prompt when the model should have acted on an instruction but called no tool. */
+const ACTION_RETRY_MESSAGE =
+	"Your previous reply did not call any tool, so nothing changed. The user gave an instruction to change their clients, invoices, payment methods, or sender details. Emit the correct tool call now through the tool interface. Do NOT ask the user to confirm in chat (the UI handles confirmation) and do NOT claim anything was done. Only if the request is genuinely out of scope or impossible, say so plainly in one short sentence.";
+
+/**
+ * The gateway chain models intermittently narrate an action ("Done…",
+ * "Creating the client…") WITHOUT calling a tool, so nothing runs. We detect
+ * the failure from the user's intent (an imperative instruction) rather than
+ * the model's wording.
+ */
+const IMPERATIVE_RE =
+	/\b(set|add|change|update|delete|remove|edit|fix|make|apply|append|insert|rename|clear|replace|assign|move|undo|revert|create|correct|adjust|drop|fill|put|toggle|activate|deactivate|enable|disable|select|reorder|polish|rewrite)\b/i;
+const looksImperative = (text: string): boolean => {
+	const t = text.trim();
+	return t.length > 0 && !t.endsWith("?") && IMPERATIVE_RE.test(t);
+};
+/** A genuine refusal/clarification we must NOT suppress as a false action narration. */
+const REFUSAL_RE =
+	/\b(can'?t|cannot|can not|unable|won'?t|not able|out of scope|outside|only help|only assist|don'?t|do not|which|could you|do you want|no client|no invoice)\b/i;
 
 /**
  * POST /api/ai/chat — runs one Copilot turn and streams the result as SSE.
@@ -220,6 +251,8 @@ export const POST: RequestHandler = async (event) => {
 		};
 
 		try {
+			// Buffer the first turn (no live text stream) so we can inspect it for a
+			// false action narration before anything reaches the user.
 			const first = await consume(
 				runChatFrames(env, {
 					systemContext,
@@ -230,29 +263,40 @@ export const POST: RequestHandler = async (event) => {
 					tools: TOOLS_CATALOG,
 					cacheKey
 				}),
-				true
+				false
 			);
 			inputTokens += first.inputTokens;
 			outputTokens += first.outputTokens;
 
 			let firstCalls = first.toolCalls;
-			if (firstCalls.length === 0 && !errored && assistantText.trim().length > 0) {
-				const salvaged = salvageTextToolCalls(assistantText);
+			let firstText = first.text;
+			// Recover tool calls the model emitted as plain-text JSON.
+			if (firstCalls.length === 0 && !errored && firstText.trim().length > 0) {
+				const salvaged = salvageTextToolCalls(firstText);
 				if (salvaged.calls.length > 0) {
 					firstCalls = salvaged.calls;
-					assistantText = salvaged.cleanedText;
+					firstText = salvaged.cleanedText;
 				}
 			}
 
 			let validated = validateToolCalls(decodeCallTokens(firstCalls, context.tokenMap));
+			let replyText = firstText;
 			const invalid = validated.filter((v) => !v.valid);
+			const userImperative = looksImperative(parsed.message);
+			// Model failed to act: an imperative instruction produced no tool call,
+			// and the reply isn't a clarifying question.
+			const failedToAct =
+				firstCalls.length === 0 && !errored && userImperative && !firstText.includes("?");
 
-			if (invalid.length > 0 && !errored) {
+			// Exactly one corrective retry: malformed args OR an instruction that
+			// produced no tool call (the model narrated instead of calling).
+			if ((invalid.length > 0 || failedToAct) && !errored) {
 				retried = true;
 				console.log(
 					JSON.stringify({
 						event: "ai.validation_retry",
 						turn_id: turnId,
+						reason: invalid.length > 0 ? "invalid_args" : "no_tool_call",
 						failed: invalid.map((v) => ({ tool: v.call.name, error: v.error }))
 					})
 				);
@@ -261,16 +305,14 @@ export const POST: RequestHandler = async (event) => {
 					{ role: "user" as const, content: userTurn },
 					{
 						role: "assistant" as const,
-						content: `${first.text}\n\n[Attempted tool calls: ${JSON.stringify(
-							first.toolCalls.map((c) => ({ name: c.name, args: c.args }))
-						)}]`
+						content: "[The assistant did not produce a valid tool call.]"
 					}
 				];
 				const retry = await consume(
 					runChatFrames(env, {
 						systemContext,
 						history: retryHistory,
-						userMessage: correctiveMessage(invalid),
+						userMessage: invalid.length > 0 ? correctiveMessage(invalid) : ACTION_RETRY_MESSAGE,
 						conversationId: activeConversationId,
 						tools: TOOLS_CATALOG
 					}),
@@ -284,11 +326,32 @@ export const POST: RequestHandler = async (event) => {
 					if (salvaged.calls.length > 0) retryCalls = salvaged.calls;
 				}
 				validated = validateToolCalls(decodeCallTokens(retryCalls, context.tokenMap));
+				replyText = retry.text;
 			}
 
-			finalCalls = validated.map((v) => v.call);
-			successCount = validated.filter((v) => v.valid).length;
+			// Only valid calls reach the client/D1.
+			finalCalls = validated.filter((v) => v.valid).map((v) => v.call);
+			successCount = finalCalls.length;
 
+			// Never let an action narration stand when no tool ran; genuine refusals
+			// and clarifying questions are preserved.
+			let outText = replyText;
+			if (
+				successCount === 0 &&
+				userImperative &&
+				!outText.includes("?") &&
+				!REFUSAL_RE.test(outText)
+			) {
+				outText = "";
+			}
+			if (failedToAct && successCount === 0 && outText.trim().length === 0) {
+				outText = "I couldn't apply that change — could you rephrase your request?";
+			}
+			assistantText = outText;
+
+			if (outText.trim().length > 0) {
+				push({ t: "text", delta: outText });
+			}
 			for (const call of finalCalls) {
 				push({ t: "tool_call", id: call.id, name: call.name, args: call.args });
 			}

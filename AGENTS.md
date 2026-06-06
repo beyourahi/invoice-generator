@@ -135,6 +135,7 @@ Each worktree shares the same repository. Agents commit directly to their worktr
 11. Generation queue derives from `getGeneratableInvoices()` / `firstGeneratableInvoice()` in `$lib/invoice/active.ts` — no caller iterates raw `session.clients` for generation
 12. `setClientActive` / `setInvoiceActive` preserve optimistic-update-with-rollback semantics
 13. No nested interactive elements — no `<button>`/`<Button>` inside a native `<button>` (clickable card headers use `div[role="button"]` + keydown), so SSR hydration cannot double-render the page
+14. If `src/routes/api/ai/chat/+server.ts` changed: the no-tool-call retry (`looksImperative` → `ACTION_RETRY_MESSAGE`) and false-action-narration suppression (`IMPERATIVE_RE`/`REFUSAL_RE`) are intact — removing them lets the Copilot claim work it never did
 
 ---
 
@@ -340,6 +341,7 @@ Every agent response must be:
 - **Secrets in `.dev.vars` only** — `BETTER_AUTH_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `SEED_SECRET` (gates `POST /api/ai/seed`) must live in `.dev.vars` (gitignored) or Cloudflare dashboard secrets. Never commit them. `BETTER_AUTH_URL` is a non-secret binding in `wrangler.jsonc`.
 - **No `.env` or `.dev.vars` committed** — hard requirement
 - **`E2E_BYPASS_AUTH` is dev-only** — when set to `"true"` in `.dev.vars`, `hooks.server.ts` synthesizes a test user + session for every request (including `/api/*`), skipping Google OAuth. Use only for local Wrangler preview / E2E runs. Never set in `wrangler.jsonc` or production secrets, and never reintroduce the removed `?__dev_bypass=1` URL param.
+- **AI bindings must stay `remote: true`** — `AI`, `VECTORIZE`, and `AI_QUOTA_KV` are marked `remote: true` in `wrangler.jsonc` so local `wrangler dev` / `bun run preview` reach real Workers AI, the seeded Vectorize index, and KV (Wrangler cannot emulate them locally). Removing the flag makes the Copilot, RAG, and quota silently fail in local preview. Re-seed `VECTORIZE` via `POST /api/ai/seed` (with `x-seed-secret`) whenever `KNOWLEDGE_CORPUS` changes.
 - **Server-side scope** — `hooks.server.ts` handles auth sessions and security headers; `+page.server.ts` / `+layout.server.ts` load data; `src/routes/api/` holds the REST API for data persistence and the AI Copilot (AI Gateway dynamic-route chat via `AI_GATEWAY_SLUG`, qwen3 + Vectorize RAG, vision image parts, quota, spend cap, undo). The PDF pipeline (`builder.ts`, `generator.ts`, `sequential-download.ts`, `zip.ts`) stays client-side — never move PDF generation server-side.
 - **CSP headers are applied by `hooks.server.ts`** — do not bypass or relax the Content-Security-Policy. If a new resource origin is needed (fonts, scripts), add it to the `CSP` array in `hooks.server.ts` with minimal scope.
 
