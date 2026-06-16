@@ -23,5 +23,4 @@
 		className
 	)}
 	bind:value
-	{...props}
-></textarea>
+	{...props}></textarea>

@@ -129,8 +129,7 @@
 				"text-chat-text-primary chat-scrollbar min-h-[3.25rem] w-full resize-none bg-transparent text-base leading-relaxed transition-[height] duration-100 ease-out outline-none md:text-sm",
 				disabled ? "placeholder:text-chat-text-secondary" : "placeholder:text-chat-text-muted"
 			)}
-			style="max-height: {MAX_HEIGHT}px;"
-		></textarea>
+			style="max-height: {MAX_HEIGHT}px;"></textarea>
 
 		<div class="absolute right-3 bottom-2.5 flex items-center gap-2">
 			<button
