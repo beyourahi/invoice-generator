@@ -31,7 +31,7 @@ All commits go directly to `main`. No feature branches. Worktrees allow parallel
 
 A SvelteKit app that generates batches of PDF invoices. Users configure a fixed sender identity and payment methods, add multiple clients (each with service details and a list of invoice months), then trigger bulk generation. Each invoice is rendered as HTML, captured via `html2canvas`, and exported to a jsPDF Blob. Multiple PDFs can be downloaded via the File System Access API (directory picker) or, if unavailable, as sequential individual downloads. A ZIP fallback is also available. An optional AI Copilot lets users drive the same client and invoice operations through natural-language commands.
 
-**Stack**: SvelteKit 2 + Svelte 5 runes, Tailwind CSS v4, shadcn-svelte, Cloudflare Workers, Better Auth (Google OAuth), Cloudflare D1, Drizzle ORM, Cloudflare Workers AI, Bun.
+**Stack**: SvelteKit 2 + Svelte 5 runes, Tailwind CSS v4, Dropout Design System (`@dropout/ds`, vendored) + shadcn-svelte, Cloudflare Workers, Better Auth (Google OAuth), Cloudflare D1, Drizzle ORM, Cloudflare Workers AI, Bun.
 
 **Auth-gated**: Google OAuth via Better Auth. Any authenticated user can access the app. Unauthenticated users are redirected to `/login`. All user data (sender info, payment methods, clients, invoice entries, AI Copilot conversations) is persisted server-side in D1 and loaded on page load. The PDF generation pipeline itself is entirely client-side.
 
@@ -43,8 +43,8 @@ A SvelteKit app that generates batches of PDF invoices. Users configure a fixed 
 | --------------- | --------------------------------------------------------------- |
 | Framework       | SvelteKit 2.x (Svelte 5 with runes)                             |
 | Language        | TypeScript (strict mode)                                        |
-| Styling         | Tailwind CSS v4 (CSS-first config, OKLCH colors)                |
-| UI Components   | shadcn-svelte                                                   |
+| Styling         | Tailwind CSS v4 (CSS-first; tokens from `@dropout/ds`)          |
+| UI Components   | Dropout Design System (`@dropout/ds`, vendored) + shadcn-svelte |
 | Authentication  | Better Auth (Google OAuth only)                                 |
 | Database        | Cloudflare D1 (SQLite via Drizzle ORM)                          |
 | AI              | Workers AI via AI Gateway dynamic route + qwen3 RAG (Vectorize) |
@@ -68,6 +68,7 @@ bun run check            # svelte-check TypeScript validation
 bun run lint             # ESLint
 bun run format           # Prettier
 bun run cf-typegen       # Regenerate worker-configuration.d.ts from wrangler.jsonc
+bun run sync-ds          # Refresh vendored @dropout/ds from ../../dropout-design-system (rsync --delete)
 bun run db:generate      # Generate Drizzle migration files
 bun run db:push          # Push schema directly to D1 (skips migration files)
 bun run db:pull          # Pull schema from D1
@@ -90,6 +91,14 @@ Two aliases are configured in `svelte.config.js`:
 - `$src` → `src/` (custom, used in route files to import from `src/components/`)
 
 Route files use `$src/components/...`; library files use `$lib/...`. Never use relative paths.
+
+### Design System (`$lib/ds`)
+
+The frontend runs on the **Dropout Design System** (`@dropout/ds`), **vendored** at `src/lib/ds/` — NOT an npm/`file:`/workspace dependency (a sibling-path dependency breaks Cloudflare git-push auto-deploy). DS is the single source of visual truth: `app.css` imports `ds/styles/tokens.css` + `ds/styles/animations.css` (ink ramp, semantic aliases, type scale, fonts, radius, shadows, `--ease`, base layer, `@custom-variant` set). `app.css` adds only tool-specific token aliases (`--popover`, `--status-*`, `--chat-*`, `--surface`, `--preview-paper`) repointed to DS primitives, plus app keyframes and the invoice-preview stage.
+
+`$lib/ds` exports `cn` and editorial components — `Cta`, `Heading`, `Eyebrow`, `Input`, `Tile` — plus style-string helpers (`inputBase`, `tileBase`, `pillBase`, …). shadcn-svelte primitives in `$lib/components/ui/` coexist and resolve to DS token values with no per-component re-theming. The app is **dark-only** — `app.html` hardcodes `<html class="dark">` (the DS canonical theme). Note `cn()` is imported from `$lib/utils` app-wide, not from DS.
+
+Refresh DS with `bun run sync-ds`. **Never hand-edit files under `src/lib/ds/`** — edit upstream in the DS repo (`../../dropout-design-system`), then re-sync.
 
 ### Auth Layer
 
@@ -363,13 +372,14 @@ The bar is high-signal only: every comment must carry information not already ob
 ### Tailwind CSS v4
 
 - CSS-first config in `src/app.css` under `@theme inline`. No `tailwind.config.js`.
-- CSS variables only for colors — never hardcode hex/rgb/oklch values directly.
-- Design is **dark-only**. No light mode.
+- CSS variables only for colors — never hardcode hex/rgb/oklch. The palette comes from `@dropout/ds` (`ds/styles/tokens.css`); `app.css` only repoints tool-specific aliases to DS primitives.
+- Design is **dark-only** — `app.html` hardcodes `<html class="dark">`. No light mode.
 
 ### shadcn-svelte Components
 
 Components in `$lib/components/ui/` are auto-generated. Never modify them. Create wrappers elsewhere. The sole hand-authored exception is `footer/footer.svelte` (a plain app component that happens to live there).
 Add components: `bunx shadcn-svelte@latest add <component>`
+Editorial components (`Cta`, `Heading`, `Eyebrow`, `Input`, `Tile`) come from `$lib/ds`, not this directory — see the Design System section.
 
 ---
 
@@ -578,6 +588,8 @@ When encountering unfamiliar patterns, check in this order:
 22. **RAG returns nothing until the index is seeded** — `VECTORIZE` (`invoice-generator-kb`) must be populated by `POST /api/ai/seed` (with the `x-seed-secret` header) before `retrieveAppKnowledge` returns matches. The chat turn degrades silently to no app-knowledge context if the index is empty or unbound. Re-seed whenever `KNOWLEDGE_CORPUS` changes.
 
 23. **The chat route's retry + false-claim suppression is load-bearing — do not remove it** — the gateway chain intermittently narrates an action without calling a tool, so nothing runs. `chat/+server.ts` detects this from the _user's_ imperative phrasing (`looksImperative`), not the model's wording, forces one extra retry (`ACTION_RETRY_MESSAGE`), and blanks any leftover action narration. Deleting the suppression or the no-tool-call retry reintroduces the Copilot claiming work it never did. AI/Vectorize/KV bindings must stay `remote: true` (see Cloudflare Bindings) or local preview can't run the model to exercise this path at all.
+
+24. **`src/lib/ds/` is vendored — never hand-edit it** — it is an rsync mirror of `@dropout/ds` (`bun run sync-ds` from `../../dropout-design-system`, `--delete` overwrites local changes). Edit the DS upstream repo, then re-sync. It is deliberately NOT an npm/`file:` dependency — a sibling-path dependency breaks Cloudflare git-push auto-deploy. DS owns the visual tokens; do not redefine the semantic palette in `app.css`.
 
 ---
 
