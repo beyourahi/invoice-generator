@@ -7,7 +7,7 @@
 	import type { Component, ComponentProps } from "svelte";
 	import * as Dialog from "$lib/components/ui/dialog";
 	import { cn } from "$lib/utils";
-	import { Eyebrow } from "@dropout/ds";
+	import { Eyebrow } from "$lib/ds";
 	import { MoreVertical, type Icon as LucideIcon } from "@lucide/svelte";
 
 	type IconComponent = Component<ComponentProps<typeof LucideIcon>>;

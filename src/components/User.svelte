@@ -9,7 +9,7 @@
 	import { cn } from "$lib/utils";
 	import * as Dialog from "$lib/components/ui/dialog";
 	import * as Tooltip from "$lib/components/ui/tooltip";
-	import { Eyebrow } from "@dropout/ds";
+	import { Eyebrow } from "$lib/ds";
 	import { LogOut } from "@lucide/svelte";
 	import type { CurrentUser } from "$lib/types";
 

@@ -4,7 +4,7 @@
 -->
 <script lang="ts">
 	import { TrendingUp, Users, BellRing, HelpCircle } from "@lucide/svelte";
-	import { Heading } from "@dropout/ds";
+	import { Heading } from "$lib/ds";
 
 	let {
 		onSuggestionClick

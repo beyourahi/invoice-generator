@@ -8,7 +8,7 @@
 	import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "$lib/components/ui/card";
 	import { Skeleton } from "$lib/components/ui/skeleton";
 	import { Button } from "$lib/components/ui/button";
-	import { Eyebrow } from "@dropout/ds";
+	import { Eyebrow } from "$lib/ds";
 	import StatusBadge from "$src/components/StatusBadge.svelte";
 	import {
 		FileText,

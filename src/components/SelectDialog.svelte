@@ -6,7 +6,7 @@
 <script lang="ts">
 	import * as Dialog from "$lib/components/ui/dialog";
 	import { cn } from "$lib/utils";
-	import { Eyebrow } from "@dropout/ds";
+	import { Eyebrow } from "$lib/ds";
 	import { Check, ChevronDown } from "@lucide/svelte";
 
 	export interface SelectOption {

@@ -1,7 +1,7 @@
 <!-- Adds a new client to the session. Renders below the ClientCard list as a DS hairline CTA. -->
 <script lang="ts">
 	import { session } from "$lib/stores/session.svelte";
-	import { Cta } from "@dropout/ds";
+	import { Cta } from "$lib/ds";
 	import { UserPlus } from "@lucide/svelte";
 
 	// onAdd overrides the default session.addClient(); omit it to use the store default.

@@ -5,8 +5,9 @@
  * source of visual truth. DS tokens.css supplies the ink ramp, semantic aliases,
  * the editorial layer (signal / ink-muted / hair), the type scale, fonts, radius,
  * shadows, --ease, the shell vars, the @custom-variant set, and the base layer.
- * `@source` is REQUIRED so Tailwind v4 generates the DS component classes
- * (bg-signal, border-hair, …) that live in node_modules.
+ * DS is VENDORED at src/lib/ds (run `bun run sync-ds` to refresh from the DS
+ * repo). Tailwind v4 auto-scans src/, so the DS component classes (bg-signal,
+ * border-hair, …) are generated with no `@source` needed.
  *
  * This file keeps ONLY what DS doesn't cover: tool-specific token aliases
  * (--popover, --status-*, --chat-*, --surface, copilot-rail, --preview-paper)
@@ -15,9 +16,8 @@
  * App is DARK-ONLY (app.html hardcodes <html class="dark">) — the DS canonical theme.
  */
 @import "tailwindcss";
-@source "../node_modules/@dropout/ds";
-@import "@dropout/ds/tokens.css";
-@import "@dropout/ds/animations.css";
+@import "./lib/ds/styles/tokens.css";
+@import "./lib/ds/styles/animations.css";
 @import "tw-animate-css";
 @import "./lib/styles/chat-animations.css";
 

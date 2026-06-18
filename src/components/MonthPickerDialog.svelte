@@ -7,7 +7,7 @@
 	import * as Dialog from "$lib/components/ui/dialog";
 	import Button from "$lib/components/ui/button.svelte";
 	import { cn } from "$lib/utils";
-	import { Cta, Eyebrow } from "@dropout/ds";
+	import { Cta, Eyebrow } from "$lib/ds";
 	import { MONTHS } from "$lib/invoice/months";
 	import type { MonthName } from "$lib/types";
 	import { Check, Loader2, Plus } from "@lucide/svelte";

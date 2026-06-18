@@ -2,7 +2,7 @@
 <script lang="ts">
 	import type { Component, ComponentProps } from "svelte";
 	import type { Icon as LucideIcon } from "@lucide/svelte";
-	import { Eyebrow } from "@dropout/ds";
+	import { Eyebrow } from "$lib/ds";
 
 	let { icon: Icon, label }: { icon: Component<ComponentProps<typeof LucideIcon>>; label: string } = $props();
 </script>

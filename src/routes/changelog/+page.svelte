@@ -9,7 +9,7 @@
 <script lang="ts">
 	import { CHANGELOG_ENTRIES, type ChangelogEntry } from "$lib/data/changelog";
 	import { reveal } from "$lib/motion";
-	import { Heading, Eyebrow } from "@dropout/ds";
+	import { Heading, Eyebrow } from "$lib/ds";
 
 	type DateGroup = { date: string; label: string; entries: ChangelogEntry[] };
 
