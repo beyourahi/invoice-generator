@@ -19,6 +19,7 @@
 	import { Separator } from "$lib/components/ui/separator";
 	import * as Tabs from "$lib/components/ui/tabs";
 	import AddClientButton from "$src/components/AddClientButton.svelte";
+	import SectionEyebrow from "$src/components/SectionEyebrow.svelte";
 	import ClientCard from "$src/components/ClientCard.svelte";
 	import FixedSenderPanel from "$src/components/FixedSenderPanel.svelte";
 	import GenerationPanel from "$src/components/GenerationPanel.svelte";
@@ -112,11 +113,17 @@
 	<div class="container flex w-full min-w-0 flex-col gap-8 sm:gap-10 lg:gap-12">
 		<Tabs.Root bind:value={activeTab} class="gap-6">
 			<Tabs.List class="w-full self-center group-data-horizontal/tabs:h-auto sm:w-fit">
-				<Tabs.Trigger value="details" class="h-auto min-h-11 gap-2 px-6 py-3 text-base">
+				<Tabs.Trigger
+					value="details"
+					class="h-auto min-h-11 gap-2 px-6 py-3 font-mono text-xs tracking-[0.1em] uppercase"
+				>
 					<SquarePen aria-hidden="true" />
 					Details
 				</Tabs.Trigger>
-				<Tabs.Trigger value="preview" class="h-auto min-h-11 gap-2 px-6 py-3 text-base">
+				<Tabs.Trigger
+					value="preview"
+					class="h-auto min-h-11 gap-2 px-6 py-3 font-mono text-xs tracking-[0.1em] uppercase"
+				>
 					<ScanLine aria-hidden="true" />
 					Preview
 				</Tabs.Trigger>
@@ -133,18 +140,17 @@
 
 					<div class="min-w-0 space-y-3" use:reveal={{ delay: 0.1 }}>
 						<div class="flex items-center justify-between">
-							<h2 class="flex items-center gap-2 text-base font-semibold text-balance">
-								<Users size={15} aria-hidden="true" />
-								<span class="whitespace-nowrap">Clients</span>
-							</h2>
-							<p class="text-muted-foreground text-xs whitespace-nowrap tabular-nums">
+							<SectionEyebrow icon={Users} label="Clients" />
+							<p
+								class="text-ink-muted font-mono text-micro tracking-wider whitespace-nowrap tabular-nums"
+							>
 								{session.clients.length} total
 							</p>
 						</div>
 
 						{#if session.clients.length === 0}
 							<button
-								class="border-border text-muted-foreground pointer-fine:hover:border-foreground/30 pointer-fine:hover:text-foreground grid min-h-36 w-full cursor-pointer place-items-center rounded-lg border border-dashed text-center transition-colors"
+								class="border-hair text-ink-muted pointer-fine:hover:border-signal/40 pointer-fine:hover:text-foreground grid min-h-36 w-full cursor-pointer place-items-center rounded-xl border border-dashed text-center transition-colors duration-[250ms] ease-[var(--ease)]"
 								onclick={session.addClient}
 								aria-label="Add client"
 							>

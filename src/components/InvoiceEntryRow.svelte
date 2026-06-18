@@ -141,7 +141,7 @@
 {:else}
 	<div
 		class={cn(
-			"border-border bg-card status-transition relative space-y-2.5 rounded-lg border p-3",
+			"border-hair bg-card status-transition relative space-y-2.5 rounded-xl border p-3",
 			inactive &&
 				"bg-status-inactive-bg before:bg-status-inactive-border opacity-80 before:absolute before:top-2 before:bottom-2 before:left-0 before:w-[3px] before:rounded-full"
 		)}
@@ -172,7 +172,7 @@
 			<div class="space-y-1">
 				<label
 					for="issue-{entry.id}"
-					class="text-muted-foreground block text-[10px] font-medium tracking-wider uppercase"
+					class="text-ink-muted block font-mono text-[10px] tracking-[0.12em] uppercase"
 				>
 					Issue
 				</label>
@@ -191,7 +191,7 @@
 			<div class="space-y-1">
 				<label
 					for="due-{entry.id}"
-					class="text-muted-foreground block text-[10px] font-medium tracking-wider uppercase"
+					class="text-ink-muted block font-mono text-[10px] tracking-[0.12em] uppercase"
 				>
 					Due
 				</label>
@@ -208,9 +208,7 @@
 				/>
 			</div>
 			<div class="space-y-1">
-				<span class="text-muted-foreground block text-[10px] font-medium tracking-wider uppercase">
-					Active
-				</span>
+				<span class="text-ink-muted block font-mono text-[10px] tracking-[0.12em] uppercase"> Active </span>
 				<div class="flex h-10 items-center justify-center">
 					{@render activeSwitch("default")}
 				</div>

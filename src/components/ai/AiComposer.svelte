@@ -139,7 +139,7 @@
 				aria-label={attachFull ? `Attachment limit reached (${ai.maxPendingImages})` : "Attach an image"}
 				title={attachFull ? `Up to ${ai.maxPendingImages} images` : "Attach an image"}
 				class={cn(
-					"relative rounded-lg p-2 transition-all duration-200",
+					"ease-[var(--ease)] relative rounded-full p-2 transition-all duration-200",
 					hasImages
 						? "bg-chat-accent-muted text-chat-text-primary"
 						: "text-chat-text-muted hover:text-chat-text-secondary",
@@ -154,11 +154,11 @@
 				disabled={!canSubmit}
 				aria-label={disabled ? "Generating response" : "Send message"}
 				class={cn(
-					"rounded-lg p-2 transition-all duration-200",
+					"ease-[var(--ease)] rounded-full p-2 transition-all duration-200",
 					disabled
 						? "bg-chat-accent-muted/40 text-chat-text-muted cursor-not-allowed"
 						: canSubmit
-							? "bg-chat-accent-muted text-chat-text-primary hover:bg-chat-surface-hover"
+							? "bg-signal text-background hover:bg-signal/90"
 							: "text-chat-text-muted cursor-not-allowed"
 				)}
 			>
@@ -183,7 +183,9 @@
 			</button>
 		</div>
 
-		<span class="text-chat-text-muted/60 absolute bottom-2.5 left-4 text-[10px]">
+		<span
+			class="text-chat-text-muted/60 absolute bottom-2.5 left-4 font-mono text-[10px] tracking-[0.1em] uppercase"
+		>
 			{#if disabled}
 				generating…
 			{:else}

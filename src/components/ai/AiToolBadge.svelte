@@ -34,13 +34,13 @@
 		if (call.undone) return "border-chat-border-subtle bg-chat-surface text-chat-text-muted";
 		switch (call.status) {
 			case "applied":
-				return "border-emerald-400/30 bg-emerald-400/10 text-emerald-300";
+				return "border-signal/40 bg-signal/10 text-chat-text-primary";
 			case "rejected":
 				return "border-chat-border-subtle bg-chat-surface text-chat-text-muted";
 			case "failed":
-				return "border-red-400/40 bg-red-400/10 text-red-300";
+				return "border-destructive/40 bg-destructive/10 text-destructive";
 			case "pending_confirmation":
-				return "border-amber-400/30 bg-amber-400/10 text-amber-300";
+				return "border-chat-border bg-chat-surface text-chat-text-secondary";
 			default:
 				return "border-chat-border-subtle bg-chat-surface text-chat-text-secondary";
 		}
@@ -64,19 +64,23 @@
 	<div
 		class="chat-message-enter border-chat-border-subtle bg-chat-surface text-chat-text-secondary space-y-2.5 rounded-lg border border-solid p-3 text-xs"
 	>
-		<div class="text-chat-text-secondary flex items-center gap-1.5 font-medium">
+		<div
+			class="text-chat-text-secondary flex items-center gap-1.5 font-mono text-[11px] tracking-[0.18em] uppercase"
+		>
 			<Wand2 class="size-3.5" aria-hidden="true" />
 			<span>Suggested rewrite</span>
 		</div>
 		<div class="space-y-1.5">
-			<div class="rounded-md bg-red-400/5 px-2.5 py-1.5">
-				<div class="text-chat-text-muted mb-0.5 text-[10px] font-medium tracking-wide uppercase">Current</div>
+			<div class="bg-chat-bg rounded-md px-2.5 py-1.5">
+				<div class="text-chat-text-muted mb-0.5 font-mono text-[10px] tracking-[0.12em] uppercase">Current</div>
 				<p class="text-chat-text-muted break-words whitespace-pre-wrap">
 					{call.polish.oldText || "(empty)"}
 				</p>
 			</div>
-			<div class="rounded-md bg-emerald-400/10 px-2.5 py-1.5">
-				<div class="mb-0.5 text-[10px] font-medium tracking-wide text-emerald-300 uppercase">Proposed</div>
+			<div class="bg-signal/10 rounded-md px-2.5 py-1.5">
+				<div class="text-chat-text-secondary mb-0.5 font-mono text-[10px] tracking-[0.12em] uppercase">
+					Proposed
+				</div>
 				<p class="text-chat-text-primary break-words whitespace-pre-wrap">{call.polish.newText}</p>
 			</div>
 		</div>
@@ -84,7 +88,7 @@
 			<button
 				type="button"
 				onclick={onRejectPolish}
-				class="text-chat-text-secondary hover:text-chat-text-primary hover:bg-chat-surface-hover border-chat-border-subtle bg-chat-bg inline-flex items-center gap-1 rounded-md border border-solid px-2.5 py-1.5 font-medium transition-colors"
+				class="text-chat-text-secondary hover:text-chat-text-primary hover:bg-ink-2 border-hair bg-chat-bg ease-[var(--ease)] inline-flex items-center gap-1 rounded-full border px-3 py-1.5 font-mono text-[11px] tracking-[0.1em] uppercase transition-colors"
 			>
 				<X class="size-3" aria-hidden="true" />
 				Reject
@@ -92,7 +96,7 @@
 			<button
 				type="button"
 				onclick={onApplyPolish}
-				class="bg-chat-accent-muted text-chat-text-primary hover:bg-chat-surface-hover inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 font-medium transition-colors"
+				class="bg-signal text-background hover:bg-signal/90 ease-[var(--ease)] inline-flex items-center gap-1 rounded-full px-3 py-1.5 font-mono text-[11px] tracking-[0.1em] uppercase transition-colors"
 			>
 				<Check class="size-3" aria-hidden="true" />
 				Apply
@@ -119,14 +123,16 @@
 				{/if}
 			</span>
 			<span class="font-medium break-words">{toolLabel(call.name)}</span>
-			<span class="tabular-nums">· {statusLabel}</span>
+			<span class="text-chat-text-muted font-mono text-[10px] tracking-[0.12em] uppercase tabular-nums">
+				· {statusLabel}
+			</span>
 			{#if canUndo}
 				<button
 					type="button"
 					onclick={onUndo}
 					disabled={undoing}
 					class={cn(
-						"text-chat-text-secondary hover:text-chat-text-primary hover:bg-chat-surface-hover border-chat-border-subtle bg-chat-bg ml-auto inline-flex items-center gap-1 rounded-md border border-solid px-2 py-1 font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50",
+						"text-chat-text-secondary hover:text-chat-text-primary hover:bg-ink-2 border-hair bg-chat-bg ease-[var(--ease)] ml-auto inline-flex items-center gap-1 rounded-full border px-2.5 py-1 font-mono text-[10px] tracking-[0.1em] uppercase transition-colors disabled:cursor-not-allowed disabled:opacity-50",
 						undoing && "cursor-wait"
 					)}
 				>

@@ -6,6 +6,7 @@
 <script lang="ts">
 	import * as Dialog from "$lib/components/ui/dialog";
 	import { cn } from "$lib/utils";
+	import { Eyebrow } from "@dropout/ds";
 	import { Check, ChevronDown } from "@lucide/svelte";
 
 	export interface SelectOption {
@@ -87,20 +88,22 @@
 	<Dialog.Trigger
 		{disabled}
 		class={cn(
-			"border-input bg-background ring-offset-background focus-visible:ring-ring inline-flex h-9 w-full items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm whitespace-nowrap focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50",
+			"border-hair bg-ink-2/40 focus-visible:outline-signal inline-flex h-10 w-full items-center justify-between gap-2 rounded-full border px-4 py-2 font-mono text-xs whitespace-nowrap transition-colors hover:border-white/20 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
 			className
 		)}
 		aria-label={title}
 	>
-		<span class={cn("truncate text-left", !displayedLabel && "text-muted-foreground")}>
+		<span class={cn("truncate text-left", !displayedLabel && "text-ink-muted")}>
 			{displayedLabel || placeholder}
 		</span>
-		<ChevronDown size={14} class="text-muted-foreground shrink-0" aria-hidden="true" />
+		<ChevronDown size={14} class="text-ink-muted shrink-0" aria-hidden="true" />
 	</Dialog.Trigger>
 
 	<Dialog.Content class={contentClass} showCloseButton={false}>
-		<Dialog.Header class="border-border border-b px-4 py-3">
-			<Dialog.Title class="text-left text-sm font-semibold text-balance">{title}</Dialog.Title>
+		<Dialog.Header class="border-hair border-b px-4 py-3">
+			<Dialog.Title>
+				<Eyebrow as="span">{title}</Eyebrow>
+			</Dialog.Title>
 		</Dialog.Header>
 
 		<div
@@ -122,29 +125,29 @@
 					use:scrollIntoViewIfSelected={isSelected}
 					onclick={() => handleSelect(option.value)}
 					class={cn(
-						"flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors",
-						"pointer-fine:hover:bg-accent pointer-fine:hover:text-accent-foreground",
-						"focus:bg-accent focus:text-accent-foreground focus:outline-none",
-						isSelected && "bg-accent/40",
+						"flex w-full items-center gap-3 rounded-lg border px-3 py-2 text-left transition-colors focus:outline-none",
+						isSelected
+							? "border-signal bg-ink-2"
+							: "border-transparent hover:bg-ink-2/60 focus:bg-ink-2/60",
 						columns > 1 && "justify-between"
 					)}
 				>
 					<div class="min-w-0 flex-1">
 						<span class="block text-sm leading-snug font-medium text-balance">{option.label}</span>
 						{#if option.description}
-							<span class="text-muted-foreground mt-0.5 block text-xs leading-snug text-pretty">
+							<span class="text-ink-muted mt-0.5 block text-xs leading-snug text-pretty">
 								{option.description}
 							</span>
 						{/if}
 					</div>
 					{#if option.badge}
 						<span
-							class="text-muted-foreground/80 shrink-0 text-[11px] tracking-wider whitespace-nowrap uppercase"
+							class="text-ink-muted shrink-0 font-mono text-micro tracking-wider whitespace-nowrap uppercase"
 						>
 							{option.badge}
 						</span>
 					{:else if isSelected}
-						<Check size={13} class="text-foreground shrink-0" aria-hidden="true" />
+						<Check size={13} class="text-signal shrink-0" aria-hidden="true" />
 					{/if}
 				</button>
 			{/each}

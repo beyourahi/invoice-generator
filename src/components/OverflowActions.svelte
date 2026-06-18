@@ -7,6 +7,7 @@
 	import type { Component, ComponentProps } from "svelte";
 	import * as Dialog from "$lib/components/ui/dialog";
 	import { cn } from "$lib/utils";
+	import { Eyebrow } from "@dropout/ds";
 	import { MoreVertical, type Icon as LucideIcon } from "@lucide/svelte";
 
 	type IconComponent = Component<ComponentProps<typeof LucideIcon>>;
@@ -44,7 +45,7 @@
 		aria-label={label}
 		onclick={(e: MouseEvent) => e.stopPropagation()}
 		class={cn(
-			"text-muted-foreground pointer-fine:hover:bg-accent pointer-fine:hover:text-foreground focus-visible:ring-ring inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:opacity-50",
+			"text-ink-muted pointer-fine:hover:bg-ink-2 pointer-fine:hover:text-foreground focus-visible:outline-signal inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50",
 			className
 		)}
 	>
@@ -55,8 +56,10 @@
 		class="data-open:slide-in-from-bottom-2 data-closed:slide-out-to-bottom-1 gap-0 p-0 sm:max-w-sm"
 		showCloseButton={false}
 	>
-		<Dialog.Header class="border-border border-b px-4 py-3">
-			<Dialog.Title class="text-left text-sm font-semibold text-balance">{label}</Dialog.Title>
+		<Dialog.Header class="border-hair border-b px-4 py-3">
+			<Dialog.Title>
+				<Eyebrow as="span">{label}</Eyebrow>
+			</Dialog.Title>
 		</Dialog.Header>
 
 		<div class="flex flex-col p-2">
@@ -68,8 +71,8 @@
 					onclick={e => handleAction(action, e)}
 					class={cn(
 						"flex min-h-12 w-full items-center gap-3 rounded-lg px-3 text-left transition-colors",
-						"pointer-fine:hover:bg-accent pointer-fine:hover:text-accent-foreground",
-						"focus:bg-accent focus:text-accent-foreground focus:outline-none",
+						"pointer-fine:hover:bg-ink-2 pointer-fine:hover:text-foreground",
+						"focus:bg-ink-2 focus:text-foreground focus:outline-none",
 						"disabled:cursor-not-allowed disabled:opacity-40",
 						action.variant === "destructive" &&
 							"text-destructive pointer-fine:hover:bg-destructive/10 pointer-fine:hover:text-destructive"

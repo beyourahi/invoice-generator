@@ -9,6 +9,7 @@
 	import { cn } from "$lib/utils";
 	import * as Dialog from "$lib/components/ui/dialog";
 	import * as Tooltip from "$lib/components/ui/tooltip";
+	import { Eyebrow } from "@dropout/ds";
 	import { LogOut } from "@lucide/svelte";
 	import type { CurrentUser } from "$lib/types";
 
@@ -43,7 +44,7 @@
 	<div
 		class={cn(
 			"sleek relative flex shrink-0 items-center justify-center rounded-full text-sm font-semibold",
-			"border-border bg-card text-foreground border backdrop-blur-sm",
+			"border-hair bg-card text-foreground border backdrop-blur-sm",
 			sizeClass,
 			user.image && "overflow-hidden p-0"
 		)}
@@ -73,7 +74,7 @@
 		<Dialog.Root bind:open={mobileOpen}>
 			<Dialog.Trigger
 				aria-label="User menu"
-				class="focus-visible:ring-ring rounded-full focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+				class="focus-visible:outline-signal rounded-full focus-visible:outline-2 focus-visible:outline-offset-2"
 			>
 				{@render avatarVisual("h-9 w-9", "h-4 w-4")}
 			</Dialog.Trigger>
@@ -81,17 +82,19 @@
 				class="data-open:slide-in-from-bottom-2 data-closed:slide-out-to-bottom-1 gap-0 p-0 sm:max-w-sm"
 				showCloseButton={false}
 			>
-				<Dialog.Header class="border-border border-b px-4 py-3.5">
-					<Dialog.Title class="text-left text-sm font-semibold text-balance">Signed in</Dialog.Title>
+				<Dialog.Header class="border-hair border-b px-4 py-3.5">
+					<Dialog.Title>
+						<Eyebrow as="span">Signed in</Eyebrow>
+					</Dialog.Title>
 				</Dialog.Header>
 				<div class="flex items-center gap-3 px-4 py-4">
 					{@render avatarVisual("h-12 w-12", "h-6 w-6")}
 					<div class="min-w-0 flex-1">
 						<p class="truncate text-sm font-medium">{currentUser.name}</p>
-						<p class="text-muted-foreground truncate text-xs">{user.email}</p>
+						<p class="text-ink-muted truncate text-xs">{user.email}</p>
 					</div>
 				</div>
-				<div class="border-border border-t p-1.5">
+				<div class="border-hair border-t p-1.5">
 					<button
 						type="button"
 						onclick={handleLogout}
@@ -103,7 +106,7 @@
 					>
 						{#if isLoggingOut}
 							<div
-								class="border-muted-foreground h-4 w-4 animate-spin rounded-full border-2 border-t-transparent"
+								class="border-ink-muted h-4 w-4 animate-spin rounded-full border-2 border-t-transparent"
 								aria-hidden="true"
 							></div>
 						{:else}
@@ -130,7 +133,7 @@
 
 			<div
 				class={cn(
-					"border-border bg-card sleek absolute right-0 flex h-10 items-center overflow-hidden rounded-full border whitespace-nowrap backdrop-blur-sm",
+					"border-hair bg-card sleek absolute right-0 flex h-10 items-center overflow-hidden rounded-full border whitespace-nowrap backdrop-blur-sm",
 					expanded ? "w-auto pr-12 pl-3 opacity-100" : "w-0 pr-0 pl-0 opacity-0"
 				)}
 			>
@@ -138,7 +141,7 @@
 					<span class="text-foreground text-sm leading-tight font-medium whitespace-nowrap">
 						{currentUser.name}
 					</span>
-					<span class="text-muted-foreground text-xs leading-tight whitespace-nowrap">{user.email}</span>
+					<span class="text-ink-muted text-xs leading-tight whitespace-nowrap">{user.email}</span>
 				</div>
 			</div>
 		</div>
@@ -151,20 +154,20 @@
 					aria-label="Sign out"
 					class={cn(
 						"sleek group flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border backdrop-blur-sm",
-						"focus-visible:ring-destructive/50 focus:outline-none focus-visible:ring-2",
+						"focus-visible:outline-signal focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2",
 						isLoggingOut
-							? "border-border bg-card cursor-wait"
-							: "border-destructive/40 bg-destructive/10 pointer-fine:hover:border-destructive pointer-fine:hover:bg-destructive active:scale-95"
+							? "border-hair bg-card cursor-wait"
+							: "border-hair bg-card pointer-fine:hover:border-destructive/50 pointer-fine:hover:bg-destructive/10 active:scale-95"
 					)}
 				>
 					{#if isLoggingOut}
 						<div
-							class="border-muted-foreground h-4 w-4 animate-spin rounded-full border-2 border-t-transparent"
+							class="border-ink-muted h-4 w-4 animate-spin rounded-full border-2 border-t-transparent"
 							aria-hidden="true"
 						></div>
 					{:else}
 						<svg
-							class="text-destructive pointer-fine:group-hover:text-destructive-foreground h-[1.125rem] w-[1.125rem] transition-colors"
+							class="text-ink-muted pointer-fine:group-hover:text-destructive h-[1.125rem] w-[1.125rem] transition-colors"
 							viewBox="0 0 24 24"
 							fill="none"
 							stroke="currentColor"

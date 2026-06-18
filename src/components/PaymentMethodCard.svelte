@@ -109,7 +109,7 @@
 	]);
 </script>
 
-<div class="border-border bg-card rounded-lg border">
+<div class="border-hair bg-card rounded-xl border">
 	<!--
 		div[role="button"] not a native <button>: same hydration invariant as ClientCard —
 		this header wraps inner action buttons, and a nested <button> breaks SSR hydration.
@@ -182,7 +182,7 @@
 	{#if expanded}
 		<div
 			id="method-panel-{method.id}"
-			class="border-border space-y-3 border-t px-3 pt-3 pb-4"
+			class="border-hair space-y-3 border-t px-3 pt-3 pb-4"
 			transition:slide={{ duration: motionDuration("base") }}
 		>
 			<Field.Field class="gap-1.5">

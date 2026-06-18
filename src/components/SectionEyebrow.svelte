@@ -1,14 +1,13 @@
-<!-- Small icon + uppercase label rendered above a form section heading. -->
+<!-- Small icon + DS Eyebrow (mono, uppercase, wide-tracked) above a form section heading. -->
 <script lang="ts">
 	import type { Component, ComponentProps } from "svelte";
 	import type { Icon as LucideIcon } from "@lucide/svelte";
+	import { Eyebrow } from "@dropout/ds";
 
 	let { icon: Icon, label }: { icon: Component<ComponentProps<typeof LucideIcon>>; label: string } = $props();
 </script>
 
 <div class="flex items-center gap-2">
-	<Icon size={14} class="text-muted-foreground" aria-hidden="true" />
-	<p class="text-muted-foreground text-[11px] font-medium tracking-wider whitespace-nowrap uppercase">
-		{label}
-	</p>
+	<Icon size={13} class="text-ink-muted" aria-hidden="true" />
+	<Eyebrow>{label}</Eyebrow>
 </div>

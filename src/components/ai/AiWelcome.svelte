@@ -4,6 +4,7 @@
 -->
 <script lang="ts">
 	import { TrendingUp, Users, BellRing, HelpCircle } from "@lucide/svelte";
+	import { Heading } from "@dropout/ds";
 
 	let {
 		onSuggestionClick
@@ -11,8 +12,8 @@
 		onSuggestionClick: (text: string) => void;
 	} = $props();
 
-	const headline = "Type what you want. The invoices follow.";
-	const subtext = "Describe an edit in plain words — the copilot updates the right clients and invoices for you.";
+	const headline = "type what you want. the invoices follow.";
+	const subtext = "Describe an edit in plain words — it updates the right clients and invoices for you.";
 
 	const suggestions = [
 		{
@@ -50,14 +51,11 @@
 		<div></div>
 		<div></div>
 	</div>
+	<div class="text-center" style="animation: chat-greeting-stagger 0.4s ease-out both; animation-delay: 100ms;">
+		<Heading as="h2" size="subtitle" weight={560} class="text-balance">{headline}</Heading>
+	</div>
 	<p
-		class="text-chat-text-primary text-center text-lg font-medium text-balance md:text-xl"
-		style="animation: chat-greeting-stagger 0.4s ease-out both; animation-delay: 100ms;"
-	>
-		{headline}
-	</p>
-	<p
-		class="text-chat-text-secondary mt-2 max-w-md text-center text-xs text-pretty md:mt-3 md:text-sm"
+		class="text-chat-text-secondary mt-2.5 max-w-md text-center text-xs text-pretty md:mt-3 md:text-sm"
 		style="animation: chat-greeting-stagger 0.4s ease-out both; animation-delay: 200ms;"
 	>
 		{subtext}

@@ -9,8 +9,8 @@ export const APP_CONFIG: AppConfig = {
 	description: "Client-side batch invoice PDF generator for recurring billing.",
 	url: "https://invoice-generator.beyourahi.workers.dev",
 	author: {
-		name: "Rahi Khan",
-		url: "https://beyourahi.com"
+		name: "Dropout Studio",
+		url: "https://dropoutstudio.co"
 	},
 	siblings: [
 		{

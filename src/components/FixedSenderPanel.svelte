@@ -93,12 +93,9 @@
 </script>
 
 <div class="space-y-3">
-	<div class="space-y-1">
-		<h2 class="flex items-center gap-2 text-base font-semibold text-balance">
-			<UserRound size={15} aria-hidden="true" />
-			<span class="whitespace-nowrap">Your details</span>
-		</h2>
-		<p class="text-muted-foreground text-xs text-pretty">Stays on this device — autofills every invoice.</p>
+	<div class="space-y-2">
+		<SectionEyebrow icon={UserRound} label="Your details" />
+		<p class="text-ink-muted text-xs text-pretty">Stays on this device — autofills every invoice.</p>
 	</div>
 
 	<Card size="sm">
@@ -154,7 +151,7 @@
 				<div class="flex items-center justify-between gap-3">
 					<SectionEyebrow icon={Wallet} label="Payment methods" />
 					{#if methods.length > 0}
-						<p class="text-muted-foreground text-xs whitespace-nowrap tabular-nums">
+						<p class="text-ink-muted font-mono text-micro tracking-wider whitespace-nowrap tabular-nums">
 							{methods.length} saved
 						</p>
 					{/if}
@@ -162,7 +159,7 @@
 
 				{#if methods.length === 0}
 					<div
-						class="border-border text-muted-foreground grid min-h-28 w-full place-items-center rounded-lg border border-dashed text-center"
+						class="border-hair text-ink-muted grid min-h-28 w-full place-items-center rounded-xl border border-dashed text-center"
 					>
 						<div class="space-y-1">
 							<p class="text-sm font-medium text-balance">No payment methods yet</p>

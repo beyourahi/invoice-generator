@@ -8,6 +8,7 @@
 	import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "$lib/components/ui/card";
 	import { Skeleton } from "$lib/components/ui/skeleton";
 	import { Button } from "$lib/components/ui/button";
+	import { Eyebrow } from "@dropout/ds";
 	import StatusBadge from "$src/components/StatusBadge.svelte";
 	import {
 		FileText,
@@ -196,14 +197,16 @@
 
 <div bind:this={fullscreenRoot} class={cn("w-full", isFullscreen && "bg-background fixed inset-0 z-50 flex flex-col")}>
 	<Card size="sm" class={cn("gap-0 py-0", isFullscreen && "h-full rounded-none border-0")}>
-		<CardHeader class="border-border border-b">
+		<CardHeader class="border-hair border-b">
 			<div class="flex flex-wrap items-center justify-between gap-3">
 				<div class="min-w-0">
-					<CardTitle class="flex items-center gap-2 text-base font-semibold text-balance">
-						<ScanLine size={15} aria-hidden="true" />
-						<span class="whitespace-nowrap">Preview</span>
+					<CardTitle>
+						<span class="flex items-center gap-2">
+							<ScanLine size={13} class="text-ink-muted" aria-hidden="true" />
+							<Eyebrow as="span">Preview</Eyebrow>
+						</span>
 					</CardTitle>
-					<CardDescription class="text-xs text-pretty">
+					<CardDescription class="mt-1.5 text-xs text-pretty">
 						First scheduled invoice for the selected client.
 					</CardDescription>
 				</div>
@@ -212,7 +215,7 @@
 						<div
 							role="group"
 							aria-label="Preview width"
-							class="bg-muted flex items-center gap-0.5 rounded-lg p-[3px]"
+							class="border-hair bg-ink-2/40 flex items-center gap-0.5 rounded-full border p-[3px]"
 						>
 							{#each WIDTH_PRESETS as preset (preset.value)}
 								{@const Icon = preset.icon}
@@ -222,24 +225,25 @@
 									aria-label={preset.label}
 									aria-pressed={widthPreset === preset.value}
 									class={cn(
-										"focus-visible:ring-ring/50 grid size-9 place-items-center rounded-md transition-colors focus-visible:ring-[3px] focus-visible:outline-none",
+										"focus-visible:outline-signal grid size-8 place-items-center rounded-full transition-colors focus-visible:outline-2 focus-visible:outline-offset-2",
 										widthPreset === preset.value
-											? "bg-background text-foreground shadow-sm"
-											: "text-muted-foreground hover:text-foreground"
+											? "bg-signal text-background"
+											: "text-ink-muted hover:text-foreground"
 									)}
 								>
-									<Icon size={15} aria-hidden="true" />
+									<Icon size={14} aria-hidden="true" />
 								</button>
 							{/each}
 						</div>
 						<span
-							class="bg-muted text-muted-foreground hidden rounded-md px-2 py-1 font-mono text-[11px] whitespace-nowrap sm:inline"
+							class="border-hair text-ink-muted hidden rounded-full border px-2.5 py-1 font-mono text-micro tracking-wider whitespace-nowrap uppercase sm:inline"
 						>
 							A4
 						</span>
 						<Button
 							variant="ghost"
 							size="icon-lg"
+							class="rounded-full"
 							aria-label={isFullscreen ? "Exit fullscreen" : "View fullscreen"}
 							onclick={toggleFullscreen}
 						>
@@ -264,10 +268,10 @@
 				</div>
 			{:else if !html}
 				<div
-					class="border-border text-muted-foreground grid min-h-72 place-items-center rounded-lg border border-dashed text-center"
+					class="border-hair text-ink-muted grid min-h-72 place-items-center rounded-xl border border-dashed text-center"
 				>
 					<div class="flex flex-col items-center gap-2">
-						<div class="bg-muted mx-auto flex size-10 items-center justify-center rounded-lg">
+						<div class="bg-ink-2 mx-auto flex size-10 items-center justify-center rounded-xl">
 							<FileText size={17} aria-hidden="true" />
 						</div>
 						{#if emptyReason === "no-active"}

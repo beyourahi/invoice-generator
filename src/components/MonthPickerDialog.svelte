@@ -7,6 +7,7 @@
 	import * as Dialog from "$lib/components/ui/dialog";
 	import Button from "$lib/components/ui/button.svelte";
 	import { cn } from "$lib/utils";
+	import { Cta, Eyebrow } from "@dropout/ds";
 	import { MONTHS } from "$lib/invoice/months";
 	import type { MonthName } from "$lib/types";
 	import { Check, Loader2, Plus } from "@lucide/svelte";
@@ -60,19 +61,19 @@
 		<Dialog.Trigger
 			{disabled}
 			onclick={() => (pending = [])}
-			class="border-border pointer-fine:hover:border-foreground/30 pointer-fine:hover:bg-accent/30 h-auto min-h-20 w-full cursor-pointer rounded-lg border border-dashed transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+			class="border-hair text-ink-muted pointer-fine:hover:border-white/30 pointer-fine:hover:bg-ink-2 pointer-fine:hover:text-foreground focus-visible:outline-signal h-auto min-h-20 w-full cursor-pointer rounded-xl border border-dashed transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
 			aria-label="Add months"
 		>
 			<div class="flex flex-col items-center gap-2 py-3">
 				<Plus size={16} aria-hidden="true" />
-				<span class="text-sm font-medium whitespace-nowrap">Add months</span>
+				<span class="font-mono text-xs tracking-wider uppercase">Add months</span>
 			</div>
 		</Dialog.Trigger>
 	{:else}
 		<Dialog.Trigger
 			{disabled}
 			onclick={() => (pending = [])}
-			class="bg-primary text-primary-foreground pointer-fine:hover:bg-primary/90 focus-visible:ring-ring inline-flex h-9 w-full cursor-pointer items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+			class="border-hair text-foreground pointer-fine:hover:border-signal pointer-fine:hover:bg-ink-2 focus-visible:outline-signal inline-flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-full border bg-transparent px-5 font-mono text-xs whitespace-nowrap uppercase transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
 			aria-label="Add months"
 		>
 			<Plus size={14} aria-hidden="true" />
@@ -84,9 +85,11 @@
 		class="data-open:slide-in-from-bottom-2 data-closed:slide-out-to-bottom-1 gap-0 p-0 sm:max-w-sm"
 		showCloseButton={false}
 	>
-		<Dialog.Header class="border-border border-b px-4 py-3">
-			<Dialog.Title class="text-left text-sm font-semibold text-balance">Add months</Dialog.Title>
-			<Dialog.Description class="text-muted-foreground mt-0.5 text-left text-xs text-pretty">
+		<Dialog.Header class="border-hair border-b px-4 py-3">
+			<Dialog.Title>
+				<Eyebrow as="span">Add months</Eyebrow>
+			</Dialog.Title>
+			<Dialog.Description class="text-ink-muted mt-1.5 text-left text-xs text-pretty">
 				Select months to schedule invoices for.
 			</Dialog.Description>
 		</Dialog.Header>
@@ -100,38 +103,42 @@
 					disabled={isScheduled}
 					onclick={() => toggleMonth(month)}
 					class={cn(
-						"relative flex h-10 items-center justify-center rounded-md border text-sm font-medium whitespace-nowrap transition-colors",
+						"focus-visible:outline-signal relative flex h-10 items-center justify-center rounded-lg border font-mono text-xs tracking-wider whitespace-nowrap uppercase transition-colors focus-visible:outline-2 focus-visible:outline-offset-2",
 						isScheduled
-							? "border-border text-muted-foreground cursor-not-allowed line-through opacity-30"
+							? "border-hair text-ink-muted cursor-not-allowed line-through opacity-30"
 							: isSelected
-								? "border-brand bg-brand/10 text-success cursor-pointer"
-								: "border-border pointer-fine:hover:border-foreground/40 pointer-fine:hover:bg-accent/40 cursor-pointer"
+								? "border-signal bg-ink-2 text-foreground cursor-pointer"
+								: "border-hair text-ink-muted pointer-fine:hover:border-white/30 pointer-fine:hover:bg-ink-2 pointer-fine:hover:text-foreground cursor-pointer"
 					)}
 					aria-pressed={isSelected}
 					aria-disabled={isScheduled}
 				>
 					{#if isSelected}
-						<Check size={10} class="absolute top-1 right-1" aria-hidden="true" />
+						<Check size={10} class="text-signal absolute top-1 right-1" aria-hidden="true" />
 					{/if}
 					{MONTH_ABBR[month]}
 				</button>
 			{/each}
 		</div>
 
-		<div class="border-border flex items-center justify-between border-t px-4 py-3">
+		<div class="border-hair flex items-center justify-between border-t px-4 py-3">
 			{#if pending.length > 0}
-				<span class="text-muted-foreground text-xs whitespace-nowrap">{pending.length} selected</span>
+				<span class="text-ink-muted font-mono text-micro tracking-wider whitespace-nowrap tabular-nums">
+					{pending.length} selected
+				</span>
 			{:else}
 				<span></span>
 			{/if}
 			<div class="flex items-center gap-2">
-				<Button variant="ghost" size="sm" onclick={() => (open = false)}>Cancel</Button>
-				<Button size="sm" disabled={pending.length === 0 || loading} onclick={confirm}>
-					{#if loading}
-						<Loader2 size={14} class="animate-spin" aria-hidden="true" />
-					{/if}
-					Confirm
-				</Button>
+				<Button variant="ghost" size="sm" class="rounded-full" onclick={() => (open = false)}>Cancel</Button>
+				<Cta variant="primary" arrow={false} disabled={pending.length === 0 || loading} onclick={confirm}>
+					<span class="inline-flex items-center gap-2">
+						{#if loading}
+							<Loader2 size={14} class="animate-spin" aria-hidden="true" />
+						{/if}
+						Confirm
+					</span>
+				</Cta>
 			</div>
 		</div>
 	</Dialog.Content>

@@ -3,15 +3,13 @@
 	(newest first; the array is already newest-first so no sort runs here). No
 	+page.server.ts sits beside this file, which keeps the route public — there is
 	no auth guard. Dates are formatted absolutely (SSR-safe; never relative) so
-	server and client output match.
+	server and client output match. Editorial DS styling: mono Eyebrow + lowercase
+	Heading header, hairline date separators, monochrome throughout.
 -->
 <script lang="ts">
 	import { CHANGELOG_ENTRIES, type ChangelogEntry } from "$lib/data/changelog";
-	import { Card, CardContent } from "$lib/components/ui/card";
-	import { Separator } from "$lib/components/ui/separator";
-	import SectionEyebrow from "$src/components/SectionEyebrow.svelte";
 	import { reveal } from "$lib/motion";
-	import { Sparkles } from "@lucide/svelte";
+	import { Heading, Eyebrow } from "@dropout/ds";
 
 	type DateGroup = { date: string; label: string; entries: ChangelogEntry[] };
 
@@ -49,60 +47,49 @@
 	/>
 </svelte:head>
 
-<main class="mx-auto w-full max-w-2xl px-4 py-10 sm:px-6 sm:py-14">
-	<header class="space-y-3 text-center sm:space-y-4" use:reveal={{ distance: "sm" }}>
-		<div class="flex justify-center">
-			<span
-				class="border-border bg-muted text-muted-foreground inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-caption font-medium"
-			>
-				<Sparkles size={13} aria-hidden="true" />
-				What's new
-			</span>
-		</div>
-		<h1 class="text-title-sm font-semibold tracking-tight text-balance sm:text-title">Changelog</h1>
-		<p class="text-muted-foreground mx-auto max-w-md text-label text-pretty sm:text-body">
+<main class="mx-auto w-full max-w-2xl px-4 py-14 sm:px-6 sm:py-20">
+	<header class="flex flex-col gap-4 sm:gap-5" use:reveal={{ distance: "sm" }}>
+		<Eyebrow>What's new</Eyebrow>
+		<Heading as="h1" size="title" weight={560} class="lowercase">changelog</Heading>
+		<p class="text-ink-muted max-w-md text-label text-pretty sm:text-body">
 			Every meaningful update to Invoice Generator, written in plain language.
 		</p>
 	</header>
 
-	<Separator class="my-10 sm:my-12" />
+	<div class="border-hair my-12 border-t sm:my-16"></div>
 
-	<div class="space-y-12 sm:space-y-16">
+	<div class="space-y-14 sm:space-y-20">
 		{#each groups as group, groupIndex (group.date)}
-			<section class="space-y-5">
+			<section class="space-y-6">
 				<div
-					class="flex flex-wrap items-center gap-x-3 gap-y-2"
+					class="flex flex-wrap items-baseline gap-x-3 gap-y-1.5"
 					use:reveal={{ distance: "sm", delay: groupIndex === 0 ? 0.05 : 0 }}
 				>
-					<SectionEyebrow icon={Sparkles} label={group.label} />
+					<span class="text-ink-muted font-mono text-micro tracking-[0.28em] uppercase tabular-nums">
+						{group.label}
+					</span>
 					{#if groupIndex === 0}
 						<span
-							class="border-border text-foreground rounded-full border px-2 py-0.5 text-micro font-medium tracking-wide uppercase"
+							class="border-hair text-ink-muted rounded-full border px-2 py-0.5 font-mono text-micro tracking-[0.18em] uppercase"
 						>
 							Latest
 						</span>
 					{/if}
 				</div>
 
-				<div class="space-y-4">
+				<div class="border-hair space-y-8 border-l pl-5 sm:pl-6">
 					{#each group.entries as entry, entryIndex (entry.title)}
-						<div use:reveal={{ distance: "sm", delay: 0.06 * entryIndex }}>
-							<Card>
-								<CardContent class="space-y-2.5">
-									<span
-										class="border-border bg-muted text-muted-foreground inline-flex w-fit items-center rounded-full border px-2 py-0.5 text-caption"
-									>
-										{entry.category}
-									</span>
-									<h2 class="text-lead font-semibold tracking-tight text-balance">
-										{entry.title}
-									</h2>
-									<p class="text-muted-foreground text-label leading-relaxed text-pretty">
-										{entry.summary}
-									</p>
-								</CardContent>
-							</Card>
-						</div>
+						<article class="space-y-2.5" use:reveal={{ distance: "sm", delay: 0.06 * entryIndex }}>
+							<span class="text-ink-muted block font-mono text-micro tracking-[0.22em] uppercase">
+								{entry.category}
+							</span>
+							<Heading as="h2" size="lead" weight={560} class="text-balance">
+								{entry.title}
+							</Heading>
+							<p class="text-ink-muted text-label leading-relaxed text-pretty">
+								{entry.summary}
+							</p>
+						</article>
 					{/each}
 				</div>
 			</section>

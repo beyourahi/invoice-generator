@@ -221,7 +221,7 @@
 				{#if session.generationState === "done"}
 					<Button
 						class={cn(
-							"bg-brand text-brand-foreground pointer-fine:hover:bg-brand/90 w-full whitespace-nowrap sm:w-auto",
+							"bg-signal text-background pointer-fine:hover:bg-signal/90 w-full rounded-full whitespace-nowrap sm:w-auto",
 							busyAll && "cursor-wait"
 						)}
 						onclick={downloadAll}
@@ -238,7 +238,7 @@
 					</Button>
 					<Button
 						variant="outline"
-						class="w-full whitespace-nowrap sm:w-auto"
+						class="w-full rounded-full whitespace-nowrap sm:w-auto"
 						onclick={session.resetGeneration}
 						disabled={busyAll}
 					>
@@ -247,7 +247,7 @@
 					</Button>
 				{:else if session.generationState === "error"}
 					<Button
-						class="bg-brand text-brand-foreground pointer-fine:hover:bg-brand/90 w-full whitespace-nowrap sm:w-auto"
+						class="bg-signal text-background pointer-fine:hover:bg-signal/90 w-full rounded-full whitespace-nowrap sm:w-auto"
 						onclick={generateAll}
 					>
 						<RotateCcw size={14} aria-hidden="true" />
@@ -256,7 +256,7 @@
 				{:else}
 					<Button
 						class={cn(
-							"bg-brand text-brand-foreground pointer-fine:hover:bg-brand/90 w-full whitespace-nowrap sm:w-auto",
+							"bg-signal text-background pointer-fine:hover:bg-signal/90 w-full rounded-full whitespace-nowrap sm:w-auto",
 							session.generationState === "generating" && "cursor-wait"
 						)}
 						onclick={generateAll}
@@ -351,7 +351,7 @@
 									<Button
 										size="sm"
 										class={cn(
-											"bg-brand text-brand-foreground pointer-fine:hover:bg-brand/90 w-full whitespace-nowrap sm:w-auto",
+											"bg-signal text-background pointer-fine:hover:bg-signal/90 w-full rounded-full whitespace-nowrap sm:w-auto",
 											isBusy && "cursor-wait"
 										)}
 										onclick={() => downloadGroup(group)}

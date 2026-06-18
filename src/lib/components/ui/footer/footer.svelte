@@ -1,41 +1,40 @@
+<!--
+	Global footer. Hairline top border, mono uppercase wide-tracked links per the
+	Dropout editorial law; muted at rest, foreground on hover. Hand-authored (not a
+	shadcn primitive) — the sole editable file under ui/. All links/hrefs preserved.
+-->
 <script lang="ts">
 	import { APP_CONFIG } from "$lib/config";
 </script>
 
 <footer
-	class="text-muted-foreground flex flex-col items-center justify-center gap-2 px-4 py-6 text-center text-xs sm:px-6 sm:py-8 sm:text-sm"
+	class="border-hair text-ink-muted flex w-full flex-wrap items-center justify-between gap-x-6 gap-y-3 border-t px-4 py-8 font-mono text-micro tracking-[0.22em] uppercase sm:px-6 sm:py-10"
 >
-	<p class="text-pretty">
-		<a href="/changelog" class="group whitespace-nowrap">
-			<span
-				class="pointer-fine:group-hover:text-foreground underline-offset-4 pointer-fine:group-hover:underline"
-			>
-				Changelog
-			</span>
+	<p class="flex flex-wrap items-center gap-x-3 gap-y-2">
+		<a
+			href="/changelog"
+			class="ease-[var(--ease)] whitespace-nowrap transition-colors pointer-fine:hover:text-foreground"
+		>
+			Changelog
 		</a>
-		<span class="mx-2 opacity-50">·</span>
+		<span class="text-hair" aria-hidden="true">/</span>
 		<a
 			href="https://dropoutstudio.co/tools"
 			target="_blank"
 			rel="noopener noreferrer"
-			class="group whitespace-nowrap"
+			class="ease-[var(--ease)] whitespace-nowrap transition-colors pointer-fine:hover:text-foreground"
 		>
-			Check out
-			<span
-				class="pointer-fine:group-hover:text-foreground underline-offset-4 pointer-fine:group-hover:underline"
-			>
-				other tools
-			</span>
+			Other tools
 		</a>
 	</p>
-	<p class="text-pretty">
-		<a href={APP_CONFIG.author.url} target="_blank" rel="noopener noreferrer" class="group whitespace-nowrap">
-			Designed by
-			<span
-				class="pointer-fine:group-hover:text-foreground underline-offset-4 pointer-fine:group-hover:underline"
-			>
-				{APP_CONFIG.author.name}
-			</span>
+	<p>
+		<a
+			href={APP_CONFIG.author.url}
+			target="_blank"
+			rel="noopener noreferrer"
+			class="ease-[var(--ease)] whitespace-nowrap transition-colors pointer-fine:hover:text-foreground"
+		>
+			Designed by {APP_CONFIG.author.name}
 		</a>
 	</p>
 </footer>

@@ -351,7 +351,9 @@
 					<div class="flex items-center justify-between gap-3">
 						<SectionEyebrow icon={Wallet} label="Payment methods" />
 						{#if savedMethods.length > 0}
-							<p class="text-muted-foreground text-xs whitespace-nowrap tabular-nums">
+							<p
+								class="text-ink-muted font-mono text-micro tracking-wider whitespace-nowrap tabular-nums"
+							>
 								{client.payment.methodIds.length} of {savedMethods.length} selected
 							</p>
 						{/if}
@@ -359,7 +361,7 @@
 
 					{#if savedMethods.length === 0}
 						<div
-							class="border-border text-muted-foreground grid min-h-20 w-full place-items-center rounded-lg border border-dashed text-center text-xs"
+							class="border-hair text-ink-muted grid min-h-20 w-full place-items-center rounded-xl border border-dashed text-center text-xs"
 						>
 							<div class="space-y-1 px-3">
 								<p class="font-medium text-balance">No payment methods configured</p>
@@ -408,7 +410,9 @@
 					<div class="flex items-center justify-between gap-3">
 						<SectionEyebrow icon={ReceiptText} label="Invoice schedule" />
 						{#if client.invoices.length > 0}
-							<p class="text-muted-foreground text-xs whitespace-nowrap">{client.invoices.length} rows</p>
+							<p class="text-ink-muted font-mono text-micro tracking-wider whitespace-nowrap">
+								{client.invoices.length} rows
+							</p>
 						{/if}
 					</div>
 

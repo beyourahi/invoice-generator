@@ -52,7 +52,7 @@
 			void tick().then(() => focusable()[0]?.focus());
 		} else if (wasOpen) {
 			wasOpen = false;
-			void tick().then(() => document.querySelector<HTMLElement>('[aria-label="Open AI Copilot"]')?.focus());
+			void tick().then(() => document.querySelector<HTMLElement>('[aria-label="Open AI chat"]')?.focus());
 		}
 	});
 </script>
@@ -60,11 +60,11 @@
 <svelte:window onkeydown={onKeydown} />
 
 {#if ai.mobileOpen}
-	<div class="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label="AI Copilot">
+	<div class="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label="AI chat">
 		<button
 			type="button"
 			class="absolute inset-0 cursor-default bg-black/60 backdrop-blur-sm"
-			aria-label="Close Copilot"
+			aria-label="Close chat"
 			onclick={close}
 			transition:fade={{ duration: 200 }}
 		></button>
@@ -77,7 +77,7 @@
 				type="button"
 				onclick={close}
 				class="text-chat-icon-muted hover:text-chat-text-primary hover:bg-chat-surface-hover absolute top-3 right-3 z-10 inline-flex size-9 items-center justify-center rounded-lg transition-colors"
-				aria-label="Close Copilot"
+				aria-label="Close chat"
 			>
 				<X class="size-5" aria-hidden="true" />
 			</button>

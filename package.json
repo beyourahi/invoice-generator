@@ -58,6 +58,7 @@
 		"wrangler": "^4.101.0"
 	},
 	"dependencies": {
+		"@dropout/ds": "file:../../dropout-design-system",
 		"better-auth": "^1.6.19",
 		"drizzle-orm": "^0.45.2",
 		"fflate": "^0.8.3",

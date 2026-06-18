@@ -17,8 +17,8 @@
 
 	const sizing = $derived(
 		size === "sm"
-			? "gap-1.5 px-2 py-0.5 text-[11px] font-semibold tracking-wider uppercase"
-			: "gap-1.5 px-2.5 py-0.5 text-xs font-semibold"
+			? "gap-1.5 px-2 py-0.5 font-mono text-[10px] font-medium tracking-[0.12em] uppercase"
+			: "gap-1.5 px-2.5 py-1 font-mono text-[10.5px] font-medium tracking-[0.12em] uppercase"
 	);
 
 	const dotSize = $derived(size === "sm" ? "size-[7px]" : "size-2");

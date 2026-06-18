@@ -1,35 +1,25 @@
 /**
- * Global stylesheet + Tailwind v4 CSS-first config (there is no tailwind.config.js).
+ * Global stylesheet — Tailwind v4 CSS-first (no tailwind.config.js).
  *
- * Token architecture: :root holds the shadcn LIGHT palette and .dark overrides it — but the
- * app is DARK-ONLY (app.html hardcodes <html class="dark">), so the :root light values are
- * effectively never used at runtime and exist only to satisfy the shadcn token contract.
- * `@theme inline` maps the --* CSS variables onto Tailwind color/font/radius/shadow utilities.
- * Semantic groups: --status-* (active/inactive badges), --chat-* (AI Copilot surface),
- * --motion-* + ::view-transition (route transitions). Reduced-motion fallbacks sit inline
- * next to each animation rather than in one central block.
+ * Color / type / space / motion-ease tokens come from @dropout/ds — the single
+ * source of visual truth. DS tokens.css supplies the ink ramp, semantic aliases,
+ * the editorial layer (signal / ink-muted / hair), the type scale, fonts, radius,
+ * shadows, --ease, the shell vars, the @custom-variant set, and the base layer.
+ * `@source` is REQUIRED so Tailwind v4 generates the DS component classes
+ * (bg-signal, border-hair, …) that live in node_modules.
+ *
+ * This file keeps ONLY what DS doesn't cover: tool-specific token aliases
+ * (--popover, --status-*, --chat-*, --surface, copilot-rail, --preview-paper)
+ * repointed to DS tokens so every existing utility stays strictly monochrome,
+ * plus app keyframes, the invoice-preview stage, and view-transition rules.
+ * App is DARK-ONLY (app.html hardcodes <html class="dark">) — the DS canonical theme.
  */
 @import "tailwindcss";
+@source "../node_modules/@dropout/ds";
+@import "@dropout/ds/tokens.css";
+@import "@dropout/ds/animations.css";
 @import "tw-animate-css";
 @import "./lib/styles/chat-animations.css";
-
-@custom-variant dark (&:is(.dark *));
-
-@custom-variant hover {
-	@media (hover: hover) and (pointer: fine) {
-		&:hover {
-			@slot;
-		}
-	}
-}
-
-@custom-variant group-hover {
-	@media (hover: hover) and (pointer: fine) {
-		&:is(:where(.group):hover *) {
-			@slot;
-		}
-	}
-}
 
 @font-face {
 	font-family: "Google Sans Flex Fallback";
@@ -40,106 +30,34 @@
 	line-gap-override: 0%;
 }
 
+/* =============================================================================
+   TOOL-EXTRAS — tokens DS doesn't define, repointed to DS primitives so every
+   existing utility (bg-chat-surface, border-status-active-border, bg-popover …)
+   keeps working but resolves to strict-monochrome DS values. App is dark-only,
+   so var(--signal)/var(--hair)/var(--ink-muted)/… resolve to their .dark
+   (white-led) values everywhere. DS owns the semantic palette; we never redefine it.
+   ============================================================================= */
 :root {
-	--background: oklch(1 0 0);
-	--foreground: oklch(0.145 0 0);
-	--card: oklch(1 0 0);
-	--card-foreground: oklch(0.145 0 0);
-	--popover: oklch(1 0 0);
-	--popover-foreground: oklch(0.145 0 0);
-	--primary: oklch(0.205 0 0);
-	--primary-foreground: oklch(0.985 0 0);
-	--secondary: oklch(0.97 0 0);
-	--secondary-foreground: oklch(0.205 0 0);
-	--muted: oklch(0.97 0 0);
-	--muted-foreground: oklch(0.556 0 0);
-	--accent: oklch(0.97 0 0);
-	--accent-foreground: oklch(0.205 0 0);
-	--destructive: oklch(0.577 0.245 27.325);
-	--destructive-foreground: oklch(1 0 0);
-	--border: oklch(0.922 0 0);
-	--input: oklch(0.922 0 0);
-	--ring: oklch(0.708 0 0);
-	--border-strong: oklch(0.85 0 0);
-	--courier-accent: oklch(0.69 0.17 162);
-	--scrollbar: oklch(0.1 0 0);
+	/* shadcn popover surface → DS card */
+	--popover: var(--card);
+	--popover-foreground: var(--card-foreground);
 
+	/* a touch stronger than the DS hairline; legacy accent → signal (monochrome) */
+	--border-strong: var(--color-ink-600);
+	--courier-accent: var(--signal);
+	--scrollbar: var(--background);
+
+	/* success / brand — original real colors (the payment chips + completeness
+	   badge read green from these; primary action buttons are decoupled to signal). */
 	--success: hsl(160 60% 70%);
 	--success-foreground: hsl(160 30% 12%);
 	--brand: hsl(160 84% 28%);
 	--brand-foreground: hsl(0 0% 98%);
+
+	/* the generated invoice PDF preview paper stays literally white (out-of-scope doc) */
 	--preview-paper: hsl(0 0% 100%);
-	--status-active: hsl(150 38% 42%);
-	--status-active-foreground: hsl(150 48% 28%);
-	--status-active-bg: hsl(150 38% 42% / 0.1);
-	--status-active-border: hsl(150 38% 42% / 0.55);
-	--status-active-track: hsl(150 42% 38%);
-	--status-inactive: hsl(8 42% 52%);
-	--status-inactive-foreground: hsl(8 46% 38%);
-	--status-inactive-bg: hsl(8 42% 52% / 0.08);
-	--status-inactive-border: hsl(8 42% 52% / 0.55);
-	--status-inactive-track: hsl(8 32% 56%);
-	--status-transition:
-		color 200ms ease, background-color 200ms ease, border-color 200ms ease, opacity 200ms ease;
 
-	--chat-bg: oklch(0.145 0 0);
-	--chat-surface: oklch(0.205 0 0);
-	--chat-surface-hover: oklch(0.269 0 0);
-	--chat-accent: oklch(0.985 0 0 / 0.9);
-	--chat-accent-muted: oklch(0.985 0 0 / 0.1);
-	--chat-accent-subtle: oklch(0.985 0 0 / 0.06);
-	--chat-text-primary: oklch(0.985 0 0);
-	--chat-text-secondary: oklch(0.708 0 0);
-	--chat-text-muted: oklch(0.62 0 0);
-	--chat-border: oklch(0.275 0 0);
-	--chat-border-subtle: oklch(0.22 0 0);
-	--chat-icon-muted: oklch(0.556 0 0);
-	--chat-user-bubble: oklch(0.985 0 0 / 0.1);
-	--chat-bot-bubble: oklch(0.205 0 0);
-	--chat-shadow: 0 8px 32px oklch(0 0 0 / 0.4), 0 2px 8px oklch(0 0 0 / 0.2);
-
-	--font-sans:
-		"Google Sans Flex", "Google Sans Flex Fallback", system-ui, -apple-system, "Segoe UI", Roboto,
-		sans-serif;
-	--font-mono: "Google Sans Code", ui-monospace, "SF Mono", Consolas, "Courier New", monospace;
-	--radius: 1rem;
-	--shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
-	--shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
-	--shadow: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
-	--shadow-md: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 2px 4px -1px hsl(0 0% 0% / 0.1);
-	--shadow-lg: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 4px 6px -1px hsl(0 0% 0% / 0.1);
-	--shadow-xl: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 8px 10px -1px hsl(0 0% 0% / 0.1);
-	--shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.25);
-}
-
-.dark {
-	--background: oklch(0.145 0 0);
-	--foreground: oklch(0.985 0 0);
-	--card: oklch(0.205 0 0);
-	--card-foreground: oklch(0.985 0 0);
-	--popover: oklch(0.205 0 0);
-	--popover-foreground: oklch(0.985 0 0);
-	--primary: oklch(0.922 0 0);
-	--primary-foreground: oklch(0.205 0 0);
-	--secondary: oklch(0.269 0 0);
-	--secondary-foreground: oklch(0.985 0 0);
-	--muted: oklch(0.269 0 0);
-	--muted-foreground: oklch(0.708 0 0);
-	--accent: oklch(0.371 0 0);
-	--accent-foreground: oklch(0.985 0 0);
-	--destructive: oklch(0.704 0.191 22.216);
-	--destructive-foreground: oklch(0.985 0 0);
-	--border: oklch(0.275 0 0);
-	--input: oklch(0.325 0 0);
-	--ring: oklch(0.556 0 0);
-	--border-strong: oklch(0.371 0 0);
-	--courier-accent: oklch(0.69 0.17 162);
-
-	--success: hsl(160 60% 70%);
-	--success-foreground: hsl(160 30% 12%);
-	--brand: hsl(160 84% 28%);
-	--brand-foreground: hsl(0 0% 98%);
-	--preview-paper: hsl(0 0% 100%);
+	/* status badges — original real colors (active green / inactive warm red) */
 	--status-active: hsl(150 42% 56%);
 	--status-active-foreground: hsl(150 48% 76%);
 	--status-active-bg: hsl(150 42% 56% / 0.1);
@@ -150,28 +68,37 @@
 	--status-inactive-bg: hsl(8 44% 60% / 0.09);
 	--status-inactive-border: hsl(8 44% 60% / 0.8);
 	--status-inactive-track: hsl(8 34% 52%);
+	--status-transition:
+		color 200ms ease, background-color 200ms ease, border-color 200ms ease, opacity 200ms ease;
+
+	/* AI Copilot surfaces → DS semantic tokens (already monochrome; signal is the accent) */
+	--chat-bg: var(--background);
+	--chat-surface: var(--card);
+	--chat-surface-hover: var(--ink-2);
+	--chat-accent: var(--signal);
+	--chat-accent-muted: oklch(1 0 0 / 0.1);
+	--chat-accent-subtle: oklch(1 0 0 / 0.06);
+	--chat-text-primary: var(--foreground);
+	--chat-text-secondary: var(--ink-muted);
+	--chat-text-muted: var(--ink-muted);
+	--chat-border: var(--hair);
+	--chat-border-subtle: var(--hair-soft);
+	--chat-icon-muted: var(--ink-muted);
+	--chat-user-bubble: oklch(1 0 0 / 0.1);
+	--chat-bot-bubble: var(--card);
+	--chat-shadow: 0 8px 32px oklch(0 0 0 / 0.4), 0 2px 8px oklch(0 0 0 / 0.2);
+
+	/* Copilot right-rail sizing (CLAUDE.md #21 — change tokens, never the calc()s) */
+	--copilot-rail-width: 26rem;
+	--copilot-rail-width-xl: 28rem;
 }
 
 @theme inline {
-	--color-background: var(--background);
-	--color-foreground: var(--foreground);
-	--color-card: var(--card);
-	--color-card-foreground: var(--card-foreground);
+	/* shadcn popover + tool-only color utilities. The semantic palette
+	   (background/foreground/card/primary/…/destructive/border/input/ring),
+	   fonts, radius-*, shadow-*, text-*, and leading-* all come from DS. */
 	--color-popover: var(--popover);
 	--color-popover-foreground: var(--popover-foreground);
-	--color-primary: var(--primary);
-	--color-primary-foreground: var(--primary-foreground);
-	--color-secondary: var(--secondary);
-	--color-secondary-foreground: var(--secondary-foreground);
-	--color-muted: var(--muted);
-	--color-muted-foreground: var(--muted-foreground);
-	--color-accent: var(--accent);
-	--color-accent-foreground: var(--accent-foreground);
-	--color-destructive: var(--destructive);
-	--color-destructive-foreground: var(--destructive-foreground);
-	--color-border: var(--border);
-	--color-input: var(--input);
-	--color-ring: var(--ring);
 	--color-border-strong: var(--border-strong);
 	--color-courier-accent: var(--courier-accent);
 
@@ -180,6 +107,7 @@
 	--color-brand: var(--brand);
 	--color-brand-foreground: var(--brand-foreground);
 	--color-preview-paper: var(--preview-paper);
+
 	--color-status-active: var(--status-active);
 	--color-status-active-foreground: var(--status-active-foreground);
 	--color-status-active-bg: var(--status-active-bg);
@@ -206,36 +134,6 @@
 	--color-chat-user-bubble: var(--chat-user-bubble);
 	--color-chat-bot-bubble: var(--chat-bot-bubble);
 
-	--font-sans: var(--font-sans);
-	--font-mono: var(--font-mono);
-
-	--radius-sm: calc(var(--radius) - 4px);
-	--radius-md: calc(var(--radius) - 2px);
-	--radius-lg: var(--radius);
-	--radius-xl: calc(var(--radius) + 4px);
-
-	--shadow-xs: var(--shadow-xs);
-	--shadow-sm: var(--shadow-sm);
-	--shadow: var(--shadow);
-	--shadow-md: var(--shadow-md);
-	--shadow-lg: var(--shadow-lg);
-	--shadow-xl: var(--shadow-xl);
-	--shadow-2xl: var(--shadow-2xl);
-
-	--text-micro: 0.625rem;
-	--text-caption: 0.75rem;
-	--text-label: 0.875rem;
-	--text-body: 1rem;
-	--text-body-lg: 1.0625rem;
-	--text-lead: 1.125rem;
-	--text-subtitle: 1.5rem;
-	--text-title-sm: 1.875rem;
-	--text-title: 2.25rem;
-	--text-title-lg: 3rem;
-	--text-display: 3.75rem;
-	--leading-tight-custom: 1.2;
-	--leading-heading: 1.25;
-	--leading-body: 1.625;
 	--tracking-tight-custom: -0.025em;
 	--tracking-caption-custom: 0.1em;
 }
