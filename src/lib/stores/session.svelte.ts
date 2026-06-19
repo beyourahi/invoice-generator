@@ -23,6 +23,7 @@ import type {
 	InvoiceEntry,
 	MonthName
 } from "$lib/types";
+import { SvelteMap } from "svelte/reactivity";
 import { api, debounceSync, sync } from "$lib/api/client";
 import { MONTHS } from "$lib/invoice/months";
 import { countGeneratableInvoices } from "$lib/invoice/active";
@@ -119,14 +120,29 @@ const createSessionStore = () => {
 		void sync(() => api.delete<void>(`/api/clients/${id}`));
 	};
 
+	// Write buffer accumulating in-flight text patches per client so the single
+	// per-client debounce coalesces them into ONE PATCH carrying every edited
+	// field. Previously each scheduled save captured only the latest field's patch
+	// and the same-key reschedule cancelled the prior timer, silently dropping
+	// earlier fields from D1 (local $state still looked saved). updateInvoiceEntry
+	// sidesteps this with per-field keys, but a ClientPatch can carry many fields
+	// at once (AI's fillRemainingFields), so we merge instead of keying per field.
+	// Entry is read+cleared at fire time. SvelteMap (not a plain Map) only to
+	// satisfy svelte/prefer-svelte-reactivity; nothing reads it reactively.
+	const pendingClientPatches = new SvelteMap<string, ClientPatch>();
+
 	const updateClient = (id: string, patch: ClientPatch) => {
 		clients = clients.map((c) => (c.id === id ? applyPatch(c, patch) : c));
 		const path = `/api/clients/${id}`;
-		const send = () => api.patch<void>(path, patch);
 		if (isTextPatch(patch)) {
-			debounceSync(`client:${id}`, TEXT_DEBOUNCE_MS, send);
+			pendingClientPatches.set(id, { ...pendingClientPatches.get(id), ...patch });
+			debounceSync(`client:${id}`, TEXT_DEBOUNCE_MS, () => {
+				const merged = pendingClientPatches.get(id) ?? patch;
+				pendingClientPatches.delete(id);
+				return api.patch<void>(path, merged);
+			});
 		} else {
-			void sync(send);
+			void sync(() => api.patch<void>(path, patch));
 		}
 	};
 
