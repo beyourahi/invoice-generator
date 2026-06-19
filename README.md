@@ -1,41 +1,48 @@
 # Invoice Generator
 
-A SvelteKit app for generating batches of PDF invoices. Configure a sender identity, add clients with service details and invoice months, then bulk-generate and download PDFs individually or as a ZIP. An optional AI Copilot drives the same client and invoice operations through natural-language commands.
+Generates batches of PDF invoices. Sign in with Google, configure a sender identity, add clients with service details and invoice months, then bulk-generate and download the PDFs individually or as a ZIP. An AI copilot drives the same client and invoice operations through natural-language commands.
 
 **Live**: https://invoice-generator.beyourahi.workers.dev
+
+Part of the Dropout Studio tools, alongside [Order Processor](https://github.com/beyourahi/order-processor) and [Day Zero](https://github.com/beyourahi/day-zero) — same stack, same Dropout Design System.
 
 ---
 
 ## Tech Stack
 
-| Layer         | Technology                           |
-| ------------- | ------------------------------------ |
-| Framework     | SvelteKit 2 + Svelte 5 (runes)       |
-| Styling       | Tailwind CSS v4                      |
-| UI Components | shadcn-svelte                        |
-| Auth          | Better Auth (Google OAuth)           |
-| Database      | Cloudflare D1 + Drizzle ORM          |
-| AI            | Cloudflare Workers AI (GPT-OSS 120B) |
-| PDF           | html2canvas + jsPDF                  |
-| ZIP           | fflate                               |
-| Deployment    | Cloudflare Workers                   |
-| Package mgr   | Bun                                  |
+| Layer              | Technology                                       |
+| ------------------ | ------------------------------------------------ |
+| Framework          | SvelteKit 2 + Svelte 5 (runes)                   |
+| Language           | TypeScript (strict)                              |
+| Styling            | Tailwind CSS v4                                  |
+| UI / Design System | Dropout Design System (vendored) + shadcn-svelte |
+| Auth               | Better Auth (Google OAuth)                       |
+| Database           | Cloudflare D1 + Drizzle ORM                      |
+| AI Copilot         | Cloudflare Workers AI                            |
+| PDF                | html2canvas + jsPDF                              |
+| ZIP                | fflate                                           |
+| Deployment         | Cloudflare Workers                               |
+| Package manager    | Bun                                              |
 
 ---
 
 ## Setup
 
-**Prerequisites**: Bun, a Cloudflare account, a Google Cloud OAuth 2.0 client.
+**Prerequisites**: Bun, a Cloudflare account with a D1 database named `invoice_generator`, a Google Cloud OAuth 2.0 client.
 
 ```bash
+git clone https://github.com/beyourahi/invoice-generator.git
+cd invoice-generator
 bun install
 ```
 
-Copy the example env files and fill in the values:
+Create `.dev.vars` at the project root (Worker runtime secrets, read by the dev server):
 
-```bash
-cp .dev.vars.example .dev.vars   # auth secrets — read by wrangler dev
-cp .env.example .env             # Cloudflare credentials — read by drizzle-kit
+```dotenv
+BETTER_AUTH_SECRET=      # openssl rand -base64 32
+BETTER_AUTH_URL=http://localhost:8787
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
 ```
 
 Apply migrations and start:
@@ -45,22 +52,24 @@ bun run db:migrate:local
 bun run dev              # http://localhost:5173
 ```
 
-> Auth requires the Wrangler-backed server. Use `bun run preview` for full auth testing.
+Google sign-in runs against the Wrangler-backed server — use `bun run preview` (`:8787`) for full auth testing, and set `BETTER_AUTH_URL=http://localhost:8787` to match.
 
 ---
 
-Two gitignored files at the project root, each read by a different tool — copy [`.dev.vars.example`](./.dev.vars.example) and [`.env.example`](./.env.example).
+## Environment Variables
 
-`.dev.vars` — Worker runtime secrets, loaded by `wrangler dev`:
+Two gitignored files at the project root, each read by a different tool. Never commit either.
 
-| Variable               | Description                                       |
-| ---------------------- | ------------------------------------------------- |
-| `BETTER_AUTH_SECRET`   | Random secret for session signing                 |
-| `BETTER_AUTH_URL`      | Worker base URL — `http://localhost:8787` locally |
-| `GOOGLE_CLIENT_ID`     | Google OAuth client ID                            |
-| `GOOGLE_CLIENT_SECRET` | Google OAuth client secret                        |
+`.dev.vars` — Worker runtime secrets, loaded by the dev server and Wrangler:
 
-`.env` — drizzle-kit credentials, loaded by Bun for `bun run db:*`:
+| Variable               | Description                                    |
+| ---------------------- | ---------------------------------------------- |
+| `BETTER_AUTH_SECRET`   | Random secret for session signing              |
+| `BETTER_AUTH_URL`      | App base URL — `http://localhost:8787` locally |
+| `GOOGLE_CLIENT_ID`     | Google OAuth client ID                         |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth client secret                     |
+
+`.env` — Cloudflare credentials for the Drizzle CLI, used only by the remote `db:*` commands (loaded by Bun):
 
 | Variable                 | Description                                  |
 | ------------------------ | -------------------------------------------- |
@@ -68,30 +77,30 @@ Two gitignored files at the project root, each read by a different tool — copy
 | `CLOUDFLARE_DATABASE_ID` | D1 database ID                               |
 | `CLOUDFLARE_D1_TOKEN`    | Cloudflare API token with D1 edit permission |
 
-Wrangler reads `.dev.vars` (not `.env`) for the Worker. In production, set the `.dev.vars` values as Worker secrets via `wrangler secret put`; `BETTER_AUTH_URL` is a non-secret binding in `wrangler.jsonc`. Never commit `.dev.vars` or `.env`.
+In production, set the `.dev.vars` values as Worker secrets via `wrangler secret put`; `BETTER_AUTH_URL` is a non-secret binding in `wrangler.jsonc`.
 
 ---
 
 ## Scripts
 
-| Script                     | Description                            |
-| -------------------------- | -------------------------------------- |
-| `bun run dev`              | Dev server on `:5173`                  |
-| `bun run preview`          | Wrangler local preview (auth testing)  |
-| `bun run build`            | Production build                       |
-| `bun run check`            | TypeScript validation                  |
-| `bun run lint`             | ESLint                                 |
-| `bun run format`           | Prettier auto-format                   |
-| `bun run cf-typegen`       | Regenerate Cloudflare types            |
-| `bun run db:generate`      | Generate migration from schema changes |
-| `bun run db:migrate`       | Apply migrations to production D1      |
-| `bun run db:migrate:local` | Apply migrations to local D1           |
+| Script                     | Description                                   |
+| -------------------------- | --------------------------------------------- |
+| `bun run dev`              | Dev server on `:5173`                         |
+| `bun run preview`          | Wrangler local preview on `:8787` (full auth) |
+| `bun run build`            | Production build                              |
+| `bun run check`            | Type & Svelte checking (svelte-check)         |
+| `bun run lint`             | ESLint                                        |
+| `bun run format`           | Prettier auto-format                          |
+| `bun run cf-typegen`       | Regenerate Cloudflare types                   |
+| `bun run db:generate`      | Generate migration from schema changes        |
+| `bun run db:migrate`       | Apply migrations to production D1             |
+| `bun run db:migrate:local` | Apply migrations to local D1                  |
 
 ---
 
 ## Deployment
 
-Set production secrets, then deploy:
+Set production secrets, then build and deploy:
 
 ```bash
 wrangler secret put BETTER_AUTH_SECRET
@@ -112,6 +121,10 @@ wrangler deploy
    - `https://invoice-generator.beyourahi.workers.dev/api/auth/callback/google` (production)
 
 ---
+
+## Contributing
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for local setup, architecture guidelines, coding standards, and the commit and PR workflow.
 
 ## License
 
