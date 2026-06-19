@@ -65,6 +65,7 @@ bun run dev              # Start Vite dev server (--open --host: opens browser, 
 bun run build            # Production build
 bun run preview          # Build, then run Wrangler dev (test auth/D1 locally)
 bun run check            # svelte-check TypeScript validation
+bun run check:watch      # svelte-check in watch mode
 bun run lint             # ESLint
 bun run format           # Prettier
 bun run cf-typegen       # Regenerate worker-configuration.d.ts from wrangler.jsonc
