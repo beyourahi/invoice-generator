@@ -27,6 +27,10 @@ import { SvelteMap } from "svelte/reactivity";
 import { api, debounceSync, sync } from "$lib/api/client";
 import { MONTHS } from "$lib/invoice/months";
 import { countGeneratableInvoices } from "$lib/invoice/active";
+import { readLocal, writeLocal } from "$lib/persistence/local";
+import { GUEST_SESSION_KEY, type GuestSessionSnapshot } from "$lib/persistence/keys";
+
+const currentYear = () => new Date().getFullYear();
 
 const TEXT_DEBOUNCE_MS = 400;
 
@@ -85,27 +89,95 @@ const createSessionStore = () => {
 	let generatedInvoices = $state<GeneratedInvoice[]>([]);
 	let generationState = $state<GenerationState>("idle");
 	let generationError = $state<string | null>(null);
+	// Set once at hydration. Authed → mutations persist to D1 (cross-device).
+	// Guest → mutations persist to localStorage, and creates (client/entry) mint
+	// their own ids/positions client-side (no server round-trip).
+	let authed = false;
 
-	const hydrate = (initial: {
-		clients: Client[];
-		selectedClientId: string | null;
-		expandedClients: Record<string, boolean>;
-	}) => {
+	const saveLocal = () =>
+		writeLocal<GuestSessionSnapshot>(GUEST_SESSION_KEY, {
+			clients,
+			selectedClientId,
+			expandedClients
+		});
+
+	// For structural (non-text) mutations: persist to D1 when authed, else mirror
+	// the whole guest snapshot to localStorage.
+	const persist = (thunk: () => Promise<unknown>) => {
+		if (authed) void sync(thunk);
+		else saveLocal();
+	};
+
+	const hydrate = (
+		initial: {
+			clients: Client[];
+			selectedClientId: string | null;
+			expandedClients: Record<string, boolean>;
+		},
+		opts?: { authed?: boolean }
+	) => {
 		clients = initial.clients;
 		selectedClientId = initial.selectedClientId;
 		expandedClients = initial.expandedClients;
+		authed = opts?.authed ?? false;
 	};
 
-	// New clients are seeded server-side from the most recent client as a template
-	// (templateId), so repeated adds inherit the last-used config.
+	// Browser-only: re-seed the guest board from localStorage after mount (SSR
+	// can't read it). Additive over the empty server state, so the single-untrack-
+	// site invariant for authed data stays intact.
+	const loadGuest = () => {
+		const guest = readLocal<GuestSessionSnapshot>(GUEST_SESSION_KEY);
+		if (guest) {
+			clients = guest.clients;
+			selectedClientId = guest.selectedClientId;
+			expandedClients = guest.expandedClients;
+		}
+	};
+
+	// New clients are seeded from the most recent client as a template, so repeated
+	// adds inherit the last-used config. Authed: the server clones (templateId).
+	// Guest: mirror that cloning client-side — IDENTITY fields (name/prefix/phone/
+	// email/address) always start blank; service config, year, payment-method links
+	// and entry month/day shapes carry over (see server createClient).
 	const addClient = async () => {
 		const template = clients[clients.length - 1];
-		const created = await sync(() =>
-			api.post<Client>("/api/clients", { templateId: template?.id ?? null })
-		);
-		if (!created) return;
+		if (authed) {
+			const created = await sync(() =>
+				api.post<Client>("/api/clients", { templateId: template?.id ?? null })
+			);
+			if (!created) return;
+			clients = [...clients, created];
+			expandedClients = { ...expandedClients, [created.id]: true };
+			return;
+		}
+		const id = crypto.randomUUID();
+		const created: Client = {
+			id,
+			name: "",
+			invoicePrefix: "",
+			phone: "",
+			email: "",
+			address: [""],
+			service: {
+				description: template?.service.description ?? "",
+				amount: template?.service.amount ?? 0,
+				currency: template?.service.currency ?? "BDT"
+			},
+			payment: { methodIds: template ? [...template.payment.methodIds] : [] },
+			year: template?.year ?? currentYear(),
+			isActive: true,
+			invoices: (template?.invoices ?? []).map((e) => ({
+				id: crypto.randomUUID(),
+				month: e.month,
+				issueDay: e.issueDay,
+				dueDay: e.dueDay,
+				isActive: true
+			})),
+			createdAt: new Date().toISOString()
+		};
 		clients = [...clients, created];
-		expandedClients = { ...expandedClients, [created.id]: true };
+		expandedClients = { ...expandedClients, [id]: true };
+		saveLocal();
 	};
 
 	const removeClient = (id: string) => {
@@ -115,9 +187,9 @@ const createSessionStore = () => {
 		expandedClients = nextExpanded;
 		if (selectedClientId === id) {
 			selectedClientId = null;
-			void sync(() => api.put<void>("/api/fixed", { selectedClientId: null }));
+			if (authed) void sync(() => api.put<void>("/api/fixed", { selectedClientId: null }));
 		}
-		void sync(() => api.delete<void>(`/api/clients/${id}`));
+		persist(() => api.delete<void>(`/api/clients/${id}`));
 	};
 
 	// Write buffer accumulating in-flight text patches per client so the single
@@ -133,6 +205,10 @@ const createSessionStore = () => {
 
 	const updateClient = (id: string, patch: ClientPatch) => {
 		clients = clients.map((c) => (c.id === id ? applyPatch(c, patch) : c));
+		if (!authed) {
+			saveLocal();
+			return;
+		}
 		const path = `/api/clients/${id}`;
 		if (isTextPatch(patch)) {
 			pendingClientPatches.set(id, { ...pendingClientPatches.get(id), ...patch });
@@ -152,7 +228,7 @@ const createSessionStore = () => {
 		const ids = target.payment.methodIds;
 		const next = ids.includes(methodId) ? ids.filter((id) => id !== methodId) : [...ids, methodId];
 		clients = clients.map((c) => (c.id === clientId ? { ...c, payment: { methodIds: next } } : c));
-		void sync(() => api.put<void>(`/api/clients/${clientId}/payment-methods`, { methodIds: next }));
+		persist(() => api.put<void>(`/api/clients/${clientId}/payment-methods`, { methodIds: next }));
 	};
 
 	const ensurePaymentMethodSelected = (clientId: string, methodId: string) => {
@@ -161,43 +237,80 @@ const createSessionStore = () => {
 		if (target.payment.methodIds.includes(methodId)) return;
 		const next = [...target.payment.methodIds, methodId];
 		clients = clients.map((c) => (c.id === clientId ? { ...c, payment: { methodIds: next } } : c));
-		void sync(() => api.put<void>(`/api/clients/${clientId}/payment-methods`, { methodIds: next }));
+		persist(() => api.put<void>(`/api/clients/${clientId}/payment-methods`, { methodIds: next }));
 	};
 
+	// Local-only (the DB FK cascade covers the server side); mirror for guests.
 	const purgePaymentMethodFromClients = (methodId: string) => {
 		clients = clients.map((c) => ({
 			...c,
 			payment: { methodIds: c.payment.methodIds.filter((id) => id !== methodId) }
 		}));
+		if (!authed) saveLocal();
+	};
+
+	// Builds a guest entry mirroring the server default: month defaults to the one
+	// AFTER the last entry (wrapping Dec→Jan) or January; issue/due days inherit.
+	const buildGuestEntry = (clientId: string, month?: MonthName): InvoiceEntry | null => {
+		const client = clients.find((c) => c.id === clientId);
+		if (!client) return null;
+		const last = client.invoices[client.invoices.length - 1];
+		const nextMonth: MonthName =
+			month ?? (last ? MONTHS[(MONTHS.indexOf(last.month) + 1) % MONTHS.length] : "January");
+		return {
+			id: crypto.randomUUID(),
+			month: nextMonth,
+			issueDay: last?.issueDay ?? "01",
+			dueDay: last?.dueDay ?? "07",
+			isActive: true
+		};
 	};
 
 	const addInvoiceEntry = async (clientId: string) => {
-		const created = await sync(() => api.post<InvoiceEntry>(`/api/clients/${clientId}/entries`));
+		if (authed) {
+			const created = await sync(() => api.post<InvoiceEntry>(`/api/clients/${clientId}/entries`));
+			if (!created) return;
+			clients = clients.map((c) =>
+				c.id === clientId ? { ...c, invoices: [...c.invoices, created] } : c
+			);
+			return;
+		}
+		const created = buildGuestEntry(clientId);
 		if (!created) return;
 		clients = clients.map((c) =>
 			c.id === clientId ? { ...c, invoices: [...c.invoices, created] } : c
 		);
+		saveLocal();
 	};
 
 	// Persists each month sequentially (one POST per entry) in calendar order.
 	const addInvoiceEntries = async (clientId: string, months: MonthName[]) => {
 		const sorted = [...months].sort((a, b) => MONTHS.indexOf(a) - MONTHS.indexOf(b));
 		for (const month of sorted) {
-			const created = await sync(() =>
-				api.post<InvoiceEntry>(`/api/clients/${clientId}/entries`, { month })
-			);
-			if (!created) continue;
-			clients = clients.map((c) =>
-				c.id === clientId ? { ...c, invoices: [...c.invoices, created] } : c
-			);
+			if (authed) {
+				const created = await sync(() =>
+					api.post<InvoiceEntry>(`/api/clients/${clientId}/entries`, { month })
+				);
+				if (!created) continue;
+				clients = clients.map((c) =>
+					c.id === clientId ? { ...c, invoices: [...c.invoices, created] } : c
+				);
+			} else {
+				const created = buildGuestEntry(clientId, month);
+				if (!created) continue;
+				clients = clients.map((c) =>
+					c.id === clientId ? { ...c, invoices: [...c.invoices, created] } : c
+				);
+			}
 		}
+		if (!authed) saveLocal();
 	};
 
 	const removeInvoiceEntry = (clientId: string, entryId: string) => {
 		clients = clients.map((c) =>
 			c.id === clientId ? { ...c, invoices: c.invoices.filter((e) => e.id !== entryId) } : c
 		);
-		void sync(() => api.delete<void>(`/api/clients/${clientId}/entries/${entryId}`));
+		persist(() => api.delete<void>(`/api/clients/${clientId}/entries/${entryId}`));
 	};
 
 	const updateInvoiceEntry = (
@@ -214,6 +327,10 @@ const createSessionStore = () => {
 					}
 				: c
 		);
+		if (!authed) {
+			saveLocal();
+			return;
+		}
 		const body =
 			field === "month"
 				? { month: value as MonthName }
@@ -237,6 +354,10 @@ const createSessionStore = () => {
 		const current = clients.find((c) => c.id === id);
 		if (!current || current.isActive === isActive) return;
 		clients = clients.map((c) => (c.id === id ? { ...c, isActive } : c));
+		if (!authed) {
+			saveLocal();
+			return;
+		}
 		const result = await sync(() => api.patch<void>(`/api/clients/${id}`, { isActive }));
 		if (result === null) {
 			clients = clients.map((c) => (c.id === id ? { ...c, isActive: !isActive } : c));
@@ -253,6 +374,10 @@ const createSessionStore = () => {
 				? { ...c, invoices: c.invoices.map((e) => (e.id === entryId ? { ...e, isActive } : e)) }
 				: c
 		);
+		if (!authed) {
+			saveLocal();
+			return;
+		}
 		const result = await sync(() =>
 			api.patch<void>(`/api/clients/${clientId}/entries/${entryId}`, { isActive })
 		);
@@ -272,12 +397,12 @@ const createSessionStore = () => {
 
 	const setSelectedClientId = (id: string | null) => {
 		selectedClientId = id;
-		void sync(() => api.put<void>("/api/fixed", { selectedClientId: id }));
+		persist(() => api.put<void>("/api/fixed", { selectedClientId: id }));
 	};
 
 	const setClientExpanded = (id: string, expanded: boolean) => {
 		expandedClients = { ...expandedClients, [id]: expanded };
-		void sync(() => api.patch<void>(`/api/clients/${id}`, { expanded }));
+		persist(() => api.patch<void>(`/api/clients/${id}`, { expanded }));
 	};
 
 	const toggleClientExpanded = (id: string) => {
@@ -364,6 +489,7 @@ const createSessionStore = () => {
 			return allClientsValid;
 		},
 		hydrate,
+		loadGuest,
 		addClient,
 		removeClient,
 		updateClient,

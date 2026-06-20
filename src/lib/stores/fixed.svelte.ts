@@ -13,6 +13,9 @@
  */
 import type { Fixed, PaymentMethodKind, SavedPaymentMethod } from "$lib/types";
 import { api, debounceSync, sync } from "$lib/api/client";
+import { createSavedMethod, getMethodDef } from "$lib/payments/registry";
+import { readLocal, writeLocal } from "$lib/persistence/local";
+import { GUEST_FIXED_KEY } from "$lib/persistence/keys";
 
 const DEFAULT_FIXED: Fixed = {
 	from: {
@@ -28,29 +31,62 @@ const TEXT_DEBOUNCE_MS = 400;
 
 const createFixedStore = () => {
 	let state = $state<Fixed>(DEFAULT_FIXED);
+	// Set once at hydration. Authed → mutations PATCH/POST to D1 (cross-device).
+	// Guest → mutations persist to localStorage, and payment-method creates mint
+	// their own ids client-side (no server round-trip).
+	let authed = false;
 
-	const hydrate = (initial: Fixed) => {
+	const saveLocal = () => writeLocal(GUEST_FIXED_KEY, state);
+
+	const hydrate = (initial: Fixed, opts?: { authed?: boolean }) => {
 		state = initial;
+		authed = opts?.authed ?? false;
+	};
+
+	// Browser-only: re-seed the guest sender/payment data from localStorage after
+	// mount (SSR can't read it). Additive over the empty server state, so the
+	// single-untrack-site invariant for authed data stays intact.
+	const loadGuest = () => {
+		const guest = readLocal<Fixed>(GUEST_FIXED_KEY);
+		if (guest) state = guest;
 	};
 
 	const updateFrom = (field: keyof Fixed["from"], value: string) => {
 		state = { ...state, from: { ...state.from, [field]: value } };
+		if (!authed) {
+			saveLocal();
+			return;
+		}
 		debounceSync(`fixed:from:${field}`, TEXT_DEBOUNCE_MS, () =>
 			api.patch<void>("/api/fixed", { [field]: value })
 		);
 	};
 
 	const addPaymentMethod = async (kind: PaymentMethodKind): Promise<string | null> => {
-		const created = await sync(() =>
-			api.post<SavedPaymentMethod>("/api/payment-methods", { kind })
-		);
-		if (!created) return null;
+		if (authed) {
+			const created = await sync(() =>
+				api.post<SavedPaymentMethod>("/api/payment-methods", { kind })
+			);
+			if (!created) return null;
+			state = { ...state, paymentMethods: [...state.paymentMethods, created] };
+			return created.id;
+		}
+		// Guest: build the method locally (matching the server's registry seed +
+		// "Bank 2"-style label disambiguation against existing methods of the kind).
+		const created = createSavedMethod(kind);
+		const sameKind = state.paymentMethods.filter((m) => m.kind === kind).length;
+		if (sameKind > 0) created.label = `${getMethodDef(kind).name} ${sameKind + 1}`;
 		state = { ...state, paymentMethods: [...state.paymentMethods, created] };
+		saveLocal();
 		return created.id;
 	};
 
 	const removePaymentMethod = (id: string) => {
 		state = { ...state, paymentMethods: state.paymentMethods.filter((m) => m.id !== id) };
+		if (!authed) {
+			saveLocal();
+			return;
+		}
 		void sync(() => api.delete<void>(`/api/payment-methods/${id}`));
 	};
 
@@ -59,6 +95,10 @@ const createFixedStore = () => {
 			...state,
 			paymentMethods: state.paymentMethods.map((m) => (m.id === id ? { ...m, label } : m))
 		};
+		if (!authed) {
+			saveLocal();
+			return;
+		}
 		debounceSync(`pm:${id}:label`, TEXT_DEBOUNCE_MS, () =>
 			api.patch<void>(`/api/payment-methods/${id}`, { label })
 		);
@@ -71,6 +111,10 @@ const createFixedStore = () => {
 				m.id === id ? { ...m, values: { ...m.values, [key]: value } } : m
 			)
 		};
+		if (!authed) {
+			saveLocal();
+			return;
+		}
 		debounceSync(`pm:${id}:value:${key}`, TEXT_DEBOUNCE_MS, () =>
 			api.patch<void>(`/api/payment-methods/${id}`, { valueKey: key, valueValue: value })
 		);
@@ -85,6 +129,10 @@ const createFixedStore = () => {
 		const next = [...list];
 		[next[index], next[target]] = [next[target], next[index]];
 		state = { ...state, paymentMethods: next };
+		if (!authed) {
+			saveLocal();
+			return;
+		}
 		void sync(() => api.put<void>("/api/payment-methods", { orderedIds: next.map((m) => m.id) }));
 	};
 
@@ -116,6 +164,7 @@ const createFixedStore = () => {
 			return state;
 		},
 		hydrate,
+		loadGuest,
 		updateFrom,
 		addPaymentMethod,
 		removePaymentMethod,

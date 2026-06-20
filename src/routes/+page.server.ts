@@ -1,4 +1,3 @@
-import { redirect } from "@sveltejs/kit";
 import type { PageServerLoad } from "./$types";
 import { getDatabase } from "$lib/server/db";
 import { loadAppState } from "$lib/server/repositories/state";
@@ -23,25 +22,24 @@ const emptyAi = (enabled: boolean): AiHydrationPayload => ({
 });
 
 /**
- * Home page load — the only authenticated route. Hydrates both the app state
- * stores and the AI Copilot store from D1.
+ * Home page load. Auth is OPTIONAL: logged-out visitors get the full builder (it
+ * persists to localStorage client-side; the PDF pipeline is client-side anyway).
+ * Signing in unlocks server storage + cross-device sync + the AI Copilot, and
+ * imports the guest snapshot once. Server data is hydrated ONLY for an
+ * authenticated session; anonymous visitors get empty shells and re-seed from
+ * localStorage on mount.
  *
  * CONTRACT:
  *  - inputs: locals.user (auth identity), platform.env.DB (D1), AI_COPILOT_ENABLED var.
  *  - outputs: { user, currentUser, appState, ai }. appState/ai default to empty
- *    shells when D1 is absent so the page still renders (PDF pipeline is client-side).
+ *    shells when D1/user is absent so the page still renders.
  *  - SIDE EFFECTS: read-only D1 queries.
- *  - ERROR MODES: 303 redirect to /login when unauthenticated.
  *
  * The AI block is skipped entirely when aiEnabled is false. Conversation/message/
  * action timestamps are serialized to ISO strings here because the wire payload
  * must be JSON-safe (Date does not survive load → client).
  */
 export const load: PageServerLoad = async ({ locals, platform }) => {
-	if (!locals.user) {
-		redirect(303, "/login");
-	}
-
 	const d1 = platform?.env?.DB;
 	const aiEnabled = platform?.env?.AI_COPILOT_ENABLED !== "false";
 	let appState: AppState = {

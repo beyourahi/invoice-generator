@@ -27,6 +27,8 @@
 	import Heading from "$lib/components/ui/heading/heading.svelte";
 	import { page } from "$app/state";
 	import User from "$src/components/User.svelte";
+	import SignInButton from "$src/components/SignInButton.svelte";
+	import { migrateGuestToServer } from "$lib/persistence/migrate";
 	import { onMount, untrack, type Component } from "svelte";
 	import { fade } from "svelte/transition";
 	import { reveal, motionDuration, flipList } from "$lib/motion";
@@ -57,16 +59,20 @@
 		await play();
 	};
 
-	// INVARIANT: the ONLY store-hydration site. untrack() seeds stores from server
-	// data without registering them as reactive deps of this render. Do not add a
-	// second hydrate call anywhere — it would clobber live local edits.
+	// INVARIANT: the ONLY server-data hydration site. untrack() seeds stores from
+	// server data without registering them as reactive deps of this render. For
+	// guests the server state is empty; the real local state loads in onMount
+	// (localStorage is browser-only). `authed` routes writes to D1 vs local.
 	untrack(() => {
-		fixed.hydrate(data.appState.fixed);
-		session.hydrate({
-			clients: data.appState.clients,
-			selectedClientId: data.appState.selectedClientId,
-			expandedClients: data.appState.expandedClients
-		});
+		fixed.hydrate(data.appState.fixed, { authed: !!data.user });
+		session.hydrate(
+			{
+				clients: data.appState.clients,
+				selectedClientId: data.appState.selectedClientId,
+				expandedClients: data.appState.expandedClients
+			},
+			{ authed: !!data.user }
+		);
 		ai.hydrate(data.ai);
 	});
 
@@ -92,6 +98,25 @@
 
 	onMount(async () => {
 		ToasterComponent = (await import("$lib/components/ui/sonner")).Toaster;
+
+		// Persistence bridge (browser-only): authed → import any prior guest
+		// workspace into the empty account once, then reload so the server load
+		// re-hydrates from D1; guest → re-seed the stores from localStorage.
+		if (data.user) {
+			const a = data.appState;
+			const accountEmpty =
+				a.clients.length === 0 &&
+				a.fixed.paymentMethods.length === 0 &&
+				!a.fixed.from.name &&
+				!a.fixed.from.phone &&
+				!a.fixed.from.email &&
+				!a.fixed.from.address &&
+				!a.selectedClientId;
+			if (await migrateGuestToServer(accountEmpty)) location.reload();
+		} else {
+			fixed.loadGuest();
+			session.loadGuest();
+		}
 	});
 </script>
 
@@ -101,95 +126,97 @@
 
 {#if page.data.user && page.data.currentUser}
 	<User user={page.data.user} currentUser={page.data.currentUser} />
+{:else}
+	<SignInButton />
 {/if}
 
-<main
-	class="flex w-full min-w-0 grow flex-col items-center gap-12 px-4 pt-16 pb-6 sm:gap-16 sm:pt-20 sm:pb-8 lg:gap-20"
->
-	<div use:reveal>
-		<Heading />
-	</div>
+<main class="flex w-full min-w-0 grow flex-col px-[var(--content-x)] py-16 sm:py-20">
+	<div class="m-auto flex w-full min-w-0 flex-col items-center gap-12 sm:gap-16 lg:gap-16">
+		<div use:reveal>
+			<Heading />
+		</div>
 
-	<div class="container flex w-full min-w-0 flex-col gap-8 sm:gap-10 lg:gap-12">
-		<Tabs.Root bind:value={activeTab} class="gap-6">
-			<Tabs.List class="w-full self-center group-data-horizontal/tabs:h-auto sm:w-fit">
-				<Tabs.Trigger
-					value="details"
-					class="h-auto min-h-11 gap-2 px-6 py-3 font-mono text-xs tracking-[0.1em] uppercase"
-				>
-					<SquarePen aria-hidden="true" />
-					Details
-				</Tabs.Trigger>
-				<Tabs.Trigger
-					value="preview"
-					class="h-auto min-h-11 gap-2 px-6 py-3 font-mono text-xs tracking-[0.1em] uppercase"
-				>
-					<ScanLine aria-hidden="true" />
-					Preview
-				</Tabs.Trigger>
-			</Tabs.List>
+		<div class="flex w-full min-w-0 flex-col gap-8 sm:gap-10 lg:gap-12">
+			<Tabs.Root bind:value={activeTab} class="gap-6">
+				<Tabs.List class="w-full self-center group-data-horizontal/tabs:h-auto sm:w-fit">
+					<Tabs.Trigger
+						value="details"
+						class="h-auto min-h-11 gap-2 px-6 py-3 font-mono text-xs tracking-[0.1em] uppercase"
+					>
+						<SquarePen aria-hidden="true" />
+						Details
+					</Tabs.Trigger>
+					<Tabs.Trigger
+						value="preview"
+						class="h-auto min-h-11 gap-2 px-6 py-3 font-mono text-xs tracking-[0.1em] uppercase"
+					>
+						<ScanLine aria-hidden="true" />
+						Preview
+					</Tabs.Trigger>
+				</Tabs.List>
 
-			<Tabs.Content value="details">
-				<div
-					class="grid w-full min-w-0 grid-cols-1 items-start gap-6"
-					in:fade={{ duration: motionDuration("fast") }}
-				>
-					<div class="min-w-0" use:reveal={{ delay: 0.05 }}>
-						<FixedSenderPanel />
-					</div>
-
-					<div class="min-w-0 space-y-3" use:reveal={{ delay: 0.1 }}>
-						<div class="flex items-center justify-between">
-							<SectionEyebrow icon={Users} label="Clients" />
-							<p
-								class="text-ink-muted font-mono text-micro tracking-wider whitespace-nowrap tabular-nums"
-							>
-								{session.clients.length} total
-							</p>
+				<Tabs.Content value="details">
+					<div
+						class="grid w-full min-w-0 grid-cols-1 items-start gap-6"
+						in:fade={{ duration: motionDuration("fast") }}
+					>
+						<div class="min-w-0" use:reveal={{ delay: 0.05 }}>
+							<FixedSenderPanel />
 						</div>
 
-						{#if session.clients.length === 0}
-							<button
-								class="border-hair text-ink-muted pointer-fine:hover:border-signal/40 pointer-fine:hover:text-foreground grid min-h-36 w-full cursor-pointer place-items-center rounded-xl border border-dashed text-center transition-colors duration-[250ms] ease-[var(--ease)]"
-								onclick={session.addClient}
-								aria-label="Add client"
-							>
-								<div class="flex flex-col items-center gap-2">
-									<UserPlus size={18} aria-hidden="true" />
-									<p class="text-sm font-medium">Add client</p>
-								</div>
-							</button>
-						{:else}
-							<div class="space-y-3" bind:this={clientListEl}>
-								{#each session.clients as client, i (client.id)}
-									<ClientCard
-										{client}
-										index={i}
-										selected={previewClient?.id === client.id}
-										onSelect={() => session.setSelectedClientId(client.id)}
-										onRemove={() => removeClientAnimated(client.id)}
-									/>
-								{/each}
+						<div class="min-w-0 space-y-3" use:reveal={{ delay: 0.1 }}>
+							<div class="flex items-center justify-between">
+								<SectionEyebrow icon={Users} label="Clients" />
+								<p
+									class="text-ink-muted font-mono text-micro tracking-wider whitespace-nowrap tabular-nums"
+								>
+									{session.clients.length} total
+								</p>
 							</div>
-						{/if}
 
-						{#if session.clients.length > 0}
-							<AddClientButton onAdd={addClientAnimated} />
-						{/if}
+							{#if session.clients.length === 0}
+								<button
+									class="border-hair text-ink-muted pointer-fine:hover:border-signal/40 pointer-fine:hover:text-foreground grid min-h-36 w-full cursor-pointer place-items-center rounded-xl border border-dashed text-center transition-colors duration-[250ms] ease-[var(--ease)]"
+									onclick={session.addClient}
+									aria-label="Add client"
+								>
+									<div class="flex flex-col items-center gap-2">
+										<UserPlus size={18} aria-hidden="true" />
+										<p class="text-sm font-medium">Add client</p>
+									</div>
+								</button>
+							{:else}
+								<div class="space-y-3" bind:this={clientListEl}>
+									{#each session.clients as client, i (client.id)}
+										<ClientCard
+											{client}
+											index={i}
+											selected={previewClient?.id === client.id}
+											onSelect={() => session.setSelectedClientId(client.id)}
+											onRemove={() => removeClientAnimated(client.id)}
+										/>
+									{/each}
+								</div>
+							{/if}
+
+							{#if session.clients.length > 0}
+								<AddClientButton onAdd={addClientAnimated} />
+							{/if}
+						</div>
 					</div>
-				</div>
-			</Tabs.Content>
+				</Tabs.Content>
 
-			<Tabs.Content value="preview">
-				<div class="mx-auto w-full" in:fade={{ duration: motionDuration("fast") }}>
-					<InvoicePreview html={previewHtml} loading={false} emptyReason={previewEmptyReason} />
-				</div>
-			</Tabs.Content>
-		</Tabs.Root>
+				<Tabs.Content value="preview">
+					<div class="mx-auto w-full" in:fade={{ duration: motionDuration("fast") }}>
+						<InvoicePreview html={previewHtml} loading={false} emptyReason={previewEmptyReason} />
+					</div>
+				</Tabs.Content>
+			</Tabs.Root>
 
-		<Separator />
-		<div use:reveal={{ onScroll: true }}>
-			<GenerationPanel />
+			<Separator />
+			<div use:reveal={{ onScroll: true }}>
+				<GenerationPanel />
+			</div>
 		</div>
 	</div>
 </main>
