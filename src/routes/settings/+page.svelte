@@ -5,10 +5,12 @@
 	Connecting an account is REQUIRED to use the Copilot; inference is billed to the user.
 -->
 <script lang="ts">
-	import { untrack } from "svelte";
+	import { untrack, onMount } from "svelte";
 	import { enhance } from "$app/forms";
+	import { browser } from "$app/environment";
 	import { invalidateAll } from "$app/navigation";
-	import { ArrowLeft, RefreshCw } from "@lucide/svelte";
+	import { authClient } from "$lib/auth-client";
+	import { ArrowLeft, RefreshCw, Fingerprint, KeyRound, Trash2 } from "@lucide/svelte";
 	import { Eyebrow, Heading, Input, Cta, cn, inputBase, labelBase } from "$lib/ds";
 	import type { PageData, ActionData } from "./$types";
 
@@ -55,6 +57,92 @@
 			await invalidateAll();
 		} finally {
 			refreshing = false;
+		}
+	};
+
+	// ── Passkeys (WebAuthn = device biometrics: Face ID / Touch ID / fingerprint) ──────────
+	type PasskeyRow = { id: string; name?: string | null; createdAt?: string | Date | null };
+	let passkeys = $state<PasskeyRow[]>([]);
+	let passkeysLoading = $state(true);
+	let passkeyBusy = $state(false);
+	let webauthnAvailable = $state(false);
+	let passkeyError = $state<string | null>(null);
+	let passkeyMessage = $state<string | null>(null);
+
+	// Friendly default name from the UA — stored as the passkey label.
+	const deviceLabel = () => {
+		const ua = browser ? navigator.userAgent : "";
+		if (/iPhone|iPad|iPod/.test(ua)) return "iPhone (Face ID / Touch ID)";
+		if (/Macintosh/.test(ua)) return "Mac (Touch ID)";
+		if (/Android/.test(ua)) return "Android (fingerprint / face)";
+		if (/Windows/.test(ua)) return "Windows Hello";
+		return "This device";
+	};
+
+	const formatDate = (d: string | Date) => {
+		const date = typeof d === "string" ? new Date(d) : d;
+		return Number.isNaN(date.getTime())
+			? ""
+			: date.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+	};
+
+	const loadPasskeys = async () => {
+		passkeysLoading = true;
+		try {
+			const res = await authClient.passkey.listUserPasskeys();
+			passkeys = (res?.data ?? []) as PasskeyRow[];
+		} catch {
+			passkeys = [];
+		} finally {
+			passkeysLoading = false;
+		}
+	};
+
+	onMount(() => {
+		webauthnAvailable = typeof window !== "undefined" && !!window.PublicKeyCredential;
+		if (webauthnAvailable) loadPasskeys();
+		else passkeysLoading = false;
+	});
+
+	// attachment "platform" → device biometric (Face ID / Touch ID / fingerprint);
+	// omitted → browser default (allows roaming security keys too).
+	const addPasskey = async (attachment?: "platform") => {
+		passkeyBusy = true;
+		passkeyError = null;
+		passkeyMessage = null;
+		try {
+			const res = await authClient.passkey.addPasskey({
+				name: deviceLabel(),
+				...(attachment ? { authenticatorAttachment: attachment } : {})
+			});
+			if (res?.error) passkeyError = res.error.message || "Couldn't add passkey.";
+			else {
+				passkeyMessage = "Passkey added.";
+				await loadPasskeys();
+			}
+		} catch {
+			passkeyError = "Passkey registration was cancelled.";
+		} finally {
+			passkeyBusy = false;
+		}
+	};
+
+	const removePasskey = async (id: string) => {
+		if (!confirm("Remove this passkey? You won't be able to sign in with it anymore.")) return;
+		passkeyBusy = true;
+		passkeyError = null;
+		passkeyMessage = null;
+		try {
+			const res = await authClient.passkey.deletePasskey({ id });
+			if (res?.error) passkeyError = res.error.message || "Couldn't remove passkey.";
+			else {
+				passkeyMessage = "Passkey removed.";
+				await loadPasskeys();
+			}
+		} catch {
+			passkeyError = "Couldn't remove passkey.";
+		} finally {
+			passkeyBusy = false;
 		}
 	};
 </script>
@@ -229,6 +317,95 @@
 				</Cta>
 			</div>
 		</form>
+	</section>
+
+	<section class="border-hair bg-card overflow-hidden rounded-2xl border">
+		<header class="border-hair flex items-center gap-3 border-b px-5 py-4">
+			<span class="bg-ink-2 border-hair text-ink-muted flex size-8 items-center justify-center rounded-lg border">
+				<Fingerprint class="size-4" aria-hidden="true" />
+			</span>
+			<div>
+				<h2 class="text-foreground text-sm font-semibold tracking-tight">Passkeys</h2>
+				<p class="text-ink-muted mt-0.5 text-[11px]">
+					Sign in with Face ID, Touch ID, or a fingerprint instead of Google.
+				</p>
+			</div>
+		</header>
+
+		<div class="flex flex-col gap-4 p-5">
+			{#if passkeyError}
+				<p
+					class="border-destructive/40 bg-destructive/10 text-destructive rounded-xl border px-4 py-3 text-xs text-pretty"
+					role="alert"
+				>
+					{passkeyError}
+				</p>
+			{:else if passkeyMessage}
+				<p
+					class="border-signal/40 text-foreground rounded-xl border px-4 py-3 text-xs text-pretty"
+					role="status"
+				>
+					{passkeyMessage}
+				</p>
+			{/if}
+
+			{#if !webauthnAvailable}
+				<p class="text-ink-muted text-xs text-pretty">
+					This browser can't use passkeys. Open the app in Safari, Chrome, or Edge on a device with Face ID,
+					Touch ID, or a fingerprint sensor.
+				</p>
+			{:else}
+				{#if passkeysLoading}
+					<p class="text-ink-muted text-xs">Loading passkeys…</p>
+				{:else if passkeys.length === 0}
+					<p class="text-ink-muted text-xs text-pretty">
+						No passkeys yet. Add one to sign in with Face ID, Touch ID, or your fingerprint instead of
+						Google.
+					</p>
+				{:else}
+					<ul class="flex flex-col gap-2">
+						{#each passkeys as pk (pk.id)}
+							<li
+								class="border-hair bg-ink-2/40 flex items-center justify-between gap-3 rounded-lg border px-3 py-2.5"
+							>
+								<div class="flex min-w-0 items-center gap-2.5">
+									<Fingerprint class="text-signal size-4 shrink-0" />
+									<div class="min-w-0">
+										<p class="text-foreground truncate text-sm font-medium">
+											{pk.name || "Passkey"}
+										</p>
+										{#if pk.createdAt && formatDate(pk.createdAt)}
+											<p class="text-ink-muted text-[11px]">Added {formatDate(pk.createdAt)}</p>
+										{/if}
+									</div>
+								</div>
+								<button
+									type="button"
+									onclick={() => removePasskey(pk.id)}
+									disabled={passkeyBusy}
+									aria-label="Remove passkey"
+									class="text-ink-muted hover:text-destructive focus-visible:outline-signal shrink-0 rounded-md p-1 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-40"
+								>
+									<Trash2 class="size-3.5" />
+								</button>
+							</li>
+						{/each}
+					</ul>
+				{/if}
+				<div class="flex flex-wrap items-center gap-2 pt-1">
+					<Cta variant="compact" arrow={false} disabled={passkeyBusy} onclick={() => addPasskey("platform")}>
+						<span class="inline-flex items-center gap-2">
+							<Fingerprint class="size-3.5" /> Set up Face ID / Touch ID
+						</span>
+					</Cta>
+					<Cta variant="secondary" arrow={false} disabled={passkeyBusy} onclick={() => addPasskey()}>
+						<span class="inline-flex items-center gap-2">
+							<KeyRound class="size-3.5" /> Use a security key
+						</span>
+					</Cta>
+				</div>
+			{/if}
+		</div>
 	</section>
 
 	{#if connected}

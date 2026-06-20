@@ -31,9 +31,9 @@ All commits go directly to `main`. No feature branches. Worktrees allow parallel
 
 A SvelteKit app that generates batches of PDF invoices. Users configure a fixed sender identity and payment methods, add multiple clients (each with service details and a list of invoice months), then trigger bulk generation. Each invoice is rendered as HTML, captured via `html2canvas`, and exported to a jsPDF Blob. Multiple PDFs can be downloaded via the File System Access API (directory picker) or, if unavailable, as sequential individual downloads. A ZIP fallback is also available. An optional AI Copilot lets users drive the same client and invoice operations through natural-language commands.
 
-**Stack**: SvelteKit 2 + Svelte 5 runes, Tailwind CSS v4, Dropout Design System (`@dropout/ds`, vendored) + shadcn-svelte, Cloudflare Workers, Better Auth (Google OAuth), Cloudflare D1, Drizzle ORM, Cloudflare Workers AI, Bun.
+**Stack**: SvelteKit 2 + Svelte 5 runes, Tailwind CSS v4, Dropout Design System (`@dropout/ds`, vendored) + shadcn-svelte, Cloudflare Workers, Better Auth (Google OAuth + One Tap + passkeys), Cloudflare D1, Drizzle ORM, Cloudflare Workers AI, Bun.
 
-**Auth-optional**: the full builder works signed-out — guest data persists to **localStorage** (the PDF pipeline is client-side anyway). There is **no auth guard / no `/login` redirect**. Google OAuth via Better Auth is an *optional* upgrade: signing in migrates the guest workspace into D1 (one-time, on first sign-in), syncs all data server-side (sender info, payment methods, clients, invoice entries, AI Copilot conversations), and unlocks the AI Copilot (which additionally requires a connected bring-your-own Cloudflare account — see AI Copilot).
+**Auth-optional**: the full builder works signed-out — guest data persists to **localStorage** (the PDF pipeline is client-side anyway). There is **no auth guard / no `/login` redirect**. Sign-in via Better Auth (Google OAuth/One Tap, or a passkey) is an *optional* upgrade: signing in migrates the guest workspace into D1 (one-time, on first sign-in), syncs all data server-side (sender info, payment methods, clients, invoice entries, AI Copilot conversations), and unlocks the AI Copilot (which additionally requires a connected bring-your-own Cloudflare account — see AI Copilot).
 
 ---
 
@@ -45,7 +45,7 @@ A SvelteKit app that generates batches of PDF invoices. Users configure a fixed 
 | Language        | TypeScript (strict mode)                                        |
 | Styling         | Tailwind CSS v4 (CSS-first; tokens from `@dropout/ds`)          |
 | UI Components   | Dropout Design System (`@dropout/ds`, vendored) + shadcn-svelte |
-| Authentication  | Better Auth (Google OAuth, optional sign-in)                    |
+| Authentication  | Better Auth (Google OAuth + One Tap + passkeys, optional sign-in) |
 | Database        | Cloudflare D1 (SQLite via Drizzle ORM)                          |
 | AI              | Bring-your-own Cloudflare Workers AI (REST, user's account) + qwen3 RAG (Vectorize) |
 | Validation      | Zod                                                             |
@@ -105,9 +105,9 @@ Refresh DS with `bun run sync-ds`. **Never hand-edit files under `src/lib/ds/`**
 
 The server layer handles authentication, data persistence, and AI Copilot inference — the PDF pipeline remains entirely client-side.
 
-- **`$lib/server/auth.ts`** — `createAuth(d1, env)` factory. Returns a Better Auth instance configured with Google OAuth, Drizzle adapter (D1/SQLite), 7-day session expiry, 5-minute cookie cache, and database rate limiting. `env` must include `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`.
+- **`$lib/server/auth.ts`** — `createAuth(d1, env)` factory. Returns a Better Auth instance configured with Google OAuth, the `oneTap()` and `passkey()` plugins, Drizzle adapter (D1/SQLite), 7-day session expiry, 5-minute cookie cache, and database rate limiting. `env` must include `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`. Passkey `rpID`/`origin` are derived from `BETTER_AUTH_URL` so dev/preview/prod all validate (`userVerification: "required"` forces the biometric gesture).
 
-- **`$lib/server/schema.ts`** — Drizzle schema for all tables: Better Auth tables (`users`, `sessions`, `accounts`, `verifications`, `rateLimits`), app tables (`fixedSettings`, `paymentMethods`, `clients`, `clientPaymentMethods`, `invoiceEntries`), AI Copilot tables (`aiConversations`, `aiMessages`, `aiActions`), and `userSettings` (one row per user, PK `user_id` cascade-delete; holds the BYO Cloudflare connection: `cloudflare_token_encrypted` blob, `cloudflare_account_id`, `cloudflare_model`). Snake_case column names required by the Drizzle adapter.
+- **`$lib/server/schema.ts`** — Drizzle schema for all tables: Better Auth tables (`users`, `sessions`, `accounts`, `verifications`, `rateLimits`, `passkeys`), app tables (`fixedSettings`, `paymentMethods`, `clients`, `clientPaymentMethods`, `invoiceEntries`), AI Copilot tables (`aiConversations`, `aiMessages`, `aiActions`), and `userSettings` (one row per user, PK `user_id` cascade-delete; holds the BYO Cloudflare connection: `cloudflare_token_encrypted` blob, `cloudflare_account_id`, `cloudflare_model`). Snake_case column names required by the Drizzle adapter.
 
 - **`$lib/server/db.ts`** — `getDatabase(d1)` factory returning a Drizzle instance. Exports `Database` type and `schema`.
 
@@ -119,7 +119,7 @@ The server layer handles authentication, data persistence, and AI Copilot infere
 
 - **`$lib/server/validation.ts`** — Shared Zod schemas for API request bodies.
 
-- **`$lib/auth-client.ts`** — Better Auth Svelte client (`createAuthClient`). Exports `authClient`, `signIn`, `signOut`, `useSession`.
+- **`$lib/auth-client.ts`** — Better Auth Svelte client (`createAuthClient`) with the `passkeyClient()` and `oneTapClient()` plugins. Exports `authClient`, `signIn`, `signOut`, `useSession`. One Tap reads the browser-exposed `PUBLIC_GOOGLE_CLIENT_ID` (via `$env/dynamic/public`); empty → One Tap never fires.
 
 - **`$lib/config/app.ts`** — `APP_CONFIG` object. App metadata used for `<title>`/`<meta>` tags; its `author` and `siblings` fields also feed the global footer links.
 
@@ -127,7 +127,7 @@ The server layer handles authentication, data persistence, and AI Copilot infere
 
 - **`$lib/hooks/use-current-user.ts`** — `getCurrentUser(user)` → `CurrentUser | null`.
 
-- **`src/hooks.server.ts`** — SvelteKit `handle` hook. Instantiates `createAuth` per request, delegates Better Auth routes to `svelteKitHandler`, calls `auth.api.getSession`, populates `event.locals.user`, `event.locals.session`, `event.locals.currentUser`. Applies CSP and security headers on every response. Gracefully degrades if D1 unavailable. Exports `handleError` with UUID correlation.
+- **`src/hooks.server.ts`** — SvelteKit `handle` hook. Instantiates `createAuth` per request, delegates Better Auth routes to `svelteKitHandler`, calls `auth.api.getSession`, populates `event.locals.user`, `event.locals.session`, `event.locals.currentUser`. Applies CSP and security headers on every response — the CSP whitelists `accounts.google.com/gsi/*` (script/style/connect/frame) and the `Permissions-Policy` grants `identity-credentials-get` so Google One Tap's FedCM prompt works; passkeys need no CSP change. Gracefully degrades if D1 unavailable. Exports `handleError` with UUID correlation.
 
 - **`src/hooks.client.ts`** — Client-side `handleError` with UUID correlation.
 
@@ -135,11 +135,11 @@ The server layer handles authentication, data persistence, and AI Copilot infere
 
 - **`src/routes/+page.server.ts`** — **No auth guard / no redirect.** Only when `d1 && locals.user` does it load full `AppState` from D1 via `loadAppState` plus the AI Copilot hydration payload (conversations, messages, actions, anomaly settings); anonymous visitors get empty shells (`emptyAi(aiEnabled)`) and re-seed client-side from localStorage. Always returns `{ user, currentUser, appState, ai }`.
 
-- **`src/routes/login/+page.svelte`** — Google sign-in button. Redirects to `/` after successful OAuth.
+- **`src/routes/login/+page.svelte`** — Sign-in page: "Continue with Google" (social OAuth), auto-prompted Google One Tap (when `PUBLIC_GOOGLE_CLIENT_ID` is set), and "Sign in with a passkey" (WebAuthn — gated on `window.PublicKeyCredential`). Redirects to the `?redirect=` target (default `/`) on success.
 
 - **`src/routes/login/+page.server.ts`** — Redirects to `/` if already authenticated.
 
-- **`src/routes/settings/+page.svelte`** and **`+page.server.ts`** — `/settings` route: configure the BYO Cloudflare connection (API token, account ID, chat model). Server `load` decrypts the stored token and returns only `maskToken(...)` (raw secret never leaves the server) plus cached model list; **redirects guests to `/login`**. The `save` action validates by calling `listChatModels(creds)` (proves token + account + Workers AI permission), encrypts the token (leaving the blob unchanged if the field is blank), upserts `userSettings`, and warms the `cf-models:{accountId}` KV cache. The `reset` action deletes the `userSettings` row.
+- **`src/routes/settings/+page.svelte`** and **`+page.server.ts`** — `/settings` route: configure the BYO Cloudflare connection (API token, account ID, chat model) **and manage passkeys** (register Face ID/Touch ID/fingerprint via `authClient.passkey.*`, list, delete — client-side only). Server `load` decrypts the stored token and returns only `maskToken(...)` (raw secret never leaves the server) plus cached model list; **redirects guests to `/login`**. The `save` action validates by calling `listChatModels(creds)` (proves token + account + Workers AI permission), encrypts the token (leaving the blob unchanged if the field is blank), upserts `userSettings`, and warms the `cf-models:{accountId}` KV cache. The `reset` action deletes the `userSettings` row.
 
 - **`src/routes/api/cf/models/+server.ts`** — `GET` lists the user's Cloudflare Workers AI chat models for the settings picker (cached in `AI_QUOTA_KV` under `cf-models:{accountId}`, 24h TTL; `?refresh=1` bypasses). Returns `{ models, connected }` (degrades to `{ models: [], connected: false }` when unconnected; errors travel in JSON, not HTTP status).
 
@@ -159,7 +159,7 @@ The server layer handles authentication, data persistence, and AI Copilot infere
 
 - **`src/routes/api/ai/`** — AI Copilot endpoints: `chat/+server.ts` (SSE streaming turn), `conversations/+server.ts` and `[id]/+server.ts` (conversation CRUD), `messages/+server.ts` (message list), `actions/+server.ts` and `[id]/+server.ts` (action history), `undo/[id]/+server.ts` (reverse an applied action), `seed/+server.ts` (embeds `KNOWLEDGE_CORPUS` into Vectorize; `POST` guarded by the `x-seed-secret` header matching `SEED_SECRET`). See the AI Copilot section.
 
-**Authorization flow**: no gate on the builder — guests use it fully (localStorage-backed). Signing in via Google OAuth scopes all data to `userId` (D1) and unlocks the AI Copilot. The AI Copilot additionally requires the signed-in user to connect their own Cloudflare account at `/settings`; `/api/ai/chat` returns **HTTP 412** until they do.
+**Authorization flow**: no gate on the builder — guests use it fully (localStorage-backed). Signing in (Google OAuth/One Tap or a passkey) scopes all data to `userId` (D1) and unlocks the AI Copilot. The AI Copilot additionally requires the signed-in user to connect their own Cloudflare account at `/settings`; `/api/ai/chat` returns **HTTP 412** until they do.
 
 ### API Client
 
@@ -506,7 +506,7 @@ Configured in `wrangler.jsonc`:
 - **VECTORIZE**: Vectorize index `invoice-generator-kb` backing RAG app-knowledge retrieval (optional — RAG is skipped if absent; required by the seed endpoint)
 - **AI_QUOTA_KV**: KV namespace backing the AI Copilot per-user daily turn quota, monthly USD spend cap, and the `cf-models:{accountId}` model-list cache (optional — quota/cap disabled if absent)
 - **`remote: true`** is set on `AI`, `VECTORIZE`, and `AI_QUOTA_KV` so local `wrangler dev` / `bun run preview` reach real Workers AI, the seeded Vectorize index, and KV. Wrangler cannot emulate these locally — without the flag seeding, RAG, and quota all silently fail in local preview.
-- **vars**: `BETTER_AUTH_URL`, `AI_COPILOT_ENABLED` (feature flag), `AI_MONTHLY_CAP_USD` (monthly AI spend cap, USD). (`AI_GATEWAY_SLUG` was removed with the gateway architecture.)
+- **vars**: `BETTER_AUTH_URL`, `AI_COPILOT_ENABLED` (feature flag), `AI_MONTHLY_CAP_USD` (monthly AI spend cap, USD), `PUBLIC_GOOGLE_CLIENT_ID` (non-secret Google OAuth client id exposed to the browser for One Tap — same value as the `GOOGLE_CLIENT_ID` secret; blank disables One Tap). (`AI_GATEWAY_SLUG` was removed with the gateway architecture.)
 - **Routes / custom domain**: served at `invoice-generator.dropoutstudio.co` (`routes: [{ pattern, custom_domain: true }]`); `workers_dev` and `preview_urls` are `false`.
 - **`SEED_SECRET`** (secret): header token gating `POST /api/ai/seed`; without it the seed endpoint returns 401
 - **`TOKEN_ENCRYPTION_KEY`** (secret): base64-encoded 32-byte AES-GCM key encrypting each user's stored Cloudflare API token at rest (`src/lib/server/crypto.ts`). **Required** for the BYO connection — a missing/wrong key makes decrypt fail and chat return 412.
@@ -538,7 +538,7 @@ bun run db:migrate        # Remote (production)
 bun run db:migrate:local  # Local (Wrangler preview)
 ```
 
-Five migrations exist: `0001_better_auth_tables.sql` (Better Auth tables), `0002_daffy_synch.sql` (app tables: clients, invoice_entries, payment_methods, etc.), `0003_cute_vision.sql` (additive `is_active` columns on `clients` and `invoice_entries` with `DEFAULT true NOT NULL`), `0004_marvelous_puck.sql` (AI Copilot tables: `ai_conversations`, `ai_messages`, `ai_actions`), and `0005_neat_the_watchers.sql` (the `user_settings` table holding the encrypted BYO Cloudflare connection).
+Six migrations exist: `0001_better_auth_tables.sql` (Better Auth tables), `0002_daffy_synch.sql` (app tables: clients, invoice_entries, payment_methods, etc.), `0003_cute_vision.sql` (additive `is_active` columns on `clients` and `invoice_entries` with `DEFAULT true NOT NULL`), `0004_marvelous_puck.sql` (AI Copilot tables: `ai_conversations`, `ai_messages`, `ai_actions`), `0005_neat_the_watchers.sql` (the `user_settings` table holding the encrypted BYO Cloudflare connection), and `0006_flaky_synch.sql` (the `passkeys` table for WebAuthn credentials, FK → `users` cascade-delete).
 
 ### Clean Rebuild
 
@@ -582,7 +582,7 @@ When encountering unfamiliar patterns, check in this order:
 
 9. **Auth is optional; sign-in requires D1** — without D1 (plain Vite dev without Wrangler) sign-in is silently disabled and everyone is a guest (localStorage workspace). There is **no auth guard / no `/login` redirect** on the builder. Use `bun run preview` to test sign-in + sync locally.
 
-10. **Do not add email/password auth** — `emailAndPassword` is explicitly disabled in `createAuth`. Google OAuth is the only sign-in method.
+10. **Do not add email/password auth** — `emailAndPassword` is explicitly disabled in `createAuth`. Sign-in is Google OAuth (with Google One Tap) plus passkeys/WebAuthn (`oneTap()` + `passkey()` plugins); there is no password method, and Google is the only social provider.
 
 11. **Stores are dual-mode (guest localStorage vs. authed D1)** — `fixed.svelte.ts` and `session.svelte.ts` branch on the `authed` flag set at `hydrate(initial, { authed })`. Guests persist to localStorage (`$lib/persistence/`); signed-in users call the REST API. On first sign-in, `migrateGuestToServer` replays guest data into D1 then clears localStorage. Don't assume a single persistence path.
 

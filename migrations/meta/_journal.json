@@ -1,41 +1,48 @@
 {
-	"version": "7",
-	"dialect": "sqlite",
-	"entries": [
-		{
-			"idx": 1,
-			"version": "6",
-			"when": 1735686000000,
-			"tag": "0001_better_auth_tables",
-			"breakpoints": true
-		},
-		{
-			"idx": 2,
-			"version": "6",
-			"when": 1777637101528,
-			"tag": "0002_daffy_synch",
-			"breakpoints": true
-		},
-		{
-			"idx": 3,
-			"version": "6",
-			"when": 1778892101221,
-			"tag": "0003_cute_vision",
-			"breakpoints": true
-		},
-		{
-			"idx": 4,
-			"version": "6",
-			"when": 1779251476576,
-			"tag": "0004_marvelous_puck",
-			"breakpoints": true
-		},
-		{
-			"idx": 5,
-			"version": "6",
-			"when": 1781947196982,
-			"tag": "0005_neat_the_watchers",
-			"breakpoints": true
-		}
-	]
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1735686000000,
+      "tag": "0001_better_auth_tables",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1777637101528,
+      "tag": "0002_daffy_synch",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1778892101221,
+      "tag": "0003_cute_vision",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1779251476576,
+      "tag": "0004_marvelous_puck",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1781947196982,
+      "tag": "0005_neat_the_watchers",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1781997013520,
+      "tag": "0006_flaky_synch",
+      "breakpoints": true
+    }
+  ]
 }

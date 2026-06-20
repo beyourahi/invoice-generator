@@ -55,7 +55,10 @@
 	"vars": {
 		"BETTER_AUTH_URL": "https://invoice-generator.dropoutstudio.co",
 		"AI_COPILOT_ENABLED": "true",
-		"AI_MONTHLY_CAP_USD": "1.00"
+		"AI_MONTHLY_CAP_USD": "1.00",
+		// Non-secret Google OAuth client id exposed to the browser for Google One Tap.
+		// Set the real value here for production (same id as the GOOGLE_CLIENT_ID secret).
+		"PUBLIC_GOOGLE_CLIENT_ID": ""
 	},
 	"observability": {
 		"enabled": true
