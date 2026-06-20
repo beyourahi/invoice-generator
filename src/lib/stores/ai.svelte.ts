@@ -138,6 +138,7 @@ const createAiStore = () => {
 	let error = $state<string | null>(null);
 	let anomalySettings = $state<AnomalySettings>({ ...DEFAULT_ANOMALY_SETTINGS });
 	let mobileOpen = $state(false);
+	let desktopOpen = $state(false);
 	let inputFocusNonce = $state(0);
 	let pendingImages = $state<string[]>([]);
 
@@ -178,6 +179,20 @@ const createAiStore = () => {
 
 	const setMobileOpen = (open: boolean) => {
 		mobileOpen = open;
+	};
+
+	// Desktop rail visibility (lg+). Separate from `railOpen` (the in-rail history
+	// sub-panel) and `mobileOpen` (the <lg sheet). Default closed; not persisted.
+	const openDesktop = () => {
+		desktopOpen = true;
+	};
+
+	const closeDesktop = () => {
+		desktopOpen = false;
+	};
+
+	const toggleDesktop = () => {
+		desktopOpen = !desktopOpen;
 	};
 
 	const requestInputFocus = () => {
@@ -420,6 +435,9 @@ const createAiStore = () => {
 		get mobileOpen() {
 			return mobileOpen;
 		},
+		get desktopOpen() {
+			return desktopOpen;
+		},
 		get inputFocusNonce() {
 			return inputFocusNonce;
 		},
@@ -435,6 +453,9 @@ const createAiStore = () => {
 		hydrate,
 		setEnabled,
 		setMobileOpen,
+		openDesktop,
+		closeDesktop,
+		toggleDesktop,
 		requestInputFocus,
 		toggleRail,
 		closeRail,
