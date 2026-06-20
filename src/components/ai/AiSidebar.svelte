@@ -81,7 +81,34 @@
 		<AiMessageList messages={ai.messages} isStreaming={ai.inputBusy} />
 	{/if}
 
-	{#if ai.error}
+	{#if ai.connectRequired}
+		<!-- 412 gate: the Copilot runs on the user's own Cloudflare account, which isn't
+			connected yet. Direct them to Settings instead of showing a raw error. -->
+		<div role="alert" class="border-chat-border-subtle border-t border-solid px-4 py-3">
+			<p class="text-chat-text-muted text-xs text-pretty">
+				The Copilot runs on your own Cloudflare account. Connect one to start chatting — inference is billed to
+				you.
+			</p>
+			<a
+				href="/settings"
+				class="bg-signal text-background hover:bg-signal/90 focus-visible:outline-signal mt-2.5 inline-flex items-center gap-1.5 rounded-full px-4 py-2 font-mono text-[11px] tracking-[0.06em] uppercase transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+			>
+				Connect in Settings
+				<svg
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2.25"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					class="size-3.5"
+					aria-hidden="true"
+				>
+					<path d="M7 17L17 7M7 7H17V17" />
+				</svg>
+			</a>
+		</div>
+	{:else if ai.error}
 		<div role="alert" class="text-destructive px-4 py-2 text-center text-xs text-pretty">
 			{ai.error}
 		</div>

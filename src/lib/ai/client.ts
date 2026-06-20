@@ -1,18 +1,20 @@
 /**
  * Server-side driver for one chat turn: builds the OpenAI Chat Completions
- * request (system + windowed history + multimodal user content), streams it
- * through the AI Gateway, and yields parsed `Frame`s while accumulating the
- * final `RawChatResult` (full text, assembled tool calls, token usage).
- * Runs on the Worker, not the browser. @see ./gateway.ts, ./streaming.ts.
+ * request (system + windowed history + multimodal user content), runs it on the
+ * USER's own Cloudflare account via the Workers AI REST API (BYO — billed to the
+ * user, not the owner's bound `env.AI`), and yields parsed `Frame`s while
+ * accumulating the final `RawChatResult` (full text, tool calls, token usage).
+ *
+ * The REST call is BUFFERED (not streamed): the whole turn returns at once, then
+ * the text + tool_call frames are yielded together. The chat endpoint already
+ * consumes this generator in buffered mode (`streamText: false` on the first turn),
+ * so the SSE wire contract the browser client reads is unchanged.
+ *
+ * Runs on the Worker, not the browser. @see ./types.ts, $lib/server/ai/run-rest.ts.
  */
 
 import type { Frame, ParsedToolCall, ToolCatalogEntry } from "./types";
-import { openGatewayChat } from "./gateway";
-
-export interface RunChatEnv {
-	AI: Ai;
-	AI_GATEWAY_SLUG?: string;
-}
+import { runChatViaRest, CfInferenceError, type CloudflareCreds } from "$lib/server/ai/run-rest";
 
 export interface RunChatParams {
 	systemContext: string;
@@ -23,6 +25,9 @@ export interface RunChatParams {
 	images?: string[];
 	maxTokens?: number;
 	cacheKey?: string;
+	/** User's account-scoped creds + the picked model — inference runs here. */
+	creds: CloudflareCreds;
+	model: string;
 }
 
 export interface RawChatResult {
@@ -31,23 +36,6 @@ export interface RawChatResult {
 	inputTokens: number;
 	outputTokens: number;
 	servedModel?: string;
-}
-
-interface StreamToolCallDelta {
-	index?: number;
-	id?: string | null;
-	function?: { name?: string | null; arguments?: string | null };
-}
-
-interface StreamChoiceDelta {
-	content?: string | null;
-	reasoning?: string | null;
-	tool_calls?: StreamToolCallDelta[];
-}
-
-interface StreamChunk {
-	choices?: Array<{ delta?: StreamChoiceDelta }>;
-	usage?: { prompt_tokens?: number; completion_tokens?: number } | null;
 }
 
 type ContentPart =
@@ -73,141 +61,85 @@ const buildUserContent = (text: string, images?: string[]): string | ContentPart
 	];
 };
 
+/** Coerces a REST tool-call `arguments` (object or JSON string) to a plain value; `{}` on failure. */
+const parseToolArgs = (raw: unknown): unknown => {
+	if (raw == null) return {};
+	if (typeof raw === "object") return raw;
+	if (typeof raw === "string") {
+		if (raw.trim().length === 0) return {};
+		try {
+			return JSON.parse(raw);
+		} catch {
+			return {};
+		}
+	}
+	return {};
+};
+
 /**
- * Yields `text`/`tool_call`/`error` frames during the turn and RETURNS the
- * accumulated RawChatResult as the generator's return value (consume via the
- * for-await done value, not a yielded frame).
+ * Yields `text`/`tool_call`/`error` frames for the turn and RETURNS the accumulated
+ * RawChatResult as the generator's return value (consume via the for-await done value).
  *
- * Streaming protocol notes:
- * - Defaults: temperature 0.2, max_tokens 1536, thinking disabled, usage included.
+ * Protocol notes (unchanged from the streaming era so the consumer is untouched):
+ * - Defaults: temperature 0.2, max_tokens 1536, thinking disabled.
  * - `tools` are only attached when non-empty (omitting them changes model behavior).
- * - Tool-call deltas arrive fragmented across chunks; `toolAccum` reassembles by
- *   `index`, concatenating `arguments` text. Tool-call frames are emitted only
- *   AFTER the stream closes (args must be complete before JSON.parse).
+ * - Tool-call frames are emitted AFTER any text frame (args are already complete here).
  * - Malformed argument JSON degrades to `{}` rather than throwing.
- * - Gateway-open failure and mid-stream read failure both surface as a single
- *   `error` frame, then the partial result is returned.
+ * - A REST failure (CfInferenceError or otherwise) surfaces as a single `error` frame,
+ *   then the partial result is returned. The endpoint maps it to a user-facing frame.
  */
 export const runChatFrames = async function* (
-	env: RunChatEnv,
 	params: RunChatParams
 ): AsyncGenerator<Frame, RawChatResult> {
-	const messages = [
+	const messages: Array<Record<string, unknown>> = [
 		{ role: "system", content: params.systemContext },
 		...params.history.map((m) => ({ role: m.role, content: m.content })),
 		{ role: "user", content: buildUserContent(params.userMessage, params.images) }
 	];
 
-	const input: Record<string, unknown> = {
-		messages,
-		max_tokens: params.maxTokens ?? 1536,
-		temperature: 0.2,
-		chat_template_kwargs: { thinking: false },
-		stream: true,
-		stream_options: { include_usage: true }
+	const result: RawChatResult = {
+		text: "",
+		toolCalls: [],
+		inputTokens: 0,
+		outputTokens: 0,
+		servedModel: params.model
 	};
-	if (params.tools.length > 0) {
-		input.tools = buildToolsPayload(params.tools);
-	}
 
-	const result: RawChatResult = { text: "", toolCalls: [], inputTokens: 0, outputTokens: 0 };
-	const toolAccum = new Map<number, { id: string; name: string; argsText: string }>();
-
-	let stream: ReadableStream<Uint8Array>;
+	let out;
 	try {
-		const gatewayResult = await openGatewayChat(env, input, {
-			conversationId: params.conversationId,
-			cacheKey: params.cacheKey
+		out = await runChatViaRest(params.creds, params.model, {
+			messages,
+			tools: params.tools.length > 0 ? buildToolsPayload(params.tools) : undefined,
+			max_tokens: params.maxTokens ?? 1536,
+			temperature: 0.2
 		});
-		stream = gatewayResult.stream;
-		if (gatewayResult.servedModel) {
-			result.servedModel = gatewayResult.servedModel;
-		}
 	} catch (err) {
-		yield {
-			t: "error",
-			message: err instanceof Error ? err.message : "Model invocation failed"
-		};
+		const message =
+			err instanceof CfInferenceError
+				? `Workers AI error (${err.status || "network"})`
+				: err instanceof Error
+					? err.message
+					: "Model invocation failed";
+		yield { t: "error", message };
 		return result;
 	}
 
-	const reader = stream.getReader();
-	const decoder = new TextDecoder();
-	let buffer = "";
-	try {
-		while (true) {
-			const { value, done } = await reader.read();
-			if (done) break;
-			buffer += decoder.decode(value, { stream: true });
-			let newlineIdx = buffer.indexOf("\n");
-			while (newlineIdx !== -1) {
-				const line = buffer.slice(0, newlineIdx).trim();
-				buffer = buffer.slice(newlineIdx + 1);
-				newlineIdx = buffer.indexOf("\n");
-				if (!line.startsWith("data:")) continue;
-				const payload = line.slice(5).trim();
-				if (payload.length === 0 || payload === "[DONE]") continue;
-				let chunk: StreamChunk;
-				try {
-					chunk = JSON.parse(payload) as StreamChunk;
-				} catch {
-					continue;
-				}
-				const delta = chunk.choices?.[0]?.delta;
-				if (delta) {
-					if (typeof delta.content === "string" && delta.content.length > 0) {
-						result.text += delta.content;
-						yield { t: "text", delta: delta.content };
-					}
-					if (Array.isArray(delta.tool_calls)) {
-						for (const tc of delta.tool_calls) {
-							const idx = typeof tc.index === "number" ? tc.index : 0;
-							let entry = toolAccum.get(idx);
-							if (!entry) {
-								entry = {
-									id: tc.id && tc.id.length > 0 ? tc.id : crypto.randomUUID(),
-									name: "",
-									argsText: ""
-								};
-								toolAccum.set(idx, entry);
-							} else if (tc.id && tc.id.length > 0) {
-								entry.id = tc.id;
-							}
-							const fn = tc.function;
-							if (fn) {
-								if (typeof fn.name === "string" && fn.name.length > 0) entry.name = fn.name;
-								if (typeof fn.arguments === "string") entry.argsText += fn.arguments;
-							}
-						}
-					}
-				}
-				if (chunk.usage) {
-					result.inputTokens = chunk.usage.prompt_tokens ?? result.inputTokens;
-					result.outputTokens = chunk.usage.completion_tokens ?? result.outputTokens;
-				}
-			}
-		}
-	} catch (err) {
-		yield {
-			t: "error",
-			message: err instanceof Error ? err.message : "Stream read failed"
-		};
-		return result;
-	} finally {
-		reader.releaseLock();
+	result.inputTokens = out.usage?.prompt_tokens ?? 0;
+	result.outputTokens = out.usage?.completion_tokens ?? 0;
+
+	if (typeof out.response === "string" && out.response.length > 0) {
+		result.text = out.response;
+		yield { t: "text", delta: out.response };
 	}
 
-	for (const entry of toolAccum.values()) {
-		if (entry.name.length === 0) continue;
-		let args: unknown = {};
-		if (entry.argsText.trim().length > 0) {
-			try {
-				args = JSON.parse(entry.argsText);
-			} catch {
-				args = {};
-			}
-		}
-		const call: ParsedToolCall = { id: entry.id, name: entry.name, args };
+	for (const tc of out.tool_calls ?? []) {
+		const name = typeof tc.name === "string" ? tc.name : "";
+		if (name.length === 0) continue;
+		const call: ParsedToolCall = {
+			id: crypto.randomUUID(),
+			name,
+			args: parseToolArgs(tc.arguments)
+		};
 		result.toolCalls.push(call);
 		yield { t: "tool_call", id: call.id, name: call.name, args: call.args };
 	}

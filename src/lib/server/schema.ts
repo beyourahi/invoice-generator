@@ -12,6 +12,7 @@ import {
 	sqliteTable,
 	text,
 	integer,
+	blob,
 	index,
 	uniqueIndex,
 	primaryKey
@@ -109,6 +110,18 @@ export const fixedSettings = sqliteTable("fixed_settings", {
 	updatedAt: integer("updated_at", { mode: "timestamp" })
 		.notNull()
 		.$defaultFn(() => new Date())
+});
+
+// One row per user (PK = user_id). Holds the BYO Cloudflare connection used by the AI Copilot:
+// the user's account-scoped Workers AI API token (AES-GCM encrypted at rest — see crypto.ts),
+// their account id, and the selected chat model. Cascade-deletes with the user.
+export const userSettings = sqliteTable("user_settings", {
+	userId: text("user_id")
+		.primaryKey()
+		.references(() => users.id, { onDelete: "cascade" }),
+	cloudflareTokenEncrypted: blob("cloudflare_token_encrypted"),
+	cloudflareAccountId: text("cloudflare_account_id"),
+	cloudflareModel: text("cloudflare_model")
 });
 
 export const paymentMethods = sqliteTable(
@@ -297,6 +310,10 @@ export const usersRelations = relations(users, ({ one, many }) => ({
 		fields: [users.id],
 		references: [fixedSettings.userId]
 	}),
+	userSettings: one(userSettings, {
+		fields: [users.id],
+		references: [userSettings.userId]
+	}),
 	paymentMethods: many(paymentMethods),
 	clients: many(clients),
 	aiConversations: many(aiConversations),
@@ -305,6 +322,10 @@ export const usersRelations = relations(users, ({ one, many }) => ({
 
 export const fixedSettingsRelations = relations(fixedSettings, ({ one }) => ({
 	user: one(users, { fields: [fixedSettings.userId], references: [users.id] })
+}));
+
+export const userSettingsRelations = relations(userSettings, ({ one }) => ({
+	user: one(users, { fields: [userSettings.userId], references: [users.id] })
 }));
 
 export const paymentMethodsRelations = relations(paymentMethods, ({ one, many }) => ({

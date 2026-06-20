@@ -7,7 +7,7 @@ import type { AppConfig } from "$lib/types";
 export const APP_CONFIG: AppConfig = {
 	name: "Invoice Generator",
 	description: "Client-side batch invoice PDF generator for recurring billing.",
-	url: "https://invoice-generator.beyourahi.workers.dev",
+	url: "https://invoice-generator.dropoutstudio.co",
 	author: {
 		name: "Dropout Studio",
 		url: "https://dropoutstudio.co"
@@ -15,7 +15,7 @@ export const APP_CONFIG: AppConfig = {
 	siblings: [
 		{
 			name: "Order Processor",
-			url: "https://order-processor.beyourahi.workers.dev"
+			url: "https://order-processor.dropoutstudio.co"
 		}
 	]
 };

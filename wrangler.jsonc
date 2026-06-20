@@ -3,6 +3,11 @@
 	"account_id": "75321bb4297a25f524624ba0f3f81443",
 	"name": "invoice-generator",
 	"main": ".svelte-kit/cloudflare/_worker.js",
+	// Served ONLY on the branded custom domain below — no *.workers.dev URL, no preview URLs.
+	"workers_dev": false,
+	"preview_urls": false,
+	// Custom domain: Cloudflare provisions the DNS record + cert for this hostname.
+	"routes": [{ "pattern": "invoice-generator.dropoutstudio.co", "custom_domain": true }],
 	// nodejs_compat is required: better-auth and parts of the AI layer rely on Node built-ins.
 	"compatibility_flags": ["nodejs_compat"],
 	"compatibility_date": "2025-05-29",
@@ -44,11 +49,11 @@
 			"remote": true
 		}
 	],
-	// Non-secret vars only. Secrets (BETTER_AUTH_SECRET, GOOGLE_CLIENT_ID/SECRET, SEED_SECRET)
-	// are set via `wrangler secret put`. AI_COPILOT_ENABLED="false" disables the Copilot.
+	// Non-secret vars only. Secrets (BETTER_AUTH_SECRET, GOOGLE_CLIENT_ID/SECRET, SEED_SECRET,
+	// and TOKEN_ENCRYPTION_KEY — the AES-GCM key for BYO Cloudflare tokens) are set via
+	// `wrangler secret put`. AI_COPILOT_ENABLED="false" disables the Copilot.
 	"vars": {
-		"BETTER_AUTH_URL": "https://invoice-generator.beyourahi.workers.dev",
-		"AI_GATEWAY_SLUG": "invoice-generator-ai",
+		"BETTER_AUTH_URL": "https://invoice-generator.dropoutstudio.co",
 		"AI_COPILOT_ENABLED": "true",
 		"AI_MONTHLY_CAP_USD": "1.00"
 	},

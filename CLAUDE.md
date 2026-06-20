@@ -33,7 +33,7 @@ A SvelteKit app that generates batches of PDF invoices. Users configure a fixed 
 
 **Stack**: SvelteKit 2 + Svelte 5 runes, Tailwind CSS v4, Dropout Design System (`@dropout/ds`, vendored) + shadcn-svelte, Cloudflare Workers, Better Auth (Google OAuth), Cloudflare D1, Drizzle ORM, Cloudflare Workers AI, Bun.
 
-**Auth-gated**: Google OAuth via Better Auth. Any authenticated user can access the app. Unauthenticated users are redirected to `/login`. All user data (sender info, payment methods, clients, invoice entries, AI Copilot conversations) is persisted server-side in D1 and loaded on page load. The PDF generation pipeline itself is entirely client-side.
+**Auth-optional**: the full builder works signed-out — guest data persists to **localStorage** (the PDF pipeline is client-side anyway). There is **no auth guard / no `/login` redirect**. Google OAuth via Better Auth is an *optional* upgrade: signing in migrates the guest workspace into D1 (one-time, on first sign-in), syncs all data server-side (sender info, payment methods, clients, invoice entries, AI Copilot conversations), and unlocks the AI Copilot (which additionally requires a connected bring-your-own Cloudflare account — see AI Copilot).
 
 ---
 
@@ -45,9 +45,9 @@ A SvelteKit app that generates batches of PDF invoices. Users configure a fixed 
 | Language        | TypeScript (strict mode)                                        |
 | Styling         | Tailwind CSS v4 (CSS-first; tokens from `@dropout/ds`)          |
 | UI Components   | Dropout Design System (`@dropout/ds`, vendored) + shadcn-svelte |
-| Authentication  | Better Auth (Google OAuth only)                                 |
+| Authentication  | Better Auth (Google OAuth, optional sign-in)                    |
 | Database        | Cloudflare D1 (SQLite via Drizzle ORM)                          |
-| AI              | Workers AI via AI Gateway dynamic route + qwen3 RAG (Vectorize) |
+| AI              | Bring-your-own Cloudflare Workers AI (REST, user's account) + qwen3 RAG (Vectorize) |
 | Validation      | Zod                                                             |
 | PDF Rendering   | html2canvas + jsPDF                                             |
 | ZIP Packaging   | fflate (`zipSync`, `level: 0`)                                  |
@@ -107,7 +107,7 @@ The server layer handles authentication, data persistence, and AI Copilot infere
 
 - **`$lib/server/auth.ts`** — `createAuth(d1, env)` factory. Returns a Better Auth instance configured with Google OAuth, Drizzle adapter (D1/SQLite), 7-day session expiry, 5-minute cookie cache, and database rate limiting. `env` must include `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`.
 
-- **`$lib/server/schema.ts`** — Drizzle schema for all tables: Better Auth tables (`users`, `sessions`, `accounts`, `verifications`, `rateLimits`), app tables (`fixedSettings`, `paymentMethods`, `clients`, `clientPaymentMethods`, `invoiceEntries`), and AI Copilot tables (`aiConversations`, `aiMessages`, `aiActions`). Snake_case column names required by the Drizzle adapter.
+- **`$lib/server/schema.ts`** — Drizzle schema for all tables: Better Auth tables (`users`, `sessions`, `accounts`, `verifications`, `rateLimits`), app tables (`fixedSettings`, `paymentMethods`, `clients`, `clientPaymentMethods`, `invoiceEntries`), AI Copilot tables (`aiConversations`, `aiMessages`, `aiActions`), and `userSettings` (one row per user, PK `user_id` cascade-delete; holds the BYO Cloudflare connection: `cloudflare_token_encrypted` blob, `cloudflare_account_id`, `cloudflare_model`). Snake_case column names required by the Drizzle adapter.
 
 - **`$lib/server/db.ts`** — `getDatabase(d1)` factory returning a Drizzle instance. Exports `Database` type and `schema`.
 
@@ -133,11 +133,15 @@ The server layer handles authentication, data persistence, and AI Copilot infere
 
 - **`src/routes/+layout.server.ts`** — Passes `user`, `session`, `currentUser` from `locals`, plus the `aiEnabled` flag (derived from the `AI_COPILOT_ENABLED` var), into `PageData`.
 
-- **`src/routes/+page.server.ts`** — Redirects to `/login` if unauthenticated. Loads full `AppState` from D1 via `loadAppState` and the AI Copilot hydration payload (conversations, messages, actions, anomaly settings), returning them alongside `user` and `currentUser`.
+- **`src/routes/+page.server.ts`** — **No auth guard / no redirect.** Only when `d1 && locals.user` does it load full `AppState` from D1 via `loadAppState` plus the AI Copilot hydration payload (conversations, messages, actions, anomaly settings); anonymous visitors get empty shells (`emptyAi(aiEnabled)`) and re-seed client-side from localStorage. Always returns `{ user, currentUser, appState, ai }`.
 
 - **`src/routes/login/+page.svelte`** — Google sign-in button. Redirects to `/` after successful OAuth.
 
 - **`src/routes/login/+page.server.ts`** — Redirects to `/` if already authenticated.
+
+- **`src/routes/settings/+page.svelte`** and **`+page.server.ts`** — `/settings` route: configure the BYO Cloudflare connection (API token, account ID, chat model). Server `load` decrypts the stored token and returns only `maskToken(...)` (raw secret never leaves the server) plus cached model list; **redirects guests to `/login`**. The `save` action validates by calling `listChatModels(creds)` (proves token + account + Workers AI permission), encrypts the token (leaving the blob unchanged if the field is blank), upserts `userSettings`, and warms the `cf-models:{accountId}` KV cache. The `reset` action deletes the `userSettings` row.
+
+- **`src/routes/api/cf/models/+server.ts`** — `GET` lists the user's Cloudflare Workers AI chat models for the settings picker (cached in `AI_QUOTA_KV` under `cf-models:{accountId}`, 24h TTL; `?refresh=1` bypasses). Returns `{ models, connected }` (degrades to `{ models: [], connected: false }` when unconnected; errors travel in JSON, not HTTP status).
 
 - **`src/routes/changelog/+page.svelte`** — Public `/changelog` route. Has **no `+page.server.ts`**, so it inherits no auth guard and is reachable unauthenticated (the guard lives only in `+page.server.ts` for `/`). Renders `CHANGELOG_ENTRIES` from `$lib/data/changelog.ts` grouped by date (source order is render order — newest first, no re-sort). Dates are formatted absolutely (SSR-safe).
 
@@ -155,7 +159,7 @@ The server layer handles authentication, data persistence, and AI Copilot infere
 
 - **`src/routes/api/ai/`** — AI Copilot endpoints: `chat/+server.ts` (SSE streaming turn), `conversations/+server.ts` and `[id]/+server.ts` (conversation CRUD), `messages/+server.ts` (message list), `actions/+server.ts` and `[id]/+server.ts` (action history), `undo/[id]/+server.ts` (reverse an applied action), `seed/+server.ts` (embeds `KNOWLEDGE_CORPUS` into Vectorize; `POST` guarded by the `x-seed-secret` header matching `SEED_SECRET`). See the AI Copilot section.
 
-**Authorization flow**: Google OAuth → any authenticated user gains full access. All data is scoped to `userId`.
+**Authorization flow**: no gate on the builder — guests use it fully (localStorage-backed). Signing in via Google OAuth scopes all data to `userId` (D1) and unlocks the AI Copilot. The AI Copilot additionally requires the signed-in user to connect their own Cloudflare account at `/settings`; `/api/ai/chat` returns **HTTP 412** until they do.
 
 ### API Client
 
@@ -163,15 +167,23 @@ The server layer handles authentication, data persistence, and AI Copilot infere
 
 ### Store Design
 
-All three stores use the **factory function + `$state` closure** pattern, exported as singletons. Mutations call the API client to persist changes server-side.
+All three stores use the **factory function + `$state` closure** pattern, exported as singletons. `session` and `fixed` are **dual-mode**: an `authed` flag (set once at `hydrate(initial, { authed })`) routes every mutation to either the REST API/D1 (signed-in) or a synchronous localStorage write (guest). The guest persistence layer lives in `$lib/persistence/` (see below).
 
-- **`$lib/stores/session.svelte.ts`** — Per-session state: `clients`, `selectedClientId`, `expandedClients`, `generatedInvoices`, `generationState`, `generationError`. Client mutations: `addClient`, `removeClient`, `updateClient(id, patch)`, `togglePaymentMethod`, `ensurePaymentMethodSelected`, `purgePaymentMethodFromClients`, `addInvoiceEntry`, `addInvoiceEntries(clientId, months[])`, `removeInvoiceEntry`, `updateInvoiceEntry`. Activation toggles: `setClientActive(id, isActive)`, `setInvoiceActive(clientId, entryId, isActive)` — both capture previous state and roll back on API failure so stale `isActive` flags cannot leak into the generation queue. Selection/expansion: `setSelectedClientId`, `setClientExpanded`, `toggleClientExpanded`, `isClientExpanded`. Generation lifecycle: `setGenerating`, `setGenerated`, `setError`, `resetGeneration`. Three `$derived` values: `totalInvoiceCount`, `generatableInvoiceCount` (count after active filter), and `allClientsValid` (checks every client has non-empty `name` and `invoicePrefix`). Has a `hydrate(initial)` method called once in `+page.svelte` via `untrack` to seed from server data.
+- **`$lib/stores/session.svelte.ts`** — Per-session state: `clients`, `selectedClientId`, `expandedClients`, `generatedInvoices`, `generationState`, `generationError`. Client mutations: `addClient`, `removeClient`, `updateClient(id, patch)`, `togglePaymentMethod`, `ensurePaymentMethodSelected`, `purgePaymentMethodFromClients`, `addInvoiceEntry`, `addInvoiceEntries(clientId, months[])`, `removeInvoiceEntry`, `updateInvoiceEntry`. Activation toggles: `setClientActive(id, isActive)`, `setInvoiceActive(clientId, entryId, isActive)` — both capture previous state and roll back on API failure so stale `isActive` flags cannot leak into the generation queue. Selection/expansion: `setSelectedClientId`, `setClientExpanded`, `toggleClientExpanded`, `isClientExpanded`. Generation lifecycle: `setGenerating`, `setGenerated`, `setError`, `resetGeneration`. Three `$derived` values: `totalInvoiceCount`, `generatableInvoiceCount` (count after active filter), and `allClientsValid` (checks every client has non-empty `name` and `invoicePrefix`). Dual-mode: `hydrate(initial, { authed })` (called once in `+page.svelte` via `untrack`), `loadGuest()` (re-seeds from `GUEST_SESSION_KEY` in `onMount` for guests after SSR), and `saveLocal()`. When `authed` is false, mutations mint ids via `crypto.randomUUID()` and write the full `GuestSessionSnapshot` to localStorage; when true they call `sync()`/`debounceSync()` against the API.
 
-- **`$lib/stores/fixed.svelte.ts`** — Sender/bank data synced to D1. Exposes `value` getter, `hydrate(initial)`, `updateFrom(field, value)`, `addPaymentMethod(kind)`, `removePaymentMethod(id)`, `updatePaymentMethodLabel`, `updatePaymentMethodValue`, `movePaymentMethod`. All mutations call the API. Text mutations are debounced via `debounceSync`. Has a `hydrate(initial)` method called once in `+page.svelte` via `untrack`.
+- **`$lib/stores/fixed.svelte.ts`** — Sender/bank data. Exposes `value` getter, `hydrate(initial, { authed })`, `loadGuest()`, `updateFrom(field, value)`, `addPaymentMethod(kind)`, `removePaymentMethod(id)`, `updatePaymentMethodLabel`, `updatePaymentMethodValue`, `movePaymentMethod`. Dual-mode: when `authed` is false, mutations mint ids via `createSavedMethod` and write synchronously to `GUEST_FIXED_KEY`; when true, text mutations debounce via `debounceSync` and structural ones call `sync()` against the API. `hydrate` is called once in `+page.svelte` via `untrack`.
 
 - **`$lib/stores/ai.svelte.ts`** — AI Copilot state: conversations, messages, streaming status, the Tier-B confirmation queue, undo history, anomaly settings (persisted to `localStorage`), pending vision images (`pendingImages`, max 3, with `addPendingImage`/`removePendingImage`/`clearPendingImages`), and mobile/tab UI state. Has a `hydrate(payload)` method called once in `+page.svelte` via `untrack`. Detailed in the AI Copilot section.
 
 The factory pattern is required because Svelte 5 `$state` reactivity is scoped to its declaration.
+
+### Guest Persistence (`$lib/persistence/`)
+
+The signed-out workspace is backed by localStorage:
+
+- **`keys.ts`** — versioned keys `GUEST_FIXED_KEY` / `GUEST_SESSION_KEY` (`invoice-generator:guest:{fixed,session}:v1`) and the `GuestSessionSnapshot` type.
+- **`local.ts`** — SSR-safe `readLocal` / `writeLocal` / `clearLocal` (no-op on server; swallow quota/parse errors; synchronous, not debounced).
+- **`migrate.ts`** — `migrateGuestToServer(accountEmpty)`: one-time replay of the guest snapshot into D1 via the REST API on first sign-in (PATCH `/api/fixed` → POST/PATCH each payment method capturing new ids → POST/PATCH each client + its entries with remapped methodIds → PUT `selectedClientId`), then clears both keys and returns `true` so `+page.svelte` reloads to re-hydrate from D1. Aborts silently (returns `false`, retains guest data) if the account already has data or any call fails.
 
 ### Payment Methods System
 
@@ -203,19 +215,20 @@ To add a theme: create a new file in `$lib/themes/` implementing the full `Theme
 
 ### UI Layout
 
-**App layout** — single-column tabbed surface (`Details` / `Preview` via shadcn `Tabs.Root` in `src/routes/+page.svelte`); AI Copilot is pinned as a fixed right-side rail rendered from `src/routes/+layout.svelte` at `lg+` viewports, reserving space via `lg:pr-[26rem] xl:pr-[28rem]` on the main flex container.
+**App layout** — single-column tabbed surface (`Details` / `Preview` via shadcn `Tabs.Root` in `src/routes/+page.svelte`), full-width with a shared `px-[var(--content-x)]` gutter. The AI Copilot is a **toggleable overlay drawer** (not a pinned rail): the desktop `<aside>` (`hidden lg:block lg:w-[26rem] xl:w-[28rem]`) renders only while `ai.desktopOpen`, flying in from the right. **No rail gutter is reserved** — toggling never reflows the page.
 
-- **`User`** (`src/components/User.svelte`) — top-right avatar. Desktop: hover tooltip; mobile: tap opens a `Dialog`. Both surface the sign-out action.
+- **`User`** (`src/components/User.svelte`) — fixed top-right avatar, shown when signed in. Desktop: hover-expand pill with a Settings (`/settings`, "Copilot settings") icon + Sign out; mobile: tap opens a `Dialog` with the same links. Right offset is `lg:right-[var(--content-x)]` when the drawer is closed, shifting left to clear the rail when `ai.desktopOpen`.
+- **`SignInButton`** (`src/components/SignInButton.svelte`) — signed-out counterpart in the same fixed top-right slot; "Sign in to sync" (desktop) / "Sign in" (mobile), links to `/login`. An invitation, not a gate — guests get the full builder.
 - **`Heading`** (`$lib/components/ui/heading/heading.svelte`) — shared heading above the tabs.
 - **`Tabs.Root`** in `+page.svelte` — two tabs:
   - **`Details`** — `FixedSenderPanel` + a `Clients` section (count badge, empty-state CTA, `ClientCard` list bound to `flipList` for add/remove FLIP motion, `AddClientButton`).
   - **`Preview`** — `InvoicePreview` of the selected/first client's first generatable invoice.
 - **Below tabs** (full-width) — `Separator` + `GenerationPanel`.
-- **AI Copilot mount** (`+layout.svelte`, gated by `data.aiEnabled && page.route.id === "/" && !page.error`):
-  - Desktop (`lg+`): fixed `<aside>` rendering `AiSidebar`.
+- **AI Copilot mount** (`+layout.svelte`, gated by `data.aiEnabled && !!data.user && page.route.id === "/" && !page.error`):
+  - Desktop (`lg+`): `AiDesktopLauncher` (fixed bottom-right launcher, hidden while open or generating) toggles `ai.desktopOpen`; the `<aside>` renders `AiSidebar` only while open.
   - Mobile: `AiMobileFab` + `AiMobileSheet`.
   - Always: `AiConfirmDialog` mounts globally for Tier-B confirmations.
-- **`Footer`** (`$lib/components/ui/footer/footer.svelte`) — rendered globally below `{@render children()}` in `+layout.svelte` (every route, full-width). Links to `/changelog`, the author URL (`APP_CONFIG.author.url`), and an external tools page. This is the only `$lib/components/ui/` component that is hand-authored, not shadcn-generated.
+- **`Footer`** (`$lib/components/ui/footer/footer.svelte`) — rendered globally below `{@render children()}` in `+layout.svelte` (every route). Uses the `px-[var(--content-x)]` gutter; centered on mobile, `justify-between` row at `sm+`. Links to `/changelog`, an external tools page, and the author URL (`APP_CONFIG.author.url`). This is the only `$lib/components/ui/` component that is hand-authored, not shadcn-generated.
 
 `GenerationPanel` owns the generate loop: iterates the queue from `getGeneratableInvoices(session.clients)` (active-only), calls `buildInvoiceHtml` + `generatePdf` sequentially, tracks progress with `$state<number>` (0–100) bound to a shadcn `Progress`. On completion renders a `Table` of results with per-client download (directory picker or sequential) and ZIP buttons. Uses `svelte-sonner` toasts for success/error feedback.
 
@@ -263,18 +276,17 @@ GSAP-driven motion lives entirely under `$lib/motion/`. Surface code imports onl
 
 ### Server-side Data Hydration
 
-`+page.server.ts` loads full `AppState` (fixed settings + payment methods + clients + invoice entries + selected/expanded state) from D1 via `loadAppState(db, userId)`. `+page.svelte` calls `fixed.hydrate(data.appState.fixed)`, `session.hydrate(...)`, and `ai.hydrate(data.ai)` inside `untrack()` to seed the stores without triggering reactive side effects.
+`+page.server.ts` loads full `AppState` from D1 via `loadAppState(db, userId)` **only when signed in**; guests receive empty shells. `+page.svelte` calls `fixed.hydrate(data.appState.fixed, { authed: !!data.user })`, `session.hydrate(..., { authed: !!data.user })`, and `ai.hydrate(data.ai)` inside `untrack()`. In `onMount`: signed-in users with an empty account run `migrateGuestToServer(true)` (imports any prior guest data, then reloads); guests call `fixed.loadGuest()` + `session.loadGuest()` to re-seed from localStorage.
 
 ### AI Copilot
 
-An optional natural-language assistant for managing clients, invoices, and payment methods. The server runs model inference; tool execution happens client-side against the same REST API as the manual UI. Gated by the `AI_COPILOT_ENABLED` var (set to `"false"` to disable).
+An optional natural-language assistant for managing clients, invoices, and payment methods. Inference runs on the **signed-in user's own Cloudflare account** (bring-your-own, billed to them) via the Cloudflare REST API — the owner's `AI` binding is used only to seed Vectorize. Tool execution happens client-side against the same REST API as the manual UI. Gated by the `AI_COPILOT_ENABLED` var (`"false"` disables) **and** by the user having connected their Cloudflare account at `/settings` (chat returns 412 otherwise).
 
 - **`$lib/ai/`** — Client-side AI layer:
   - `types.ts` — shared types: `Frame`, tool-call shapes, `InverseRecord`, `AnomalyResult`, `SafetyTier`.
-  - `client.ts` — `runChatFrames()` streams an OpenAI Chat Completions turn (temperature 0.2, `thinking: false`, `max_tokens` 1536) through `openGatewayChat`. Builds multimodal user content (`image_url` parts) when `images` are present.
-  - `gateway.ts` — `openGatewayChat()` routes the turn through the AI Gateway dynamic route `dynamic/copilot-chain` (fallback chain: `kimi-k2.6` → `gemma-4` → `llama-4-scout`), keyed by `AI_GATEWAY_SLUG`. Throws if the slug is unset. Exports `MODEL_CHAIN`, `DYNAMIC_ROUTE`.
-  - `embeddings.ts` — `embedDocuments` / `embedQuery` call the qwen3 embedding model (`@cf/qwen/qwen3-embedding-0.6b`, 1024 dims). Query embeddings take an instruction prefix.
-  - `rag.ts` — `retrieveAppKnowledge()` embeds the user message, queries the `VECTORIZE` index (topK 4, `MIN_SCORE` 0.4), and `formatKnowledge()` renders matches as a numbered list.
+  - `client.ts` — `runChatFrames(params)` async generator runs a turn via `runChatViaRest(params.creds, params.model, …)` (temperature 0.2, `max_tokens` 1536) on the user's Cloudflare account; buffers the whole response (Workers AI REST is non-streaming) then yields `Frame`s. Builds multimodal user content (`image_url` parts) when `images` are present. (The old `gateway.ts` / AI Gateway dynamic route is deleted.)
+  - `embeddings.ts` — `embedDocuments` calls the qwen3 embedding model (`@cf/qwen/qwen3-embedding-0.6b`, 1024 dims) via the owner's `AI` binding — used **only** by the seed endpoint to build the index. Per-query RAG embeddings instead run on the user's account via `runEmbeddingViaRest` (see `rag.ts`).
+  - `rag.ts` — `retrieveAppKnowledge(env, creds, query)` embeds the message on the user's account via `runEmbeddingViaRest(creds, …)`, queries the owner's `VECTORIZE` index (topK 4, `MIN_SCORE` 0.4), and `formatKnowledge()` renders matches as a numbered list. Fails open (returns `[]`) so chat never breaks.
   - `knowledge.ts` — `KNOWLEDGE_CORPUS`: the static app-help passages embedded into Vectorize by the seed endpoint.
   - `window.ts` — `windowHistory()` keeps the last `WINDOW_SIZE` (12) messages for sliding-window context.
   - `streaming.ts` — SSE frame encode/decode (`encodeFrame`, `decodeFrame`, `streamFrames`, `sseStream`).
@@ -290,18 +302,22 @@ An optional natural-language assistant for managing clients, invoices, and payme
   - `inverse.ts` — builds an `InverseRecord` (reverse tool call + optional snapshot) for every executed tool, enabling undo.
   - `markdown.ts` — minimal AST-based markdown parser; renders AI message text in `AiMessage.svelte` (no markdown library).
   - `errors.ts` — maps technical error strings to friendly user-facing messages; `looksTechnical()` flags raw artifacts (braces, URLs) so they are stripped from rendered replies.
-  - `chat-client.ts` — `sendMessage`, `triggerUndo`, conversation CRUD, confirmation responses.
+  - `chat-client.ts` — `sendMessage`, `triggerUndo`, conversation CRUD, confirmation responses. On a 412 from `/api/ai/chat` it flips `ai.setConnectRequired(true)` (the sidebar then shows a "connect your Cloudflare account in Settings" CTA).
 - **`$lib/server/`** — AI server layer:
+  - `ai/cloudflare-config.ts` — `loadCloudflareConfig(db, userId)` reads the `userSettings` row; `isCloudflareConnected(cfg)`; `resolveCloudflareCreds(encryptionKey, cfg)` decrypts the token (via `TOKEN_ENCRYPTION_KEY`) → `{ creds, model } | null`.
+  - `ai/run-rest.ts` — direct account-scoped Cloudflare REST calls (no binding): `runChatViaRest(creds, model, input)` (POST `/accounts/{id}/ai/run/{model}`), `runEmbeddingViaRest`, `listChatModels(creds)`. `DEFAULT_MODEL = "@cf/moonshotai/kimi-k2.6"`, `EMBEDDING_MODEL = "@cf/qwen/qwen3-embedding-0.6b"`. Throws `CfInferenceError(status, kind, …)` (`kind: "auth" | "rate_limit" | "model_unavailable" | "transport"`).
+  - `ai/errors.ts` — `CloudflareNotConnectedError`, `describeCloudflareError(err)` (user-facing messages), `CF_TOKEN_HELP`.
+  - `crypto.ts` — AES-GCM-256 token encryption keyed by `TOKEN_ENCRYPTION_KEY` (base64 32-byte): `deriveTokenKey`, `encryptToken` (IV‖ciphertext+tag → `Uint8Array`), `decryptToken`, `maskToken`.
   - `ai-quota.ts` — `checkAndIncrementQuota(kv, userId)`: per-user daily turn limit (default 200) tracked in `AI_QUOTA_KV`; disabled when the KV binding is absent.
   - `ai-spend.ts` — `checkSpendCap` / `recordSpend` / `estimateTurnCostUsd`: per-user monthly USD spend cap (default $1.00, override via `AI_MONTHLY_CAP_USD`) tracked in `AI_QUOTA_KV`; disabled when the KV binding is absent.
   - `ai-undo.ts` — `applyInverse(db, userId, inverse)`: server-side reversal of an action; throws `UndoInvalidatedError` if the target no longer exists.
   - `log.ts` — `logChatTurn` / `logToolExecution`: structured stdout logging with hashed user IDs.
-  - `chat/+server.ts` buffers the first model turn, retrieves RAG context (when `VECTORIZE` is bound), builds the cache key as `sha256(PROMPT_VERSION|state|message)`, validates tool-call args against `argSchemas`, and issues exactly one corrective retry turn — on schema-invalid args **or** when an imperative user message produced no tool call — before persisting. It also blanks any action narration ("Done…") that ran no tool, gated by `IMPERATIVE_RE`/`REFUSAL_RE` so genuine refusals and clarifying questions survive. Tool-only assistant turns persist with empty content but are summarized back into history as `[Performed: …]` so the model doesn't re-fire the prior instruction.
+  - `chat/+server.ts` first resolves the user's BYO creds via `resolveCloudflareCreds(env.TOKEN_ENCRYPTION_KEY, …)` and returns **HTTP 412** (`{ error, connect: "/settings" }`) if unconnected — gated before quota. It then buffers the first model turn (run on the user's account via `runChatViaRest`), retrieves RAG context (when `VECTORIZE` is bound), builds the cache key as `sha256(PROMPT_VERSION|state|message)`, validates tool-call args against `argSchemas`, and issues exactly one corrective retry turn — on schema-invalid args **or** when an imperative user message produced no tool call — before persisting. It also blanks any action narration ("Done…") that ran no tool, gated by `IMPERATIVE_RE`/`REFUSAL_RE` so genuine refusals and clarifying questions survive. Tool-only assistant turns persist with empty content but are summarized back into history as `[Performed: …]` so the model doesn't re-fire the prior instruction.
   - `repositories/ai-conversations.ts`, `ai-messages.ts`, `ai-actions.ts` — D1 persistence for the three AI tables.
 - **`$lib/stores/ai.svelte.ts`** — the `ai` store (see Store Design).
-- **`src/components/ai/`** — `AiSidebar` composes a chat shell from focused sub-components: `AiHeader` (toolbar pairing a `New Chat` action with an adjacent `History` toggle that opens `AiConversationsPanel`, plus Settings), `AiWelcome` (empty-state suggestion cards), `AiMessageList` (renders one `AiMessage` per turn and `AiTypingIndicator` while streaming, wrapped in a `<svelte:boundary>` so a render error degrades to inline retry rather than crashing the pane), and `AiComposer` (the textarea + send input). Remaining pieces: `AiToolBadge`, `AiConfirmDialog`, `AiAnomalyWarning`, `AiSettingsDialog`, `AiConversationsPanel`, `AiMobileFab`, `AiMobileSheet`, `AiLauncherIcon` (shared launcher glyph used in both the desktop sidebar header and the mobile FAB; takes a `variant: "row" | "grid"` prop), `AiImageUpload` (vision attachments: re-encodes images to WebP via `OffscreenCanvas`, max 3 × 8 MB, exposes `triggerUpload`). Chat styling lives in `$lib/styles/chat-animations.css` (imported in `app.css`) and the `chat-*` design tokens. There is no action-log panel — undo for applied actions stays available via per-action toasts and inline `AiToolBadge` controls.
+- **`src/components/ai/`** — `AiSidebar` composes a chat shell from focused sub-components: `AiHeader` (toolbar pairing a `New Chat` action with an adjacent `History` toggle that opens `AiConversationsPanel`), `AiWelcome` (empty-state suggestion cards), `AiMessageList` (renders one `AiMessage` per turn and `AiTypingIndicator` while streaming, wrapped in a `<svelte:boundary>` so a render error degrades to inline retry rather than crashing the pane), and `AiComposer` (the textarea + send input). Remaining pieces: `AiToolBadge`, `AiConfirmDialog`, `AiAnomalyWarning`, `AiConversationsPanel`, `AiMobileFab`, `AiMobileSheet`, `AiDesktopLauncher` (desktop bottom-right launcher button toggling `ai.desktopOpen`), `AiLauncherIcon` (shared launcher glyph; `variant: "row" | "grid"`), `AiImageUpload` (vision attachments: re-encodes images to WebP via `OffscreenCanvas`, max 3 × 8 MB, exposes `triggerUpload`). The BYO Cloudflare connection is configured at the `/settings` route (not in a dialog); `AiSettingsDialog.svelte` exists but is currently unreferenced. Chat styling lives in `$lib/styles/chat-animations.css` (imported in `app.css`) and the `chat-*` design tokens. There is no action-log panel — undo for applied actions stays available via per-action toasts and inline `AiToolBadge` controls.
 
-**Data flow**: user message (+ optional images) → `POST /api/ai/chat` (loads context, retrieves RAG knowledge, runs the gateway model, streams frames) → client parses frames and runs each tool via `executeToolCall` → Tier B tools wait for `AiConfirmDialog` approval → applied actions are recorded and reversible via `POST /api/ai/undo/[id]`.
+**Data flow**: user message (+ optional images) → `POST /api/ai/chat` (resolves BYO creds or 412, loads context, retrieves RAG knowledge, runs the model on the user's Cloudflare account via `runChatViaRest`, streams frames) → client parses frames and runs each tool via `executeToolCall` → Tier B tools wait for `AiConfirmDialog` approval → applied actions are recorded and reversible via `POST /api/ai/undo/[id]`.
 
 ---
 
@@ -478,7 +494,7 @@ bun install
 bun run dev
 ```
 
-Auth state and all user data require D1 + secrets (see below). Without D1, auth is disabled and all routes treat the user as unauthenticated — the PDF pipeline still works if you bypass auth guards.
+Signing in and all server-side persistence require D1 + secrets (see below). Without D1 the app still runs fully as a **guest** (localStorage-backed); the PDF pipeline is client-side regardless. The AI Copilot additionally needs a signed-in user with a connected Cloudflare account (`/settings`).
 
 ### Cloudflare Bindings
 
@@ -486,28 +502,32 @@ Configured in `wrangler.jsonc`:
 
 - **ASSETS**: static SvelteKit output
 - **DB**: D1 database binding (required for auth and data at runtime)
-- **AI**: Workers AI binding (required for the AI Copilot; used for both gateway chat and qwen3 embeddings)
+- **AI**: Workers AI binding (owner's account; used **only** to seed the Vectorize index via `/api/ai/seed` and build-time `embedDocuments` — Copilot chat + per-query embeddings run on each user's own Cloudflare account via REST, not this binding)
 - **VECTORIZE**: Vectorize index `invoice-generator-kb` backing RAG app-knowledge retrieval (optional — RAG is skipped if absent; required by the seed endpoint)
-- **AI_QUOTA_KV**: KV namespace backing the AI Copilot per-user daily turn quota and monthly USD spend cap (optional — both disabled if absent)
-- **`remote: true`** is set on `AI`, `VECTORIZE`, and `AI_QUOTA_KV` so local `wrangler dev` / `bun run preview` reach real Workers AI, the seeded Vectorize index, and KV. Wrangler cannot emulate these locally — without the flag the Copilot, RAG, and quota all silently fail in local preview.
-- **vars**: `BETTER_AUTH_URL`, `AI_GATEWAY_SLUG` (AI Gateway dynamic-route slug), `AI_COPILOT_ENABLED` (feature flag), `AI_MONTHLY_CAP_USD` (monthly AI spend cap, USD)
+- **AI_QUOTA_KV**: KV namespace backing the AI Copilot per-user daily turn quota, monthly USD spend cap, and the `cf-models:{accountId}` model-list cache (optional — quota/cap disabled if absent)
+- **`remote: true`** is set on `AI`, `VECTORIZE`, and `AI_QUOTA_KV` so local `wrangler dev` / `bun run preview` reach real Workers AI, the seeded Vectorize index, and KV. Wrangler cannot emulate these locally — without the flag seeding, RAG, and quota all silently fail in local preview.
+- **vars**: `BETTER_AUTH_URL`, `AI_COPILOT_ENABLED` (feature flag), `AI_MONTHLY_CAP_USD` (monthly AI spend cap, USD). (`AI_GATEWAY_SLUG` was removed with the gateway architecture.)
+- **Routes / custom domain**: served at `invoice-generator.dropoutstudio.co` (`routes: [{ pattern, custom_domain: true }]`); `workers_dev` and `preview_urls` are `false`.
 - **`SEED_SECRET`** (secret): header token gating `POST /api/ai/seed`; without it the seed endpoint returns 401
+- **`TOKEN_ENCRYPTION_KEY`** (secret): base64-encoded 32-byte AES-GCM key encrypting each user's stored Cloudflare API token at rest (`src/lib/server/crypto.ts`). **Required** for the BYO connection — a missing/wrong key makes decrypt fail and chat return 412.
 - **`E2E_BYPASS_AUTH`** (dev-only, not in `wrangler.jsonc`): when set to `"true"` in `.dev.vars`, `hooks.server.ts` synthesizes a test user + session and skips Google OAuth entirely. Lets `bun run preview` exercise auth-gated UI and `/api/*` routes without OAuth. Must never be set in production.
 - **Compatibility**: `nodejs_compat` flag
 - Run `bun run cf-typegen` after any `wrangler.jsonc` changes
 
-### Cloudflare Secrets (required for auth)
+### Cloudflare Secrets (required for auth + AI)
 
 Set via `wrangler secret put` or in the Cloudflare dashboard:
 
 | Secret                 | Description                                                           |
 | ---------------------- | --------------------------------------------------------------------- |
 | `BETTER_AUTH_SECRET`   | Random secret (e.g. `openssl rand -base64 32`)                        |
-| `BETTER_AUTH_URL`      | Deployed URL (e.g. `https://invoice-generator.beyourahi.workers.dev`) |
+| `BETTER_AUTH_URL`      | Deployed URL (`https://invoice-generator.dropoutstudio.co`)          |
 | `GOOGLE_CLIENT_ID`     | Google OAuth client ID                                                |
 | `GOOGLE_CLIENT_SECRET` | Google OAuth client secret                                            |
+| `TOKEN_ENCRYPTION_KEY` | base64 32-byte AES-GCM key; encrypts users' BYO Cloudflare tokens     |
+| `SEED_SECRET`          | header token gating `POST /api/ai/seed`                              |
 
-`BETTER_AUTH_URL` is also a non-secret binding in `wrangler.jsonc`. The other three are secrets — never commit them.
+`BETTER_AUTH_URL` is also a non-secret binding in `wrangler.jsonc`. The rest are secrets — never commit them.
 
 Use `bun run preview` (Wrangler-backed) to test auth locally.
 
@@ -518,7 +538,7 @@ bun run db:migrate        # Remote (production)
 bun run db:migrate:local  # Local (Wrangler preview)
 ```
 
-Four migrations exist: `0001_better_auth_tables.sql` (Better Auth tables), `0002_daffy_synch.sql` (app tables: clients, invoice_entries, payment_methods, etc.), `0003_cute_vision.sql` (additive `is_active` columns on `clients` and `invoice_entries` with `DEFAULT true NOT NULL`), and `0004_marvelous_puck.sql` (AI Copilot tables: `ai_conversations`, `ai_messages`, `ai_actions`).
+Five migrations exist: `0001_better_auth_tables.sql` (Better Auth tables), `0002_daffy_synch.sql` (app tables: clients, invoice_entries, payment_methods, etc.), `0003_cute_vision.sql` (additive `is_active` columns on `clients` and `invoice_entries` with `DEFAULT true NOT NULL`), `0004_marvelous_puck.sql` (AI Copilot tables: `ai_conversations`, `ai_messages`, `ai_actions`), and `0005_neat_the_watchers.sql` (the `user_settings` table holding the encrypted BYO Cloudflare connection).
 
 ### Clean Rebuild
 
@@ -560,11 +580,11 @@ When encountering unfamiliar patterns, check in this order:
 
 8. **shadcn-svelte components in `$lib/components/ui/` are auto-generated** — never modify them by hand. Use the CLI to update.
 
-9. **Auth requires D1 at runtime** — if D1 is unavailable (plain Vite dev without Wrangler), auth is silently disabled and all routes treat the user as unauthenticated. Use `bun run preview` to test auth locally.
+9. **Auth is optional; sign-in requires D1** — without D1 (plain Vite dev without Wrangler) sign-in is silently disabled and everyone is a guest (localStorage workspace). There is **no auth guard / no `/login` redirect** on the builder. Use `bun run preview` to test sign-in + sync locally.
 
 10. **Do not add email/password auth** — `emailAndPassword` is explicitly disabled in `createAuth`. Google OAuth is the only sign-in method.
 
-11. **Payment methods are stored in D1, not localStorage** — `fixed.svelte.ts` no longer reads from `localStorage`. All mutations call the REST API. The `hydrate()` method seeds the store from server-loaded data at page load.
+11. **Stores are dual-mode (guest localStorage vs. authed D1)** — `fixed.svelte.ts` and `session.svelte.ts` branch on the `authed` flag set at `hydrate(initial, { authed })`. Guests persist to localStorage (`$lib/persistence/`); signed-in users call the REST API. On first sign-in, `migrateGuestToServer` replays guest data into D1 then clears localStorage. Don't assume a single persistence path.
 
 12. **API routes require D1** — `requireApiContext` throws 503 if `platform.env.DB` is unavailable. All `/api/*` routes will fail in plain Vite dev without Wrangler.
 
@@ -576,7 +596,7 @@ When encountering unfamiliar patterns, check in this order:
 
 16. **Active toggles use optimistic updates with rollback** — `setClientActive` and `setInvoiceActive` capture the previous `isActive` value, mutate locally, then call the API. On failure they restore the prior state. Do not add a separate "saving" flag; the rollback path is the contract.
 
-17. **AI Copilot is gated by `AI_COPILOT_ENABLED`** — setting the var to `"false"` disables the feature in `+layout.server.ts` and `+page.server.ts`. The `AI` binding and `AI_GATEWAY_SLUG` var are required when enabled (chat throws if the slug is unset); `VECTORIZE` (RAG) and `AI_QUOTA_KV` (daily quota + monthly spend cap) are optional and degrade gracefully if absent.
+17. **AI Copilot gating is two-layer** — the `AI_COPILOT_ENABLED` var disables it globally (in `+layout.server.ts`/`+page.server.ts`); beyond that, each signed-in user must connect their own Cloudflare account at `/settings` or `/api/ai/chat` returns 412. `TOKEN_ENCRYPTION_KEY` is required (decrypts the user's token). The owner's `AI` binding is needed only for seeding; `VECTORIZE` (RAG) and `AI_QUOTA_KV` (quota/cap/model cache) are optional and degrade gracefully.
 
 18. **Every AI tool must produce an inverse** — each executor in `$lib/ai/tools.ts` returns an `InverseRecord` so the action can be reversed via `applyInverse`. When adding or changing a tool, update its inverse in `$lib/ai/inverse.ts` in lockstep, or undo will silently break.
 
@@ -584,11 +604,15 @@ When encountering unfamiliar patterns, check in this order:
 
 20. **Never nest a `<button>` inside a `<button>` in collapsible cards** — a native `<button>` wrapping inner `<Button>` actions is invalid HTML; SSR auto-closes the outer button early and desyncs Svelte's hydration walker, causing the client to append a second copy of the entire app (the whole page renders twice — only when content is present). Use `div[role="button"]` with `tabindex="0"` + Enter/Space `onkeydown`, matching `ClientCard`/`PaymentMethodCard`; inner actions `stopPropagation`.
 
-21. **The model fallback chain lives in the AI Gateway dashboard, not the code** — `gateway.ts` calls the `dynamic/copilot-chain` route; `MODEL_CHAIN` (`kimi-k2.6` → `gemma-4` → `llama-4-scout`) documents the configured order but does not set it. Changing models means editing the AI Gateway dynamic route, not the code. The route requires tool-calling and vision support across the chain.
+21. **The chat model is the user's choice, set at `/settings`** — there is no fallback chain or AI Gateway anymore (`gateway.ts` is deleted). `run-rest.ts` calls the single selected model directly (`DEFAULT_MODEL = "@cf/moonshotai/kimi-k2.6"`); the picker is populated from the user's own account via `/api/cf/models`. The chosen model must support tool-calling and vision.
 
 22. **RAG returns nothing until the index is seeded** — `VECTORIZE` (`invoice-generator-kb`) must be populated by `POST /api/ai/seed` (with the `x-seed-secret` header) before `retrieveAppKnowledge` returns matches. The chat turn degrades silently to no app-knowledge context if the index is empty or unbound. Re-seed whenever `KNOWLEDGE_CORPUS` changes.
 
-23. **The chat route's retry + false-claim suppression is load-bearing — do not remove it** — the gateway chain intermittently narrates an action without calling a tool, so nothing runs. `chat/+server.ts` detects this from the _user's_ imperative phrasing (`looksImperative`), not the model's wording, forces one extra retry (`ACTION_RETRY_MESSAGE`), and blanks any leftover action narration. Deleting the suppression or the no-tool-call retry reintroduces the Copilot claiming work it never did. AI/Vectorize/KV bindings must stay `remote: true` (see Cloudflare Bindings) or local preview can't run the model to exercise this path at all.
+23. **The chat route's retry + false-claim suppression is load-bearing — do not remove it** — the model intermittently narrates an action without calling a tool, so nothing runs. `chat/+server.ts` detects this from the _user's_ imperative phrasing (`looksImperative`), not the model's wording, forces one extra retry (`ACTION_RETRY_MESSAGE`), and blanks any leftover action narration. Deleting the suppression or the no-tool-call retry reintroduces the Copilot claiming work it never did. `VECTORIZE`/`AI_QUOTA_KV` must stay `remote: true` (see Cloudflare Bindings) and the tester must have a connected Cloudflare account, or local preview can't run a turn to exercise this path at all.
+
+25. **`TOKEN_ENCRYPTION_KEY` must not change once users connect** — it decrypts the AES-GCM-encrypted tokens in `user_settings`. Rotating or losing it silently breaks every connected user's Copilot (decrypt fails → 412); they must re-enter tokens at `/settings`. Never log or return the raw token — the server only ever exposes `maskToken(...)`.
+
+26. **Don't reintroduce an auth guard on `/` or `/changelog`** — both are intentionally reachable signed-out; the builder runs as a localStorage-backed guest. Only `/settings` and `/api/*` (via `requireApiContext`) require a session. Adding `redirect(302, "/login")` to `+page.server.ts` would break the guest workspace and its sign-in migration.
 
 24. **`src/lib/ds/` is vendored — never hand-edit it** — it is an rsync mirror of `@dropout/ds` (`bun run sync-ds` from `../../dropout-design-system`, `--delete` overwrites local changes). Edit the DS upstream repo, then re-sync. It is deliberately NOT an npm/`file:` dependency — a sibling-path dependency breaks Cloudflare git-push auto-deploy. DS owns the visual tokens; do not redefine the semantic palette in `app.css`.
 
@@ -646,12 +670,12 @@ Detection order (use the first that works):
 
 ### What to Check in Screenshots
 
-- `Details` / `Preview` tabs switch cleanly; AI Copilot rail is pinned at `lg+` without overlapping the main column
+- `Details` / `Preview` tabs switch cleanly; the AI Copilot overlay drawer opens/closes from `AiDesktopLauncher` without reflowing the page
 - Dark theme renders consistently (no light-mode bleed)
 - Spacing, typography, and color tokens are correct
-- `FixedSenderPanel`, `ClientCard` list, `GenerationPanel`, and the right-side AI rail are in expected positions
+- `FixedSenderPanel`, `ClientCard` list, and `GenerationPanel` are in expected positions; the AI drawer overlays cleanly when open; signed-out shows `SignInButton` (not `User`)
 - Interactive states (hover, focus, expanded cards) render properly
-- Mobile: AI rail collapses to `AiMobileFab` + `AiMobileSheet`; tabs reflow without overflow
+- Mobile: AI uses `AiMobileFab` + `AiMobileSheet`; tabs reflow without overflow
 
 ### Commit Message Rules
 

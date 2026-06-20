@@ -60,11 +60,11 @@ export const createAuth = (d1: D1Database, env: AuthEnv) => {
 			useSecureCookies: true
 		},
 		// OAuth callbacks/CSRF are rejected from origins not listed here; the two localhost
-		// ports cover Vite dev (5173) and Wrangler preview (8787).
+		// ports cover Vite dev (5173) and Wrangler preview (8787), plus the branded domain.
 		trustedOrigins: [
 			"http://localhost:5173",
 			"http://localhost:8787",
-			"https://invoice-generator.beyourahi.workers.dev"
+			"https://invoice-generator.dropoutstudio.co"
 		]
 	});
 };

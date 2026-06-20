@@ -1,7 +1,8 @@
 /**
- * qwen3 text-embedding wrappers over the Workers AI binding, used by RAG
- * (query embedding) and the seed endpoint (document embedding).
- * @see ./rag.ts — consumes embedQuery to search VECTORIZE.
+ * qwen3 document-embedding wrapper over the owner's Workers AI binding, used by the
+ * ONE-TIME seed endpoint (/api/ai/seed) to index KNOWLEDGE_CORPUS into VECTORIZE
+ * (owner-paid, build-time). The per-QUERY embedding now runs on the USER's account
+ * via $lib/server/ai/run-rest.runEmbeddingViaRest — see ./rag.ts.
  * INVARIANT: vector dimensionality (EMBEDDING_DIMS) must match the VECTORIZE index config.
  */
 
@@ -28,22 +29,4 @@ export const embedDocuments = async (env: EmbeddingEnv, texts: string[]): Promis
 		throw new Error("qwen3 document embedding returned an unexpected shape");
 	}
 	return res.data;
-};
-
-/**
- * Embeds a single search query. qwen3 expects an `instruction` prefix on the
- * query side (asymmetric retrieval) — document embeddings must NOT pass one.
- * @throws if the model returns no vector.
- */
-export const embedQuery = async (
-	env: EmbeddingEnv,
-	text: string,
-	instruction: string
-): Promise<number[]> => {
-	const res = (await env.AI.run(EMBEDDING_MODEL, { text: [text], instruction })) as EmbeddingOutput;
-	const vector = res.data?.[0];
-	if (!vector) {
-		throw new Error("qwen3 query embedding returned no vector");
-	}
-	return vector;
 };

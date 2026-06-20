@@ -109,7 +109,19 @@ export const sendMessage = async (message: string, options: SendOptions = {}): P
 			signal: options.signal
 		});
 
-		if (response.ok) ai.clearPendingImages();
+		if (response.ok) {
+			ai.clearPendingImages();
+			ai.setConnectRequired(false);
+		}
+
+		// 412: no Cloudflare account connected. Surface the dedicated "connect in Settings"
+		// CTA banner (not a generic error) and stop — the turn never ran.
+		if (response.status === 412) {
+			ai.setConnectRequired(true);
+			ai.finalizeAssistantMessage(assistantId);
+			ai.setStreaming(false);
+			return;
+		}
 
 		if (!response.ok) {
 			let payload: unknown = null;

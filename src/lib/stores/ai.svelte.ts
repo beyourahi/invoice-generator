@@ -141,6 +141,9 @@ const createAiStore = () => {
 	let desktopOpen = $state(false);
 	let inputFocusNonce = $state(0);
 	let pendingImages = $state<string[]>([]);
+	// True after the chat endpoint returns 412 (no Cloudflare account connected); drives the
+	// "Connect your Cloudflare account in Settings →" CTA banner in the Copilot, not a raw error.
+	let connectRequired = $state(false);
 
 	const MAX_PENDING_IMAGES = 3;
 
@@ -213,6 +216,11 @@ const createAiStore = () => {
 
 	const setError = (msg: string | null) => {
 		error = msg;
+	};
+
+	// 412 gate: true while the Copilot is blocked on a missing Cloudflare connection.
+	const setConnectRequired = (v: boolean) => {
+		connectRequired = v;
 	};
 
 	// Streaming and input-busy are tied together: an in-flight turn locks the composer.
@@ -429,6 +437,9 @@ const createAiStore = () => {
 		get error() {
 			return error;
 		},
+		get connectRequired() {
+			return connectRequired;
+		},
 		get anomalySettings() {
 			return anomalySettings;
 		},
@@ -461,6 +472,7 @@ const createAiStore = () => {
 		closeRail,
 		setShowUndone,
 		setError,
+		setConnectRequired,
 		setStreaming,
 		updateAnomalySettings,
 		appendUserMessage,

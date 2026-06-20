@@ -1,14 +1,18 @@
 /**
  * Retrieval step for the Copilot: turns the user message into app-help context
  * pulled from the VECTORIZE index, formatted for injection into the user turn.
- * INVARIANT: returns nothing until the index is seeded via POST /api/ai/seed;
+ *
+ * The per-QUERY embedding runs on the USER's own Cloudflare account via the Workers
+ * AI REST API (BYO — billed to the user), NOT the owner's bound `env.AI`. The
+ * VECTORIZE index itself is the owner's, seeded once at build time (see /api/ai/seed,
+ * which still uses `env.AI`). INVARIANT: returns nothing until the index is seeded;
  * the chat turn degrades silently to no APP KNOWLEDGE if the index is empty/unbound.
  * @see ./knowledge.ts (corpus), ./prompts.ts buildUserTurn (consumes formatKnowledge output).
  */
 
-import { embedQuery, type EmbeddingEnv } from "./embeddings";
+import { runEmbeddingViaRest, type CloudflareCreds } from "$lib/server/ai/run-rest";
 
-export interface RagEnv extends EmbeddingEnv {
+export interface RagEnv {
 	VECTORIZE: VectorizeIndex;
 }
 
@@ -24,18 +28,21 @@ const QUERY_INSTRUCTION =
 const MIN_SCORE = 0.4;
 
 /**
- * Embeds `query`, runs a topK similarity search, drops matches below MIN_SCORE
- * and any with empty metadata text. Returns [] for blank queries.
- * @throws propagates embedQuery failure; VECTORIZE.query errors bubble to caller.
+ * Embeds `query` on the user's account, runs a topK similarity search against the
+ * owner's VECTORIZE index, drops matches below MIN_SCORE and any with empty metadata
+ * text. Returns [] for blank queries.
+ * @throws propagates the embedding failure; VECTORIZE.query errors bubble to caller
+ *   (the chat endpoint catches both so RAG fails open).
  */
 export const retrieveAppKnowledge = async (
 	env: RagEnv,
+	creds: CloudflareCreds,
 	query: string,
 	topK = 4
 ): Promise<RagChunk[]> => {
 	const trimmed = query.trim();
 	if (trimmed.length === 0) return [];
-	const vector = await embedQuery(env, trimmed, QUERY_INSTRUCTION);
+	const vector = await runEmbeddingViaRest(creds, trimmed, QUERY_INSTRUCTION);
 	const result = await env.VECTORIZE.query(vector, { topK, returnMetadata: "all" });
 	return (result.matches ?? [])
 		.filter((m) => typeof m.score === "number" && m.score >= MIN_SCORE)

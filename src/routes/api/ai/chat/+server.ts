@@ -17,6 +17,7 @@ import {
 import { checkAndIncrementQuota } from "$lib/server/ai-quota";
 import { checkSpendCap, recordSpend } from "$lib/server/ai-spend";
 import { logChatTurn } from "$lib/server/log";
+import { loadCloudflareConfig, resolveCloudflareCreds } from "$lib/server/ai/cloudflare-config";
 import { projectAppState, decodeTokens } from "$lib/ai/context";
 import {
 	buildSystemContext,
@@ -164,6 +165,25 @@ export const POST: RequestHandler = async (event) => {
 		throw error(400, err instanceof Error ? err.message : "Invalid request body");
 	}
 
+	// BYO gate: the Copilot runs inference on the USER's own Cloudflare account.
+	// Resolve their creds + model before anything else; 412 (with a connect link) if
+	// they haven't connected an account in Settings. Gated before the quota increment
+	// so unconnected users never consume quota.
+	const resolved = await resolveCloudflareCreds(
+		env.TOKEN_ENCRYPTION_KEY ?? "",
+		await loadCloudflareConfig(db, userId)
+	).catch(() => null);
+	if (!resolved) {
+		return json(
+			{
+				error: "Connect your Cloudflare account in Settings to use the copilot.",
+				connect: "/settings"
+			},
+			{ status: 412 }
+		);
+	}
+	const { creds, model } = resolved;
+
 	const quota = await checkAndIncrementQuota(env.AI_QUOTA_KV, userId);
 	if (!quota.allowed) {
 		return json(
@@ -208,7 +228,9 @@ export const POST: RequestHandler = async (event) => {
 	let knowledgeText = "";
 	if (env.VECTORIZE) {
 		try {
-			knowledgeText = formatKnowledge(await retrieveAppKnowledge(env, parsed.message));
+			knowledgeText = formatKnowledge(
+				await retrieveAppKnowledge({ VECTORIZE: env.VECTORIZE }, creds, parsed.message)
+			);
 		} catch {
 			knowledgeText = "";
 		}
@@ -254,14 +276,16 @@ export const POST: RequestHandler = async (event) => {
 			// Buffer the first turn (no live text stream) so we can inspect it for a
 			// false action narration before anything reaches the user.
 			const first = await consume(
-				runChatFrames(env, {
+				runChatFrames({
 					systemContext,
 					history: withFewShots,
 					userMessage: userTurn,
 					conversationId: activeConversationId,
 					images: parsed.images,
 					tools: TOOLS_CATALOG,
-					cacheKey
+					cacheKey,
+					creds,
+					model
 				}),
 				false
 			);
@@ -309,12 +333,14 @@ export const POST: RequestHandler = async (event) => {
 					}
 				];
 				const retry = await consume(
-					runChatFrames(env, {
+					runChatFrames({
 						systemContext,
 						history: retryHistory,
 						userMessage: invalid.length > 0 ? correctiveMessage(invalid) : ACTION_RETRY_MESSAGE,
 						conversationId: activeConversationId,
-						tools: TOOLS_CATALOG
+						tools: TOOLS_CATALOG,
+						creds,
+						model
 					}),
 					false
 				);

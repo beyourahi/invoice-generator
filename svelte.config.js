@@ -13,6 +13,15 @@ const config = {
 			// ($lib → src/lib/ is SvelteKit's default and intentionally not redeclared here.)
 			$src: "src"
 		},
+		// CSRF: form POSTs (the settings actions) are rejected from origins not listed here.
+		// Covers Vite dev (5173), Wrangler preview (8787), and the branded production domain.
+		csrf: {
+			trustedOrigins: [
+				"http://localhost:5173",
+				"http://localhost:8787",
+				"https://invoice-generator.dropoutstudio.co"
+			]
+		},
 		adapter: adapter({
 			platformProxy: {
 				configPath: "wrangler.jsonc"
