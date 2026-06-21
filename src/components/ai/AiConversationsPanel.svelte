@@ -45,7 +45,7 @@
 					<button
 						type="button"
 						onclick={() => onSwitch(conversation.id)}
-						class="flex min-w-0 flex-1 items-center gap-1.5 text-left"
+						class="flex min-w-0 flex-1 touch-manipulation items-center gap-1.5 text-left"
 						aria-current={active ? "true" : undefined}
 					>
 						{#if active}
@@ -62,7 +62,7 @@
 					</button>
 					<button
 						type="button"
-						class="text-chat-text-muted hover:text-chat-text-primary hover:bg-chat-surface-hover rounded-md p-1 transition-colors"
+						class="text-chat-text-muted hover:text-chat-text-primary hover:bg-chat-surface-hover touch-manipulation rounded-md p-1 transition-colors"
 						onclick={() => onRename(conversation.id, conversation.title)}
 						aria-label="Rename chat {conversation.title}"
 						title="Rename"
@@ -71,7 +71,7 @@
 					</button>
 					<button
 						type="button"
-						class="text-chat-text-muted hover:bg-destructive/10 hover:text-destructive rounded-md p-1 transition-colors"
+						class="text-chat-text-muted hover:bg-destructive/10 hover:text-destructive touch-manipulation rounded-md p-1 transition-colors"
 						onclick={() => onDelete(conversation.id)}
 						aria-label="Delete chat {conversation.title}"
 						title="Delete"

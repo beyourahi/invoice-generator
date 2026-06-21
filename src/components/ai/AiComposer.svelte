@@ -139,7 +139,7 @@
 				aria-label={attachFull ? `Attachment limit reached (${ai.maxPendingImages})` : "Attach an image"}
 				title={attachFull ? `Up to ${ai.maxPendingImages} images` : "Attach an image"}
 				class={cn(
-					"ease-[var(--ease)] relative rounded-full p-2 transition-all duration-200",
+					"ease-[var(--ease)] relative touch-manipulation rounded-full p-2 transition-all duration-200",
 					hasImages
 						? "bg-chat-accent-muted text-chat-text-primary"
 						: "text-chat-text-muted hover:text-chat-text-secondary",
@@ -154,7 +154,7 @@
 				disabled={!canSubmit}
 				aria-label={disabled ? "Generating response" : "Send message"}
 				class={cn(
-					"ease-[var(--ease)] rounded-full p-2 transition-all duration-200",
+					"ease-[var(--ease)] touch-manipulation rounded-full p-2 transition-all duration-200",
 					disabled
 						? "bg-chat-accent-muted/40 text-chat-text-muted cursor-not-allowed"
 						: canSubmit

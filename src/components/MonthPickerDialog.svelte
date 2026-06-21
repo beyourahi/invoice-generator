@@ -61,7 +61,7 @@
 		<Dialog.Trigger
 			{disabled}
 			onclick={() => (pending = [])}
-			class="border-hair text-ink-muted pointer-fine:hover:border-white/30 pointer-fine:hover:bg-ink-2 pointer-fine:hover:text-foreground focus-visible:outline-signal h-auto min-h-20 w-full cursor-pointer rounded-xl border border-dashed transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+			class="border-hair text-ink-muted pointer-fine:hover:border-white/30 pointer-fine:hover:bg-ink-2 pointer-fine:hover:text-foreground focus-visible:outline-signal h-auto min-h-20 w-full cursor-pointer touch-manipulation rounded-xl border border-dashed transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
 			aria-label="Add months"
 		>
 			<div class="flex flex-col items-center gap-2 py-3">
@@ -73,7 +73,7 @@
 		<Dialog.Trigger
 			{disabled}
 			onclick={() => (pending = [])}
-			class="border-hair text-foreground pointer-fine:hover:border-signal pointer-fine:hover:bg-ink-2 focus-visible:outline-signal inline-flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-full border bg-transparent px-5 font-mono text-xs whitespace-nowrap uppercase transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+			class="border-hair text-foreground pointer-fine:hover:border-signal pointer-fine:hover:bg-ink-2 focus-visible:outline-signal inline-flex h-10 w-full cursor-pointer touch-manipulation items-center justify-center gap-2 rounded-full border bg-transparent px-5 font-mono text-xs whitespace-nowrap uppercase transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
 			aria-label="Add months"
 		>
 			<Plus size={14} aria-hidden="true" />
@@ -103,7 +103,7 @@
 					disabled={isScheduled}
 					onclick={() => toggleMonth(month)}
 					class={cn(
-						"focus-visible:outline-signal relative flex h-10 items-center justify-center rounded-lg border font-mono text-xs tracking-wider whitespace-nowrap uppercase transition-colors focus-visible:outline-2 focus-visible:outline-offset-2",
+						"focus-visible:outline-signal relative flex h-10 touch-manipulation items-center justify-center rounded-lg border font-mono text-xs tracking-wider whitespace-nowrap uppercase transition-colors focus-visible:outline-2 focus-visible:outline-offset-2",
 						isScheduled
 							? "border-hair text-ink-muted cursor-not-allowed line-through opacity-30"
 							: isSelected
@@ -130,7 +130,9 @@
 				<span></span>
 			{/if}
 			<div class="flex items-center gap-2">
-				<Button variant="ghost" size="sm" class="rounded-full" onclick={() => (open = false)}>Cancel</Button>
+				<Button variant="ghost" size="sm" class="touch-manipulation rounded-full" onclick={() => (open = false)}
+					>Cancel</Button
+				>
 				<Cta variant="primary" arrow={false} disabled={pending.length === 0 || loading} onclick={confirm}>
 					<span class="inline-flex items-center gap-2">
 						{#if loading}

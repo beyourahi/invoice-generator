@@ -151,11 +151,15 @@
 	<title>Settings · Invoice Generator</title>
 </svelte:head>
 
-<main class="mx-auto flex w-full max-w-2xl grow flex-col gap-10 px-4 pt-10 pb-16 sm:px-6 sm:pt-14">
+<main
+	id="main"
+	tabindex="-1"
+	class="mx-auto flex w-full max-w-2xl grow flex-col gap-10 px-4 pt-10 pb-16 outline-none sm:px-6 sm:pt-14"
+>
 	<header class="flex flex-col gap-5">
 		<a
 			href="/"
-			class="text-ink-muted hover:text-foreground focus-visible:outline-signal inline-flex w-fit items-center gap-2 font-mono text-caption tracking-[0.18em] uppercase transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+			class="text-ink-muted hover:text-foreground focus-visible:outline-signal inline-flex w-fit touch-manipulation items-center gap-2 font-mono text-caption tracking-[0.18em] whitespace-nowrap uppercase transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
 		>
 			<ArrowLeft class="size-3.5" /> Back to invoices
 		</a>
@@ -195,7 +199,7 @@
 			</div>
 			<span
 				class={cn(
-					"ml-auto inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-mono text-micro tracking-[0.14em] uppercase",
+					"ml-auto inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-mono text-micro tracking-[0.14em] whitespace-nowrap uppercase",
 					connected ? "border-signal/40 text-foreground" : "border-hair text-ink-muted"
 				)}
 			>
@@ -245,7 +249,8 @@
 				/>
 				<p class="text-ink-muted mt-2 text-caption text-pretty">
 					{#if connected && maskedToken}
-						Stored: <span class="text-foreground font-mono">{maskedToken}</span> — leave blank to keep it.
+						Stored: <span class="text-foreground font-mono wrap-break-word">{maskedToken}</span> — leave blank
+						to keep it.
 					{:else}
 						An API token with the <span class="text-foreground">Account · Workers AI · Read</span>
 						permission. Stored securely. You won't see it again after saving.
@@ -281,7 +286,7 @@
 						disabled={refreshing || !connected}
 						title="Refresh model list"
 						aria-label="Refresh models"
-						class="text-ink-muted hover:text-foreground focus-visible:outline-signal rounded-md p-2 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-40"
+						class="text-ink-muted hover:text-foreground focus-visible:outline-signal touch-manipulation rounded-md p-2 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-40"
 					>
 						<RefreshCw class={cn("size-3.5", refreshing && "animate-spin")} />
 					</button>
@@ -306,7 +311,7 @@
 					href="https://dash.cloudflare.com/profile/api-tokens"
 					target="_blank"
 					rel="noreferrer"
-					class="text-foreground underline underline-offset-2 hover:text-signal"
+					class="text-foreground underline underline-offset-2 wrap-break-word hover:text-signal"
 					>dash.cloudflare.com/profile/api-tokens</a
 				>
 				→ Create Custom Token → permission
@@ -314,7 +319,7 @@
 			</p>
 
 			<div class="flex items-center justify-end gap-3">
-				<Cta type="submit" arrow={false} disabled={saving}>
+				<Cta type="submit" arrow={false} disabled={saving} class="touch-manipulation">
 					{saving ? "Connecting…" : connected ? "Save changes" : "Connect account"}
 				</Cta>
 			</div>
@@ -374,7 +379,9 @@
 											{pk.name || "Face ID / Touch ID"}
 										</p>
 										{#if pk.createdAt && formatDate(pk.createdAt)}
-											<p class="text-ink-muted text-caption">Added {formatDate(pk.createdAt)}</p>
+											<p class="text-ink-muted text-caption tabular-nums">
+												Added {formatDate(pk.createdAt)}
+											</p>
 										{/if}
 									</div>
 								</div>
@@ -383,7 +390,7 @@
 									onclick={() => removePasskey(pk.id)}
 									disabled={passkeyBusy}
 									aria-label="Remove Face ID / Touch ID"
-									class="text-ink-muted hover:text-destructive focus-visible:outline-signal shrink-0 rounded-md p-1 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-40"
+									class="text-ink-muted hover:text-destructive focus-visible:outline-signal shrink-0 touch-manipulation rounded-md p-1 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-40"
 								>
 									<Trash2 class="size-3.5" />
 								</button>
@@ -392,7 +399,13 @@
 					</ul>
 				{/if}
 				<div class="flex flex-wrap items-center gap-2 pt-1">
-					<Cta variant="compact" arrow={false} disabled={passkeyBusy} onclick={() => addPasskey()}>
+					<Cta
+						variant="compact"
+						arrow={false}
+						disabled={passkeyBusy}
+						onclick={() => addPasskey()}
+						class="touch-manipulation"
+					>
 						<span class="inline-flex items-center gap-2">
 							<Fingerprint class="size-3.5" /> Set up Face ID / Touch ID
 						</span>
@@ -422,7 +435,12 @@
 					if (!confirm("Disconnect your Cloudflare account?")) e.preventDefault();
 				}}
 			>
-				<Cta type="submit" variant="secondary" arrow={false} class="text-destructive hover:border-destructive">
+				<Cta
+					type="submit"
+					variant="secondary"
+					arrow={false}
+					class="text-destructive touch-manipulation hover:border-destructive"
+				>
 					Disconnect
 				</Cta>
 			</form>

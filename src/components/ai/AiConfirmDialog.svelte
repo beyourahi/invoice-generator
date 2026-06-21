@@ -170,14 +170,14 @@
 					type="button"
 					onclick={isBatch ? onCancelAll : onReject}
 					use:focusOnMount
-					class="border-hair bg-chat-surface text-chat-text-primary hover:border-signal hover:bg-ink-2 focus-visible:ring-signal ease-[var(--ease)] inline-flex h-9 cursor-pointer items-center rounded-full border px-5 font-mono text-caption tracking-[0.12em] uppercase transition-colors focus:outline-none focus-visible:ring-2"
+					class="border-hair bg-chat-surface text-chat-text-primary hover:border-signal hover:bg-ink-2 focus-visible:ring-signal ease-[var(--ease)] inline-flex h-9 cursor-pointer touch-manipulation items-center rounded-full border px-5 font-mono text-caption whitespace-nowrap tracking-[0.12em] uppercase transition-colors focus:outline-none focus-visible:ring-2"
 				>
 					{isBatch ? "Reject all" : "Reject"}
 				</button>
 				<button
 					type="button"
 					onclick={isBatch ? onApplyAll : onConfirm}
-					class="bg-signal text-background hover:bg-signal/90 focus-visible:ring-signal ease-[var(--ease)] inline-flex h-9 cursor-pointer items-center rounded-full px-5 font-mono text-caption font-medium tracking-[0.12em] uppercase transition-colors focus:outline-none focus-visible:ring-2"
+					class="bg-signal text-background hover:bg-signal/90 focus-visible:ring-signal ease-[var(--ease)] inline-flex h-9 cursor-pointer touch-manipulation items-center rounded-full px-5 font-mono text-caption font-medium whitespace-nowrap tracking-[0.12em] uppercase transition-colors focus:outline-none focus-visible:ring-2"
 				>
 					{isBatch ? "Apply selected" : "Confirm"}
 				</button>

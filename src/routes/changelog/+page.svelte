@@ -47,7 +47,7 @@
 	/>
 </svelte:head>
 
-<main class="mx-auto w-full max-w-2xl px-4 py-14 sm:px-6 sm:py-20">
+<main id="main" tabindex="-1" class="mx-auto w-full max-w-2xl px-4 py-14 outline-none sm:px-6 sm:py-20">
 	<header class="flex flex-col gap-4 sm:gap-5" use:reveal={{ distance: "sm" }}>
 		<Eyebrow>What's new</Eyebrow>
 		<Heading as="h1" size="title" weight={560} class="lowercase">changelog</Heading>
@@ -70,7 +70,7 @@
 					</span>
 					{#if groupIndex === 0}
 						<span
-							class="border-hair text-ink-muted rounded-full border px-2 py-0.5 font-mono text-micro tracking-[0.18em] uppercase"
+							class="border-hair text-ink-muted rounded-full border px-2 py-0.5 font-mono text-micro tracking-[0.18em] whitespace-nowrap uppercase"
 						>
 							Latest
 						</span>

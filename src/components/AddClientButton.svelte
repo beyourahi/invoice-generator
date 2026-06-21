@@ -14,7 +14,7 @@
 </script>
 
 <Cta variant="secondary" arrow={false} class="w-full justify-center" onclick={handleClick}>
-	<span class="inline-flex items-center gap-2">
+	<span class="inline-flex items-center gap-2 whitespace-nowrap">
 		<UserPlus size={15} aria-hidden="true" />
 		Add client
 	</span>

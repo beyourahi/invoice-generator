@@ -120,7 +120,7 @@
 				session.toggleClientExpanded(client.id);
 			}}
 			onkeydown={selectCard}
-			class="pointer-fine:hover:bg-accent/40 flex min-w-0 cursor-pointer items-center gap-3 px-4 py-3 transition-colors"
+			class="pointer-fine:hover:bg-accent/40 flex min-w-0 cursor-pointer touch-manipulation items-center gap-3 px-4 py-3 transition-colors select-none"
 		>
 			<span
 				class={cn(
@@ -377,7 +377,7 @@
 									type="button"
 									onclick={() => session.togglePaymentMethod(client.id, method.id)}
 									class={cn(
-										"group inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs whitespace-nowrap transition-colors",
+										"group inline-flex touch-manipulation items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs whitespace-nowrap transition-colors",
 										active
 											? "border-brand bg-brand/10 text-success"
 											: "border-border text-muted-foreground pointer-fine:hover:border-foreground/40 pointer-fine:hover:text-foreground"

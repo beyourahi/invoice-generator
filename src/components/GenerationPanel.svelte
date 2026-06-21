@@ -221,7 +221,7 @@
 				{#if session.generationState === "done"}
 					<Button
 						class={cn(
-							"bg-signal text-background pointer-fine:hover:bg-signal/90 w-full rounded-full whitespace-nowrap sm:w-auto",
+							"bg-signal text-background pointer-fine:hover:bg-signal/90 w-full touch-manipulation rounded-full whitespace-nowrap sm:w-auto",
 							busyAll && "cursor-wait"
 						)}
 						onclick={downloadAll}
@@ -238,7 +238,7 @@
 					</Button>
 					<Button
 						variant="outline"
-						class="w-full rounded-full whitespace-nowrap sm:w-auto"
+						class="w-full touch-manipulation rounded-full whitespace-nowrap sm:w-auto"
 						onclick={session.resetGeneration}
 						disabled={busyAll}
 					>
@@ -247,7 +247,7 @@
 					</Button>
 				{:else if session.generationState === "error"}
 					<Button
-						class="bg-signal text-background pointer-fine:hover:bg-signal/90 w-full rounded-full whitespace-nowrap sm:w-auto"
+						class="bg-signal text-background pointer-fine:hover:bg-signal/90 w-full touch-manipulation rounded-full whitespace-nowrap sm:w-auto"
 						onclick={generateAll}
 					>
 						<RotateCcw size={14} aria-hidden="true" />
@@ -256,7 +256,7 @@
 				{:else}
 					<Button
 						class={cn(
-							"bg-signal text-background pointer-fine:hover:bg-signal/90 w-full rounded-full whitespace-nowrap sm:w-auto",
+							"bg-signal text-background pointer-fine:hover:bg-signal/90 w-full touch-manipulation rounded-full whitespace-nowrap sm:w-auto",
 							session.generationState === "generating" && "cursor-wait"
 						)}
 						onclick={generateAll}
@@ -340,7 +340,9 @@
 							{@const isBusy = busyClientId === group.clientId}
 							{@const isSingle = group.invoices.length === 1}
 							<Table.Row class="border-border pointer-fine:hover:bg-transparent">
-								<Table.Cell class="bg-card sticky left-0 z-10 py-2 pl-3 text-xs font-medium">
+								<Table.Cell
+									class="bg-card sticky left-0 z-10 py-2 pl-3 text-xs font-medium wrap-break-word"
+								>
 									{group.clientName}
 								</Table.Cell>
 								<Table.Cell class="text-muted-foreground py-2 text-xs tabular-nums">
@@ -355,7 +357,7 @@
 									<Button
 										size="sm"
 										class={cn(
-											"bg-signal text-background pointer-fine:hover:bg-signal/90 w-full rounded-full whitespace-nowrap sm:w-auto",
+											"bg-signal text-background pointer-fine:hover:bg-signal/90 w-full touch-manipulation rounded-full whitespace-nowrap sm:w-auto",
 											isBusy && "cursor-wait"
 										)}
 										onclick={() => downloadGroup(group)}

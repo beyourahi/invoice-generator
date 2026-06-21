@@ -29,7 +29,7 @@
 	const inactive = $derived(!clientActive || !entry.isActive);
 	const suppressed = $derived(!clientActive);
 	const switchTone =
-		"data-[state=checked]:bg-status-active-track data-[state=unchecked]:bg-status-inactive-track status-transition";
+		"data-[state=checked]:bg-status-active-track data-[state=unchecked]:bg-status-inactive-track status-transition touch-manipulation";
 
 	// Strip non-digits and write back to the DOM value so the field never shows rejected chars.
 	const handleNumericInput = (field: "issueDay" | "dueDay", e: Event) => {
@@ -130,7 +130,7 @@
 			<Button
 				variant="ghost"
 				size="icon"
-				class="text-muted-foreground pointer-fine:hover:bg-destructive/10 pointer-fine:hover:text-destructive h-11 w-11 sm:h-9 sm:w-9"
+				class="text-muted-foreground pointer-fine:hover:bg-destructive/10 pointer-fine:hover:text-destructive h-11 w-11 touch-manipulation sm:h-9 sm:w-9"
 				onclick={() => session.removeInvoiceEntry(clientId, entry.id)}
 				aria-label="Remove entry"
 			>
@@ -161,7 +161,7 @@
 			<Button
 				variant="ghost"
 				size="icon"
-				class="text-muted-foreground pointer-fine:hover:bg-destructive/10 pointer-fine:hover:text-destructive h-10 w-10 shrink-0"
+				class="text-muted-foreground pointer-fine:hover:bg-destructive/10 pointer-fine:hover:text-destructive h-10 w-10 shrink-0 touch-manipulation"
 				onclick={() => session.removeInvoiceEntry(clientId, entry.id)}
 				aria-label="Remove entry"
 			>

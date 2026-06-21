@@ -45,7 +45,7 @@
 		aria-label={label}
 		onclick={(e: MouseEvent) => e.stopPropagation()}
 		class={cn(
-			"text-ink-muted pointer-fine:hover:bg-ink-2 pointer-fine:hover:text-foreground focus-visible:outline-signal inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50",
+			"text-ink-muted pointer-fine:hover:bg-ink-2 pointer-fine:hover:text-foreground focus-visible:outline-signal inline-flex h-9 w-9 shrink-0 touch-manipulation items-center justify-center rounded-full transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50",
 			className
 		)}
 	>
@@ -70,7 +70,7 @@
 					disabled={action.disabled}
 					onclick={e => handleAction(action, e)}
 					class={cn(
-						"flex min-h-12 w-full items-center gap-3 rounded-lg px-3 text-left transition-colors",
+						"flex min-h-12 w-full touch-manipulation items-center gap-3 rounded-lg px-3 text-left transition-colors",
 						"pointer-fine:hover:bg-ink-2 pointer-fine:hover:text-foreground",
 						"focus:bg-ink-2 focus:text-foreground focus:outline-none",
 						"disabled:cursor-not-allowed disabled:opacity-40",

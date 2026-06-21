@@ -225,7 +225,7 @@
 									aria-label={preset.label}
 									aria-pressed={widthPreset === preset.value}
 									class={cn(
-										"focus-visible:outline-signal grid size-8 place-items-center rounded-full transition-colors focus-visible:outline-2 focus-visible:outline-offset-2",
+										"focus-visible:outline-signal grid size-8 touch-manipulation place-items-center rounded-full transition-colors focus-visible:outline-2 focus-visible:outline-offset-2",
 										widthPreset === preset.value
 											? "bg-signal text-background"
 											: "text-ink-muted hover:text-foreground"
@@ -243,7 +243,7 @@
 						<Button
 							variant="ghost"
 							size="icon-lg"
-							class="rounded-full"
+							class="touch-manipulation rounded-full"
 							aria-label={isFullscreen ? "Exit fullscreen" : "View fullscreen"}
 							onclick={toggleFullscreen}
 						>

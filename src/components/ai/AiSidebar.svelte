@@ -90,7 +90,7 @@
 			</p>
 			<a
 				href="/settings"
-				class="bg-signal text-background hover:bg-signal/90 focus-visible:outline-signal mt-2.5 inline-flex items-center gap-1.5 rounded-full px-4 py-2 font-mono text-caption tracking-[0.06em] uppercase transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+				class="bg-signal text-background hover:bg-signal/90 focus-visible:outline-signal mt-2.5 inline-flex touch-manipulation items-center gap-1.5 rounded-full px-4 py-2 font-mono text-caption whitespace-nowrap tracking-[0.06em] uppercase transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
 			>
 				Connect in Settings
 				<svg

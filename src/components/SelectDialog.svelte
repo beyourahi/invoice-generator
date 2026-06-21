@@ -88,7 +88,7 @@
 	<Dialog.Trigger
 		{disabled}
 		class={cn(
-			"border-hair bg-ink-2/40 focus-visible:outline-signal inline-flex h-10 w-full items-center justify-between gap-2 rounded-full border px-4 py-2 font-mono text-xs whitespace-nowrap transition-colors hover:border-white/20 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+			"border-hair bg-ink-2/40 focus-visible:outline-signal inline-flex h-10 w-full touch-manipulation items-center justify-between gap-2 rounded-full border px-4 py-2 font-mono text-xs whitespace-nowrap transition-colors hover:border-white/20 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
 			className
 		)}
 		aria-label={title}
@@ -125,7 +125,7 @@
 					use:scrollIntoViewIfSelected={isSelected}
 					onclick={() => handleSelect(option.value)}
 					class={cn(
-						"flex w-full items-center gap-3 rounded-lg border px-3 py-2 text-left transition-colors focus:outline-none",
+						"flex w-full touch-manipulation items-center gap-3 rounded-lg border px-3 py-2 text-left transition-colors focus:outline-none",
 						isSelected
 							? "border-signal bg-ink-2"
 							: "border-transparent hover:bg-ink-2/60 focus:bg-ink-2/60",

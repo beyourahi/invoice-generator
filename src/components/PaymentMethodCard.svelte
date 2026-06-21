@@ -120,7 +120,7 @@
 		tabindex="0"
 		onclick={() => onToggle?.(!expanded)}
 		onkeydown={toggleKey}
-		class="pointer-fine:hover:bg-accent/40 flex w-full cursor-pointer items-center gap-3 px-3 py-2.5 text-left transition-colors"
+		class="pointer-fine:hover:bg-accent/40 flex w-full cursor-pointer touch-manipulation items-center gap-3 px-3 py-2.5 text-left transition-colors select-none"
 		aria-expanded={expanded}
 		aria-controls="method-panel-{method.id}"
 	>
@@ -141,7 +141,7 @@
 				<Button
 					variant="ghost"
 					size="icon-sm"
-					class="text-muted-foreground pointer-fine:hover:text-foreground h-8 w-8"
+					class="text-muted-foreground pointer-fine:hover:text-foreground h-8 w-8 touch-manipulation"
 					onclick={(e: MouseEvent) => move(-1, e)}
 					disabled={index === 0}
 					aria-label="Move up"
@@ -151,7 +151,7 @@
 				<Button
 					variant="ghost"
 					size="icon-sm"
-					class="text-muted-foreground pointer-fine:hover:text-foreground h-8 w-8"
+					class="text-muted-foreground pointer-fine:hover:text-foreground h-8 w-8 touch-manipulation"
 					onclick={(e: MouseEvent) => move(1, e)}
 					disabled={index === total - 1}
 					aria-label="Move down"
@@ -161,7 +161,7 @@
 				<Button
 					variant="ghost"
 					size="icon-sm"
-					class="text-muted-foreground pointer-fine:hover:bg-destructive/10 pointer-fine:hover:text-destructive h-8 w-8"
+					class="text-muted-foreground pointer-fine:hover:bg-destructive/10 pointer-fine:hover:text-destructive h-8 w-8 touch-manipulation"
 					onclick={remove}
 					aria-label="Remove payment method"
 				>

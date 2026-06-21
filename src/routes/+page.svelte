@@ -130,7 +130,11 @@
 	<SignInButton />
 {/if}
 
-<main class="flex w-full min-w-0 grow flex-col px-[var(--content-x)] py-16 sm:py-20">
+<main
+	id="main"
+	tabindex="-1"
+	class="flex w-full min-w-0 grow flex-col px-[var(--content-x)] py-16 sm:py-20 outline-none"
+>
 	<div class="m-auto flex w-full min-w-0 flex-col items-center gap-12 sm:gap-16 lg:gap-16">
 		<div use:reveal>
 			<Heading />
@@ -141,14 +145,14 @@
 				<Tabs.List class="w-full self-center group-data-horizontal/tabs:h-auto sm:w-fit">
 					<Tabs.Trigger
 						value="details"
-						class="h-auto min-h-11 gap-2 px-4 py-3 font-mono text-xs tracking-[0.1em] uppercase sm:px-6"
+						class="h-auto min-h-11 gap-2 px-4 py-3 font-mono text-xs tracking-[0.1em] whitespace-nowrap uppercase sm:px-6"
 					>
 						<SquarePen aria-hidden="true" />
 						Details
 					</Tabs.Trigger>
 					<Tabs.Trigger
 						value="preview"
-						class="h-auto min-h-11 gap-2 px-4 py-3 font-mono text-xs tracking-[0.1em] uppercase sm:px-6"
+						class="h-auto min-h-11 gap-2 px-4 py-3 font-mono text-xs tracking-[0.1em] whitespace-nowrap uppercase sm:px-6"
 					>
 						<ScanLine aria-hidden="true" />
 						Preview
@@ -176,7 +180,7 @@
 
 							{#if session.clients.length === 0}
 								<button
-									class="border-hair text-ink-muted pointer-fine:hover:border-signal/40 pointer-fine:hover:text-foreground grid min-h-36 w-full cursor-pointer place-items-center rounded-xl border border-dashed text-center transition-colors duration-[var(--motion-base)] ease-[var(--ease)]"
+									class="border-hair text-ink-muted pointer-fine:hover:border-signal/40 pointer-fine:hover:text-foreground grid min-h-36 w-full cursor-pointer touch-manipulation place-items-center rounded-xl border border-dashed text-center transition-colors duration-[var(--motion-base)] ease-[var(--ease)]"
 									onclick={session.addClient}
 									aria-label="Add client"
 								>
