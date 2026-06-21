@@ -86,8 +86,7 @@
 			connected yet. Direct them to Settings instead of showing a raw error. -->
 		<div role="alert" class="border-chat-border-subtle border-t border-solid px-4 py-3">
 			<p class="text-chat-text-muted text-xs text-pretty">
-				The Copilot runs on your own Cloudflare account. Connect one to start chatting — inference is billed to
-				you.
+				The Copilot runs on your own Cloudflare account. Connect one to start chatting.
 			</p>
 			<a
 				href="/settings"

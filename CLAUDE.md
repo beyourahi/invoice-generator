@@ -105,7 +105,7 @@ Refresh DS with `bun run sync-ds`. **Never hand-edit files under `src/lib/ds/`**
 
 The server layer handles authentication, data persistence, and AI Copilot inference — the PDF pipeline remains entirely client-side.
 
-- **`$lib/server/auth.ts`** — `createAuth(d1, env)` factory. Returns a Better Auth instance configured with Google OAuth, the `oneTap()` and `passkey()` plugins, Drizzle adapter (D1/SQLite), 7-day session expiry, 5-minute cookie cache, and database rate limiting. `env` must include `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`. Passkey `rpID`/`origin` are derived from `BETTER_AUTH_URL` so dev/preview/prod all validate (`userVerification: "required"` forces the biometric gesture).
+- **`$lib/server/auth.ts`** — `createAuth(d1, env)` factory. Returns a Better Auth instance configured with Google OAuth, the `oneTap()` and `passkey()` plugins, Drizzle adapter (D1/SQLite), 7-day session expiry, 5-minute cookie cache, and database rate limiting. `env` must include `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`. Passkey `rpID`/`origin` are derived from `BETTER_AUTH_URL` so dev/preview/prod all validate. `authenticatorSelection: { authenticatorAttachment: "platform", residentKey: "required", userVerification: "required" }` restricts registration to platform biometrics (Face ID / Touch ID — no roaming security keys) and forces the gesture (registration-time only; existing credentials keep working).
 
 - **`$lib/server/schema.ts`** — Drizzle schema for all tables: Better Auth tables (`users`, `sessions`, `accounts`, `verifications`, `rateLimits`, `passkeys`), app tables (`fixedSettings`, `paymentMethods`, `clients`, `clientPaymentMethods`, `invoiceEntries`), AI Copilot tables (`aiConversations`, `aiMessages`, `aiActions`), and `userSettings` (one row per user, PK `user_id` cascade-delete; holds the BYO Cloudflare connection: `cloudflare_token_encrypted` blob, `cloudflare_account_id`, `cloudflare_model`). Snake_case column names required by the Drizzle adapter.
 
@@ -135,7 +135,7 @@ The server layer handles authentication, data persistence, and AI Copilot infere
 
 - **`src/routes/+page.server.ts`** — **No auth guard / no redirect.** Only when `d1 && locals.user` does it load full `AppState` from D1 via `loadAppState` plus the AI Copilot hydration payload (conversations, messages, actions, anomaly settings); anonymous visitors get empty shells (`emptyAi(aiEnabled)`) and re-seed client-side from localStorage. Always returns `{ user, currentUser, appState, ai }`.
 
-- **`src/routes/login/+page.svelte`** — Sign-in page: "Continue with Google" (social OAuth), auto-prompted Google One Tap (when `PUBLIC_GOOGLE_CLIENT_ID` is set), and "Sign in with a passkey" (WebAuthn — gated on `window.PublicKeyCredential`). Redirects to the `?redirect=` target (default `/`) on success.
+- **`src/routes/login/+page.svelte`** — Sign-in page: "Continue with Google" (social OAuth), auto-prompted Google One Tap (when `PUBLIC_GOOGLE_CLIENT_ID` is set), and "Sign in with Face ID / Touch ID" (WebAuthn platform biometrics — gated on `window.PublicKeyCredential`). Redirects to the `?redirect=` target (default `/`) on success.
 
 - **`src/routes/login/+page.server.ts`** — Redirects to `/` if already authenticated.
 

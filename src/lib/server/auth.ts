@@ -53,15 +53,20 @@ export const createAuth = (d1: D1Database, env: AuthEnv) => {
 			// provider, no new table). Reuses the configured Google client; the browser
 			// client (auth-client.ts) supplies the public client id.
 			oneTap(),
-			// Passkey / WebAuthn = device biometrics (Face ID / Touch ID / fingerprint).
-			// `userVerification: "required"` forces the biometric/PIN gesture. Attachment is
-			// left unset so platform biometrics AND roaming security keys can both register;
-			// the biometric (platform) path is chosen per-registration in /settings.
+			// Passkey / WebAuthn = device biometrics (Face ID / Touch ID; also Windows Hello /
+			// Android fingerprint — all platform authenticators). `authenticatorAttachment:
+			// "platform"` gates registration to the built-in biometric, excluding roaming
+			// security keys; `userVerification: "required"` forces the biometric/PIN gesture.
+			// Registration-time only, so existing passkeys keep working.
 			passkey({
 				rpID,
 				rpName: "Invoice Generator",
 				origin: passkeyOrigin,
-				authenticatorSelection: { residentKey: "preferred", userVerification: "required" }
+				authenticatorSelection: {
+					authenticatorAttachment: "platform",
+					residentKey: "required",
+					userVerification: "required"
+				}
 			})
 		],
 		session: {
