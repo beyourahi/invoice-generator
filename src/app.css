@@ -655,6 +655,18 @@ textarea,
 	}
 }
 
+[data-slot="select-content"] {
+	--tw-duration: 120ms;
+	animation-timing-function: var(--ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	[data-slot="select-content"] {
+		--tw-duration: 0ms;
+		animation: none;
+	}
+}
+
 ::view-transition-old(root),
 ::view-transition-new(root) {
 	animation-duration: var(--motion-base);

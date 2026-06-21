@@ -12,6 +12,7 @@
 	import { authClient } from "$lib/auth-client";
 	import { ArrowLeft, RefreshCw, Fingerprint, Trash2 } from "@lucide/svelte";
 	import { Eyebrow, Heading, Input, Cta, cn, inputBase, labelBase } from "$lib/ds";
+	import * as Select from "$lib/components/ui/select";
 	import type { PageData, ActionData } from "./$types";
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -48,6 +49,8 @@
 		}
 		return opts;
 	});
+
+	const selectedModelLabel = $derived(modelOptions.find(o => o.id === model)?.label ?? "Select a model");
 
 	let refreshing = $state(false);
 	const refreshModels = async () => {
@@ -291,16 +294,29 @@
 						<RefreshCw class={cn("size-3.5", refreshing && "animate-spin")} />
 					</button>
 					<div class="w-full sm:w-80">
-						<select
-							id="cf-model"
-							name="cloudflareModel"
-							bind:value={model}
-							class={cn(inputBase, "appearance-none text-caption")}
-						>
-							{#each modelOptions as opt (opt.id)}
-								<option value={opt.id}>{opt.label}</option>
-							{/each}
-						</select>
+						<Select.Root type="single" name="cloudflareModel" bind:value={model}>
+							<Select.Trigger
+								id="cf-model"
+								aria-label="Chat model"
+								class={cn(
+									inputBase,
+									"flex h-auto w-full items-center justify-between gap-2 text-caption [&>svg]:size-4 [&>svg]:shrink-0 [&>svg]:opacity-60"
+								)}
+							>
+								<span class="min-w-0 truncate text-left">{selectedModelLabel}</span>
+							</Select.Trigger>
+							<Select.Content
+								class="border-hair bg-card max-h-72 w-(--bits-select-anchor-width) rounded-xl p-1 shadow-lg ring-0"
+							>
+								{#each modelOptions as opt (opt.id)}
+									<Select.Item
+										value={opt.id}
+										label={opt.label}
+										class="text-foreground data-highlighted:bg-ink-2 focus:bg-ink-2 ease-[var(--ease)] cursor-pointer rounded-lg px-2.5 py-2 text-caption transition-colors [&_.cn-select-item-indicator-icon]:text-signal"
+									/>
+								{/each}
+							</Select.Content>
+						</Select.Root>
 					</div>
 				</div>
 			</div>

@@ -11,6 +11,7 @@
 	import { respondToConfirmation, respondToAllConfirmations } from "$lib/ai/chat-client";
 	import { motionDuration } from "$lib/motion";
 	import { ShieldCheck, Undo2 } from "@lucide/svelte";
+	import { Switch } from "$lib/components/ui/switch";
 	import AiAnomalyWarning from "./AiAnomalyWarning.svelte";
 	import { toolLabel } from "$lib/ai/tool-labels";
 
@@ -90,14 +91,7 @@
 							<li
 								class="border-chat-border-subtle bg-chat-surface rounded-md border border-solid p-2 text-xs"
 							>
-								<div class="flex items-start gap-2">
-									<input
-										type="checkbox"
-										class="mt-0.5"
-										checked={rejected.has(req.toolCallId)}
-										onchange={() => onToggleReject(req.toolCallId)}
-										aria-label="Reject {req.humanLabel}"
-									/>
+								<div class="flex items-start gap-3">
 									<div class="flex flex-1 flex-col gap-1">
 										<span
 											class={rejected.has(req.toolCallId)
@@ -117,6 +111,21 @@
 										<span class="text-chat-text-muted text-micro text-pretty">
 											{req.inverseSummary}
 										</span>
+									</div>
+									<div class="flex shrink-0 flex-col items-center gap-1 pt-0.5">
+										<Switch
+											id="reject-{req.toolCallId}"
+											size="sm"
+											checked={rejected.has(req.toolCallId)}
+											onCheckedChange={() => onToggleReject(req.toolCallId)}
+											aria-label="Reject {req.humanLabel}"
+										/>
+										<label
+											for="reject-{req.toolCallId}"
+											class="text-chat-text-muted text-micro tracking-[0.1em] uppercase select-none"
+										>
+											Reject
+										</label>
 									</div>
 								</div>
 							</li>
