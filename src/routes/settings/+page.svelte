@@ -155,7 +155,7 @@
 	<header class="flex flex-col gap-5">
 		<a
 			href="/"
-			class="text-ink-muted hover:text-foreground focus-visible:outline-signal inline-flex w-fit items-center gap-2 font-mono text-[11px] tracking-[0.18em] uppercase transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+			class="text-ink-muted hover:text-foreground focus-visible:outline-signal inline-flex w-fit items-center gap-2 font-mono text-caption tracking-[0.18em] uppercase transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
 		>
 			<ArrowLeft class="size-3.5" /> Back to invoices
 		</a>
@@ -190,13 +190,13 @@
 			</span>
 			<div>
 				<h2 class="text-foreground text-sm font-semibold tracking-tight">Cloudflare account</h2>
-				<p class="text-ink-muted mt-0.5 text-[11px]">
+				<p class="text-ink-muted mt-0.5 text-caption">
 					{connected ? "Connected — the Copilot is ready." : "Not connected — the Copilot is disabled."}
 				</p>
 			</div>
 			<span
 				class={cn(
-					"ml-auto inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-mono text-[10px] tracking-[0.14em] uppercase",
+					"ml-auto inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-mono text-micro tracking-[0.14em] uppercase",
 					connected ? "border-signal/40 text-foreground" : "border-hair text-ink-muted"
 				)}
 			>
@@ -244,7 +244,7 @@
 					placeholder={maskedToken || "v1.0-…"}
 					autocomplete="off"
 				/>
-				<p class="text-ink-muted mt-2 text-[11px] text-pretty">
+				<p class="text-ink-muted mt-2 text-caption text-pretty">
 					{connected && maskedToken
 						? `Stored: ${maskedToken} — leave blank to keep it.`
 						: "Scoped token with the Account · Workers AI · Read permission. Encrypted at rest."}
@@ -260,7 +260,7 @@
 					placeholder="0123456789abcdef…"
 					autocomplete="off"
 				/>
-				<p class="text-ink-muted mt-2 text-[11px] text-pretty">
+				<p class="text-ink-muted mt-2 text-caption text-pretty">
 					Right sidebar of any account page in the Cloudflare dashboard.
 				</p>
 			</div>
@@ -268,7 +268,7 @@
 			<div class="border-hair flex flex-col gap-3 border-t pt-5 sm:flex-row sm:items-end sm:justify-between">
 				<div class="min-w-0">
 					<label class={labelBase} for="cf-model">Chat model</label>
-					<p class="text-ink-muted text-[11px] text-pretty">
+					<p class="text-ink-muted text-caption text-pretty">
 						Kimi K2.6 is the recommended default. Others are experimental — quality varies.
 					</p>
 				</div>
@@ -288,7 +288,7 @@
 							id="cf-model"
 							name="cloudflareModel"
 							bind:value={model}
-							class={cn(inputBase, "appearance-none text-[11px]")}
+							class={cn(inputBase, "appearance-none text-caption")}
 						>
 							{#each modelOptions as opt (opt.id)}
 								<option value={opt.id}>{opt.label}</option>
@@ -298,7 +298,7 @@
 				</div>
 			</div>
 
-			<p class="text-ink-muted text-[11px] leading-relaxed text-pretty">
+			<p class="text-ink-muted text-caption leading-relaxed text-pretty">
 				Create a token at
 				<a
 					href="https://dash.cloudflare.com/profile/api-tokens"
@@ -326,7 +326,7 @@
 			</span>
 			<div>
 				<h2 class="text-foreground text-sm font-semibold tracking-tight">Passkeys</h2>
-				<p class="text-ink-muted mt-0.5 text-[11px]">
+				<p class="text-ink-muted mt-0.5 text-caption">
 					Sign in with Face ID, Touch ID, or a fingerprint instead of Google.
 				</p>
 			</div>
@@ -375,7 +375,7 @@
 											{pk.name || "Passkey"}
 										</p>
 										{#if pk.createdAt && formatDate(pk.createdAt)}
-											<p class="text-ink-muted text-[11px]">Added {formatDate(pk.createdAt)}</p>
+											<p class="text-ink-muted text-caption">Added {formatDate(pk.createdAt)}</p>
 										{/if}
 									</div>
 								</div>
@@ -414,7 +414,7 @@
 		>
 			<div>
 				<p class="text-foreground text-sm font-medium">Disconnect</p>
-				<p class="text-ink-muted mt-1 text-[11px] text-pretty">
+				<p class="text-ink-muted mt-1 text-caption text-pretty">
 					Removes the encrypted token and account ID. The Copilot is disabled until you reconnect.
 				</p>
 			</div>

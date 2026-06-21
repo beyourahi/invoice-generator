@@ -107,14 +107,14 @@
 											{req.humanLabel}
 										</span>
 										<span
-											class="text-chat-text-muted font-mono text-[10px] tracking-[0.12em] uppercase"
+											class="text-chat-text-muted font-mono text-micro tracking-[0.12em] uppercase"
 										>
 											{toolLabel(req.toolName)}
 										</span>
 										{#if req.anomalies.length > 0}
 											<AiAnomalyWarning anomalies={req.anomalies} />
 										{/if}
-										<span class="text-chat-text-muted text-[10px] text-pretty">
+										<span class="text-chat-text-muted text-micro text-pretty">
 											{req.inverseSummary}
 										</span>
 									</div>
@@ -134,7 +134,7 @@
 						>
 							{#each first.diff as row, i (i)}
 								<div class="space-y-1">
-									<div class="text-chat-text-muted font-mono text-[10px] tracking-[0.12em] uppercase">
+									<div class="text-chat-text-muted font-mono text-micro tracking-[0.12em] uppercase">
 										{row.label}
 									</div>
 									<div class="flex items-start gap-2 text-xs">
@@ -158,7 +158,7 @@
 						<AiAnomalyWarning anomalies={first.anomalies} />
 					{/if}
 
-					<p class="text-chat-text-muted flex items-start gap-1.5 text-[11px] text-pretty">
+					<p class="text-chat-text-muted flex items-start gap-1.5 text-caption text-pretty">
 						<Undo2 class="mt-px size-3 shrink-0" aria-hidden="true" />
 						<span>{first.inverseSummary}</span>
 					</p>
@@ -170,14 +170,14 @@
 					type="button"
 					onclick={isBatch ? onCancelAll : onReject}
 					use:focusOnMount
-					class="border-hair bg-chat-surface text-chat-text-primary hover:border-signal hover:bg-ink-2 focus-visible:ring-signal ease-[var(--ease)] inline-flex h-9 cursor-pointer items-center rounded-full border px-5 font-mono text-[12px] tracking-[0.12em] uppercase transition-colors focus:outline-none focus-visible:ring-2"
+					class="border-hair bg-chat-surface text-chat-text-primary hover:border-signal hover:bg-ink-2 focus-visible:ring-signal ease-[var(--ease)] inline-flex h-9 cursor-pointer items-center rounded-full border px-5 font-mono text-caption tracking-[0.12em] uppercase transition-colors focus:outline-none focus-visible:ring-2"
 				>
 					{isBatch ? "Reject all" : "Reject"}
 				</button>
 				<button
 					type="button"
 					onclick={isBatch ? onApplyAll : onConfirm}
-					class="bg-signal text-background hover:bg-signal/90 focus-visible:ring-signal ease-[var(--ease)] inline-flex h-9 cursor-pointer items-center rounded-full px-5 font-mono text-[12px] font-medium tracking-[0.12em] uppercase transition-colors focus:outline-none focus-visible:ring-2"
+					class="bg-signal text-background hover:bg-signal/90 focus-visible:ring-signal ease-[var(--ease)] inline-flex h-9 cursor-pointer items-center rounded-full px-5 font-mono text-caption font-medium tracking-[0.12em] uppercase transition-colors focus:outline-none focus-visible:ring-2"
 				>
 					{isBatch ? "Apply selected" : "Confirm"}
 				</button>

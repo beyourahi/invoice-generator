@@ -199,7 +199,7 @@
 						<span class="whitespace-nowrap">{totalCount} invoice{totalCount !== 1 ? "s" : ""}</span>
 					{:else}
 						<span
-							class="border-status-active-border bg-status-active-bg text-status-active-foreground status-transition inline-flex items-center gap-1 rounded-full border px-1.5 py-px text-[10px] font-medium tracking-wide whitespace-nowrap uppercase"
+							class="border-status-active-border bg-status-active-bg text-status-active-foreground status-transition text-micro inline-flex items-center gap-1 rounded-full border px-1.5 py-px font-medium tracking-wide whitespace-nowrap uppercase"
 						>
 							<span
 								class="bg-status-active status-dot-pulse inline-block size-1.5 rounded-full"
@@ -208,7 +208,7 @@
 							{generatableCount} active
 						</span>
 						<span
-							class="border-status-inactive-border bg-status-inactive-bg text-status-inactive-foreground status-transition inline-flex items-center gap-1 rounded-full border px-1.5 py-px text-[10px] font-medium tracking-wide whitespace-nowrap uppercase"
+							class="border-status-inactive-border bg-status-inactive-bg text-status-inactive-foreground status-transition text-micro inline-flex items-center gap-1 rounded-full border px-1.5 py-px font-medium tracking-wide whitespace-nowrap uppercase"
 						>
 							<span class="bg-status-inactive inline-block size-1.5 rounded-full" aria-hidden="true"
 							></span>
@@ -319,14 +319,16 @@
 				<Table.Root>
 					<Table.Header>
 						<Table.Row class="border-border pointer-fine:hover:bg-transparent">
-							<Table.Head class="h-9 pl-3 text-[11px] tracking-wider whitespace-nowrap uppercase">
+							<Table.Head
+								class="bg-card text-caption sticky left-0 z-10 h-9 pl-3 tracking-wider whitespace-nowrap uppercase"
+							>
 								Client
 							</Table.Head>
-							<Table.Head class="h-9 text-[11px] tracking-wider whitespace-nowrap uppercase">
+							<Table.Head class="text-caption h-9 tracking-wider whitespace-nowrap uppercase">
 								Invoices
 							</Table.Head>
 							<Table.Head
-								class="hidden h-9 text-[11px] tracking-wider whitespace-nowrap uppercase sm:table-cell"
+								class="text-caption hidden h-9 tracking-wider whitespace-nowrap uppercase sm:table-cell"
 							>
 								Year
 							</Table.Head>
@@ -338,7 +340,9 @@
 							{@const isBusy = busyClientId === group.clientId}
 							{@const isSingle = group.invoices.length === 1}
 							<Table.Row class="border-border pointer-fine:hover:bg-transparent">
-								<Table.Cell class="py-2 pl-3 text-xs font-medium">{group.clientName}</Table.Cell>
+								<Table.Cell class="bg-card sticky left-0 z-10 py-2 pl-3 text-xs font-medium">
+									{group.clientName}
+								</Table.Cell>
 								<Table.Cell class="text-muted-foreground py-2 text-xs tabular-nums">
 									{group.invoices.length}
 								</Table.Cell>

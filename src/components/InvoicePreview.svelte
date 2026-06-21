@@ -215,7 +215,7 @@
 						<div
 							role="group"
 							aria-label="Preview width"
-							class="border-hair bg-ink-2/40 flex items-center gap-0.5 rounded-full border p-[3px]"
+							class="border-hair bg-ink-2/40 flex items-center gap-0.5 rounded-full border p-0.5"
 						>
 							{#each WIDTH_PRESETS as preset (preset.value)}
 								{@const Icon = preset.icon}

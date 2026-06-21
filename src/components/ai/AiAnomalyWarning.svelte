@@ -9,7 +9,7 @@
 {#if anomalies.length > 0}
 	<div class="border-hair bg-ink-2 text-chat-text-secondary rounded-md border p-3 text-xs">
 		<div
-			class="text-chat-text-primary mb-1.5 flex items-center gap-1.5 font-mono text-[11px] tracking-[0.18em] uppercase"
+			class="text-chat-text-primary mb-1.5 flex items-center gap-1.5 font-mono text-caption tracking-[0.18em] uppercase"
 		>
 			<AlertTriangle class="size-3.5 shrink-0" aria-hidden="true" />
 			<span class="whitespace-nowrap">Safety check</span>

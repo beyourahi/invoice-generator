@@ -126,7 +126,7 @@
 	>
 		<span
 			class={cn(
-				"rounded-md px-1.5 py-0.5 font-mono text-[11px] tracking-wider whitespace-nowrap uppercase",
+				"text-caption rounded-md px-1.5 py-0.5 font-mono tracking-wider whitespace-nowrap uppercase",
 				complete ? "bg-brand/15 text-success" : "bg-muted text-muted-foreground"
 			)}
 		>
@@ -202,7 +202,7 @@
 						<Field.FieldLabel for="{method.id}-{field.key}">
 							{field.label}
 							{#if field.optional}
-								<span class="text-muted-foreground ml-1 text-[11px]">optional</span>
+								<span class="text-muted-foreground text-caption ml-1">optional</span>
 							{/if}
 						</Field.FieldLabel>
 						{#if field.type === "textarea"}

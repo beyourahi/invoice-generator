@@ -86,7 +86,7 @@
 								{/each}
 							</p>
 						{:else if block.type === "heading"}
-							<p class="text-chat-text-primary text-[0.9rem] font-semibold text-balance">
+							<p class="text-chat-text-primary text-label font-semibold text-balance">
 								{@render inline(block.nodes)}
 							</p>
 						{:else if block.type === "list"}
@@ -132,7 +132,7 @@
 		{/if}
 
 		{#if (message.content || (message.images && message.images.length > 0)) && timeLabel}
-			<span class="text-chat-text-muted px-1 text-[10px] tabular-nums">{timeLabel}</span>
+			<span class="text-chat-text-muted px-1 text-micro tabular-nums">{timeLabel}</span>
 		{/if}
 	</div>
 </div>

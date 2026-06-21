@@ -1,4 +1,7 @@
-<!-- Animated wave-bar placeholder shown while awaiting the assistant's first streamed tokens. -->
+<!-- Animated wave-bar placeholder shown while awaiting the assistant's first streamed tokens.
+	The bars use rounded-[1px] (optical exception): a DS radius token would round the 2px-wide
+	bars into pills. -->
+
 <div class="mb-3 flex justify-start" role="status" aria-label="Generating response">
 	<div class="chat-message-enter">
 		<div

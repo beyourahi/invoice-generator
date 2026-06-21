@@ -141,14 +141,14 @@
 				<Tabs.List class="w-full self-center group-data-horizontal/tabs:h-auto sm:w-fit">
 					<Tabs.Trigger
 						value="details"
-						class="h-auto min-h-11 gap-2 px-6 py-3 font-mono text-xs tracking-[0.1em] uppercase"
+						class="h-auto min-h-11 gap-2 px-4 py-3 font-mono text-xs tracking-[0.1em] uppercase sm:px-6"
 					>
 						<SquarePen aria-hidden="true" />
 						Details
 					</Tabs.Trigger>
 					<Tabs.Trigger
 						value="preview"
-						class="h-auto min-h-11 gap-2 px-6 py-3 font-mono text-xs tracking-[0.1em] uppercase"
+						class="h-auto min-h-11 gap-2 px-4 py-3 font-mono text-xs tracking-[0.1em] uppercase sm:px-6"
 					>
 						<ScanLine aria-hidden="true" />
 						Preview
@@ -176,7 +176,7 @@
 
 							{#if session.clients.length === 0}
 								<button
-									class="border-hair text-ink-muted pointer-fine:hover:border-signal/40 pointer-fine:hover:text-foreground grid min-h-36 w-full cursor-pointer place-items-center rounded-xl border border-dashed text-center transition-colors duration-[250ms] ease-[var(--ease)]"
+									class="border-hair text-ink-muted pointer-fine:hover:border-signal/40 pointer-fine:hover:text-foreground grid min-h-36 w-full cursor-pointer place-items-center rounded-xl border border-dashed text-center transition-colors duration-[var(--motion-base)] ease-[var(--ease)]"
 									onclick={session.addClient}
 									aria-label="Add client"
 								>

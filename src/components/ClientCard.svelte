@@ -124,7 +124,7 @@
 		>
 			<span
 				class={cn(
-					"status-transition text-muted-foreground w-6 shrink-0 font-mono text-[11px] whitespace-nowrap tabular-nums",
+					"status-transition text-muted-foreground text-caption w-6 shrink-0 font-mono whitespace-nowrap tabular-nums",
 					!client.isActive && "opacity-70"
 				)}
 			>
@@ -146,12 +146,12 @@
 				)}
 			>
 				<span
-					class="bg-muted text-muted-foreground rounded-md px-1.5 py-0.5 font-mono text-[11px] whitespace-nowrap"
+					class="bg-muted text-muted-foreground text-caption rounded-md px-1.5 py-0.5 font-mono whitespace-nowrap"
 				>
 					{client.service.currency}
 				</span>
 				<span
-					class="bg-muted text-muted-foreground max-w-[140px] truncate rounded-md px-1.5 py-0.5 text-[11px] whitespace-nowrap"
+					class="bg-muted text-muted-foreground text-caption max-w-[140px] truncate rounded-md px-1.5 py-0.5 whitespace-nowrap"
 				>
 					{paymentSummary}
 				</span>
@@ -300,7 +300,7 @@
 						/>
 						<Field.FieldDescription>
 							Insert
-							<code class="bg-muted text-foreground rounded px-1 py-0.5 font-mono text-[11px]">
+							<code class="bg-muted text-foreground text-caption rounded px-1 py-0.5 font-mono">
 								{"{MONTH}"}
 							</code>
 							to auto-fill each invoice's month name (e.g. January).
@@ -392,7 +392,7 @@
 									<span class="font-medium whitespace-nowrap">{method.label || def.name}</span>
 									<span
 										class={cn(
-											"font-mono text-[11px] whitespace-nowrap uppercase",
+											"text-caption font-mono whitespace-nowrap uppercase",
 											active ? "text-success/80" : "text-muted-foreground"
 										)}
 									>
@@ -427,20 +427,20 @@
 							<Table.Root>
 								<Table.Header>
 									<Table.Row class="border-border pointer-fine:hover:bg-transparent">
-										<Table.Head class="h-8 pl-0 text-[11px] tracking-wider uppercase"
+										<Table.Head class="text-caption h-8 pl-0 tracking-wider uppercase"
 											>Month</Table.Head
 										>
 										<Table.Head
-											class="h-8 w-[72px] text-center text-[11px] tracking-wider uppercase"
+											class="text-caption h-8 w-[72px] text-center tracking-wider uppercase"
 										>
 											Issue
 										</Table.Head>
 										<Table.Head
-											class="h-8 w-[72px] text-center text-[11px] tracking-wider uppercase"
+											class="text-caption h-8 w-[72px] text-center tracking-wider uppercase"
 										>
 											Due
 										</Table.Head>
-										<Table.Head class="h-8 w-12 text-center text-[11px] tracking-wider uppercase">
+										<Table.Head class="text-caption h-8 w-12 text-center tracking-wider uppercase">
 											Active
 										</Table.Head>
 										<Table.Head class="h-8 w-8"></Table.Head>

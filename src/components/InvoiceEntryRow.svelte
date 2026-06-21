@@ -56,7 +56,7 @@
 						class={cn(switchTone, "cursor-not-allowed opacity-60")}
 					/>
 				</Tooltip.Trigger>
-				<Tooltip.Content side="left" class="text-[11px]">
+				<Tooltip.Content side="left" class="text-caption">
 					Client is inactive — all invoices suppressed
 				</Tooltip.Content>
 			</Tooltip.Root>
@@ -172,7 +172,7 @@
 			<div class="space-y-1">
 				<label
 					for="issue-{entry.id}"
-					class="text-ink-muted block font-mono text-[10px] tracking-[0.12em] uppercase"
+					class="text-ink-muted text-micro block font-mono tracking-[0.12em] uppercase"
 				>
 					Issue
 				</label>
@@ -191,7 +191,7 @@
 			<div class="space-y-1">
 				<label
 					for="due-{entry.id}"
-					class="text-ink-muted block font-mono text-[10px] tracking-[0.12em] uppercase"
+					class="text-ink-muted text-micro block font-mono tracking-[0.12em] uppercase"
 				>
 					Due
 				</label>
@@ -208,7 +208,7 @@
 				/>
 			</div>
 			<div class="space-y-1">
-				<span class="text-ink-muted block font-mono text-[10px] tracking-[0.12em] uppercase"> Active </span>
+				<span class="text-ink-muted text-micro block font-mono tracking-[0.12em] uppercase"> Active </span>
 				<div class="flex h-10 items-center justify-center">
 					{@render activeSwitch("default")}
 				</div>
