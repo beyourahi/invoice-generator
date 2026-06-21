@@ -33,28 +33,28 @@ A SvelteKit app that generates batches of PDF invoices. Users configure a fixed 
 
 **Stack**: SvelteKit 2 + Svelte 5 runes, Tailwind CSS v4, Dropout Design System (`@dropout/ds`, vendored) + shadcn-svelte, Cloudflare Workers, Better Auth (Google OAuth + One Tap + passkeys), Cloudflare D1, Drizzle ORM, Cloudflare Workers AI, Bun.
 
-**Auth-optional**: the full builder works signed-out — guest data persists to **localStorage** (the PDF pipeline is client-side anyway). There is **no auth guard / no `/login` redirect**. Sign-in via Better Auth (Google OAuth/One Tap, or a passkey) is an *optional* upgrade: signing in migrates the guest workspace into D1 (one-time, on first sign-in), syncs all data server-side (sender info, payment methods, clients, invoice entries, AI Copilot conversations), and unlocks the AI Copilot (which additionally requires a connected bring-your-own Cloudflare account — see AI Copilot).
+**Auth-optional**: the full builder works signed-out — guest data persists to **localStorage** (the PDF pipeline is client-side anyway). There is **no auth guard / no `/login` redirect**. Sign-in via Better Auth (Google OAuth/One Tap, or a passkey) is an _optional_ upgrade: signing in migrates the guest workspace into D1 (one-time, on first sign-in), syncs all data server-side (sender info, payment methods, clients, invoice entries, AI Copilot conversations), and unlocks the AI Copilot (which additionally requires a connected bring-your-own Cloudflare account — see AI Copilot).
 
 ---
 
 ## Tech Stack
 
-| Layer           | Technology                                                      |
-| --------------- | --------------------------------------------------------------- |
-| Framework       | SvelteKit 2.x (Svelte 5 with runes)                             |
-| Language        | TypeScript (strict mode)                                        |
-| Styling         | Tailwind CSS v4 (CSS-first; tokens from `@dropout/ds`)          |
-| UI Components   | Dropout Design System (`@dropout/ds`, vendored) + shadcn-svelte |
-| Authentication  | Better Auth (Google OAuth + One Tap + passkeys, optional sign-in) |
-| Database        | Cloudflare D1 (SQLite via Drizzle ORM)                          |
+| Layer           | Technology                                                                          |
+| --------------- | ----------------------------------------------------------------------------------- |
+| Framework       | SvelteKit 2.x (Svelte 5 with runes)                                                 |
+| Language        | TypeScript (strict mode)                                                            |
+| Styling         | Tailwind CSS v4 (CSS-first; tokens from `@dropout/ds`)                              |
+| UI Components   | Dropout Design System (`@dropout/ds`, vendored) + shadcn-svelte                     |
+| Authentication  | Better Auth (Google OAuth + One Tap + passkeys, optional sign-in)                   |
+| Database        | Cloudflare D1 (SQLite via Drizzle ORM)                                              |
 | AI              | Bring-your-own Cloudflare Workers AI (REST, user's account) + qwen3 RAG (Vectorize) |
-| Validation      | Zod                                                             |
-| PDF Rendering   | html2canvas + jsPDF                                             |
-| ZIP Packaging   | fflate (`zipSync`, `level: 0`)                                  |
-| Animations      | GSAP 3 (motion, view transitions); shadcn Progress/Skeleton     |
-| Deployment      | Cloudflare Workers                                              |
-| Package Manager | Bun                                                             |
-| Linting         | ESLint 10 flat config + Prettier                                |
+| Validation      | Zod                                                                                 |
+| PDF Rendering   | html2canvas + jsPDF                                                                 |
+| ZIP Packaging   | fflate (`zipSync`, `level: 0`)                                                      |
+| Animations      | GSAP 3 (motion, view transitions); shadcn Progress/Skeleton                         |
+| Deployment      | Cloudflare Workers                                                                  |
+| Package Manager | Bun                                                                                 |
+| Linting         | ESLint 10 flat config + Prettier                                                    |
 
 ---
 
@@ -518,14 +518,14 @@ Configured in `wrangler.jsonc`:
 
 Set via `wrangler secret put` or in the Cloudflare dashboard:
 
-| Secret                 | Description                                                           |
-| ---------------------- | --------------------------------------------------------------------- |
-| `BETTER_AUTH_SECRET`   | Random secret (e.g. `openssl rand -base64 32`)                        |
-| `BETTER_AUTH_URL`      | Deployed URL (`https://invoice-generator.dropoutstudio.co`)          |
-| `GOOGLE_CLIENT_ID`     | Google OAuth client ID                                                |
-| `GOOGLE_CLIENT_SECRET` | Google OAuth client secret                                            |
-| `TOKEN_ENCRYPTION_KEY` | base64 32-byte AES-GCM key; encrypts users' BYO Cloudflare tokens     |
-| `SEED_SECRET`          | header token gating `POST /api/ai/seed`                              |
+| Secret                 | Description                                                       |
+| ---------------------- | ----------------------------------------------------------------- |
+| `BETTER_AUTH_SECRET`   | Random secret (e.g. `openssl rand -base64 32`)                    |
+| `BETTER_AUTH_URL`      | Deployed URL (`https://invoice-generator.dropoutstudio.co`)       |
+| `GOOGLE_CLIENT_ID`     | Google OAuth client ID                                            |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth client secret                                        |
+| `TOKEN_ENCRYPTION_KEY` | base64 32-byte AES-GCM key; encrypts users' BYO Cloudflare tokens |
+| `SEED_SECRET`          | header token gating `POST /api/ai/seed`                           |
 
 `BETTER_AUTH_URL` is also a non-secret binding in `wrangler.jsonc`. The rest are secrets — never commit them.
 
@@ -610,11 +610,11 @@ When encountering unfamiliar patterns, check in this order:
 
 23. **The chat route's retry + false-claim suppression is load-bearing — do not remove it** — the model intermittently narrates an action without calling a tool, so nothing runs. `chat/+server.ts` detects this from the _user's_ imperative phrasing (`looksImperative`), not the model's wording, forces one extra retry (`ACTION_RETRY_MESSAGE`), and blanks any leftover action narration. Deleting the suppression or the no-tool-call retry reintroduces the Copilot claiming work it never did. `VECTORIZE`/`AI_QUOTA_KV` must stay `remote: true` (see Cloudflare Bindings) and the tester must have a connected Cloudflare account, or local preview can't run a turn to exercise this path at all.
 
-25. **`TOKEN_ENCRYPTION_KEY` must not change once users connect** — it decrypts the AES-GCM-encrypted tokens in `user_settings`. Rotating or losing it silently breaks every connected user's Copilot (decrypt fails → 412); they must re-enter tokens at `/settings`. Never log or return the raw token — the server only ever exposes `maskToken(...)`.
+24. **`TOKEN_ENCRYPTION_KEY` must not change once users connect** — it decrypts the AES-GCM-encrypted tokens in `user_settings`. Rotating or losing it silently breaks every connected user's Copilot (decrypt fails → 412); they must re-enter tokens at `/settings`. Never log or return the raw token — the server only ever exposes `maskToken(...)`.
 
-26. **Don't reintroduce an auth guard on `/` or `/changelog`** — both are intentionally reachable signed-out; the builder runs as a localStorage-backed guest. Only `/settings` and `/api/*` (via `requireApiContext`) require a session. Adding `redirect(302, "/login")` to `+page.server.ts` would break the guest workspace and its sign-in migration.
+25. **Don't reintroduce an auth guard on `/` or `/changelog`** — both are intentionally reachable signed-out; the builder runs as a localStorage-backed guest. Only `/settings` and `/api/*` (via `requireApiContext`) require a session. Adding `redirect(302, "/login")` to `+page.server.ts` would break the guest workspace and its sign-in migration.
 
-24. **`src/lib/ds/` is vendored — never hand-edit it** — it is an rsync mirror of `@dropout/ds` (`bun run sync-ds` from `../../dropout-design-system`, `--delete` overwrites local changes). Edit the DS upstream repo, then re-sync. It is deliberately NOT an npm/`file:` dependency — a sibling-path dependency breaks Cloudflare git-push auto-deploy. DS owns the visual tokens; do not redefine the semantic palette in `app.css`.
+26. **`src/lib/ds/` is vendored — never hand-edit it** — it is an rsync mirror of `@dropout/ds` (`bun run sync-ds` from `../../dropout-design-system`, `--delete` overwrites local changes). Edit the DS upstream repo, then re-sync. It is deliberately NOT an npm/`file:` dependency — a sibling-path dependency breaks Cloudflare git-push auto-deploy. DS owns the visual tokens; do not redefine the semantic palette in `app.css`.
 
 ---
 
