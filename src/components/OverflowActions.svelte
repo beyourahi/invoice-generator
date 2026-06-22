@@ -72,7 +72,7 @@
 					class={cn(
 						"flex min-h-12 w-full touch-manipulation items-center gap-3 rounded-lg px-3 text-left transition-colors",
 						"pointer-fine:hover:bg-ink-2 pointer-fine:hover:text-foreground",
-						"focus:bg-ink-2 focus:text-foreground focus:outline-none",
+						"focus:bg-ink-2 focus:text-foreground",
 						"disabled:cursor-not-allowed disabled:opacity-40",
 						action.variant === "destructive" &&
 							"text-destructive pointer-fine:hover:bg-destructive/10 pointer-fine:hover:text-destructive"

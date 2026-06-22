@@ -65,7 +65,7 @@
 		role="dialog"
 		aria-modal="true"
 		aria-labelledby="ai-confirm-title"
-		class="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+		class="bg-scrim fixed inset-0 z-[60] flex items-center justify-center p-4 backdrop-blur-[var(--glass-blur-soft)]"
 		transition:fade={{ duration: motionDuration("fast") }}
 	>
 		<div
@@ -179,14 +179,14 @@
 					type="button"
 					onclick={isBatch ? onCancelAll : onReject}
 					use:focusOnMount
-					class="border-hair bg-chat-surface text-chat-text-primary hover:border-signal hover:bg-ink-2 focus-visible:ring-signal ease-[var(--ease)] inline-flex h-9 cursor-pointer touch-manipulation items-center rounded-full border px-5 font-mono text-caption whitespace-nowrap tracking-[0.12em] uppercase transition-colors focus:outline-none focus-visible:ring-2"
+					class="border-hair bg-chat-surface text-chat-text-primary hover:border-signal hover:bg-ink-2 focus-visible:ring-signal ease-[var(--ease)] inline-flex h-9 cursor-pointer touch-manipulation items-center rounded-full border px-5 font-mono text-caption whitespace-nowrap tracking-[0.12em] uppercase transition-colors focus-visible:ring-2"
 				>
 					{isBatch ? "Reject all" : "Reject"}
 				</button>
 				<button
 					type="button"
 					onclick={isBatch ? onApplyAll : onConfirm}
-					class="bg-signal text-background hover:bg-signal/90 focus-visible:ring-signal ease-[var(--ease)] inline-flex h-9 cursor-pointer touch-manipulation items-center rounded-full px-5 font-mono text-caption font-medium whitespace-nowrap tracking-[0.12em] uppercase transition-colors focus:outline-none focus-visible:ring-2"
+					class="bg-signal text-background hover:bg-signal/90 focus-visible:ring-signal ease-[var(--ease)] inline-flex h-9 cursor-pointer touch-manipulation items-center rounded-full px-5 font-mono text-caption font-medium whitespace-nowrap tracking-[0.12em] uppercase transition-colors focus-visible:ring-2"
 				>
 					{isBatch ? "Apply selected" : "Confirm"}
 				</button>

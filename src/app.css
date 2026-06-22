@@ -68,6 +68,13 @@
 	--status-inactive-border: hsl(8 44% 60% / 0.8);
 	--status-inactive-track: hsl(8 34% 52%);
 
+	/* Copilot connection status — online/connecting/error dots. OKLCH triad shared with the
+	   sibling tools (order-processor + the username-extractor palette) so every Dropout
+	   copilot's status dot reads identically. */
+	--status-ok: oklch(0.745 0.111 158);
+	--status-warn: oklch(0.8 0.142 79);
+	--status-error: oklch(0.655 0.105 29);
+
 	/* AI Copilot surfaces → DS semantic tokens (already monochrome; signal is the accent) */
 	--chat-bg: var(--background);
 	--chat-surface: var(--card);
@@ -133,6 +140,10 @@
 	--color-status-inactive-bg: var(--status-inactive-bg);
 	--color-status-inactive-border: var(--status-inactive-border);
 	--color-status-inactive-track: var(--status-inactive-track);
+
+	--color-status-ok: var(--status-ok);
+	--color-status-warn: var(--status-warn);
+	--color-status-error: var(--status-error);
 
 	--color-chat-bg: var(--chat-bg);
 	--color-chat-surface: var(--chat-surface);

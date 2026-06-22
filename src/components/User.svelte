@@ -110,7 +110,7 @@
 					<a
 						href="/settings"
 						onclick={() => (mobileOpen = false)}
-						class="text-foreground pointer-fine:hover:bg-ink-2 focus:bg-ink-2 flex min-h-12 w-full touch-manipulation items-center gap-3 rounded-lg px-3 text-left transition-colors focus:outline-none"
+						class="text-foreground pointer-fine:hover:bg-ink-2 focus:bg-ink-2 flex min-h-12 w-full touch-manipulation items-center gap-3 rounded-lg px-3 text-left transition-colors"
 					>
 						<Settings size={16} aria-hidden="true" />
 						<span class="text-sm font-medium whitespace-nowrap">Copilot settings</span>
@@ -120,7 +120,7 @@
 						onclick={handleLogout}
 						disabled={isLoggingOut}
 						class={cn(
-							"text-destructive pointer-fine:hover:bg-destructive/10 pointer-fine:hover:text-destructive focus:bg-destructive/10 focus:text-destructive flex min-h-12 w-full touch-manipulation items-center gap-3 rounded-lg px-3 text-left transition-colors focus:outline-none disabled:cursor-not-allowed disabled:opacity-60",
+							"text-destructive pointer-fine:hover:bg-destructive/10 pointer-fine:hover:text-destructive focus:bg-destructive/10 focus:text-destructive flex min-h-12 w-full touch-manipulation items-center gap-3 rounded-lg px-3 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-60",
 							isLoggingOut && "cursor-wait"
 						)}
 					>
@@ -174,7 +174,7 @@
 							href="/settings"
 							aria-label="Copilot settings"
 							{...props}
-							class="sleek group border-hair bg-card pointer-fine:hover:border-foreground/30 pointer-fine:hover:bg-ink-2 focus-visible:outline-signal flex h-10 w-10 touch-manipulation items-center justify-center rounded-full border backdrop-blur-sm transition-colors focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 active:scale-95"
+							class="sleek group border-hair bg-card pointer-fine:hover:border-foreground/30 pointer-fine:hover:bg-ink-2 focus-visible:outline-signal flex h-10 w-10 touch-manipulation items-center justify-center rounded-full border backdrop-blur-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 active:scale-95"
 						>
 							<Settings
 								class="text-ink-muted pointer-fine:group-hover:text-foreground h-[1.125rem] w-[1.125rem] transition-colors"
@@ -195,7 +195,7 @@
 					aria-label="Sign out"
 					class={cn(
 						"sleek group flex h-10 w-10 cursor-pointer touch-manipulation items-center justify-center rounded-full border backdrop-blur-sm",
-						"focus-visible:outline-signal focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2",
+						"focus-visible:outline-signal focus-visible:outline-2 focus-visible:outline-offset-2",
 						isLoggingOut
 							? "border-hair bg-card cursor-wait"
 							: "border-hair bg-card pointer-fine:hover:border-destructive/50 pointer-fine:hover:bg-destructive/10 active:scale-95"

@@ -111,7 +111,7 @@
 					type="button"
 					onclick={() => ai.removePendingImage(index)}
 					aria-label="Remove attachment {index + 1}"
-					class="absolute inset-0 flex touch-manipulation items-center justify-center bg-black/55 opacity-0 backdrop-blur-[2px] transition-opacity duration-150 hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none"
+					class="bg-scrim-soft absolute inset-0 flex touch-manipulation items-center justify-center opacity-0 backdrop-blur-[var(--glass-blur-soft)] transition-opacity duration-150 hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none"
 				>
 					<X class="size-3.5 text-white" aria-hidden="true" />
 				</button>

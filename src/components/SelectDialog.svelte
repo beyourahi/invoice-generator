@@ -125,7 +125,7 @@
 					use:scrollIntoViewIfSelected={isSelected}
 					onclick={() => handleSelect(option.value)}
 					class={cn(
-						"flex w-full touch-manipulation items-center gap-3 rounded-lg border px-3 py-2 text-left transition-colors focus:outline-none",
+						"flex w-full touch-manipulation items-center gap-3 rounded-lg border px-3 py-2 text-left transition-colors",
 						isSelected
 							? "border-signal bg-ink-2"
 							: "border-transparent hover:bg-ink-2/60 focus:bg-ink-2/60",
