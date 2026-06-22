@@ -23,7 +23,8 @@
 		helperBase,
 		metaBase,
 		SettingsSection,
-		SettingsRow
+		SettingsRow,
+		SettingsActions
 	} from "$lib/ds";
 	import * as Select from "$lib/components/ui/select";
 	import type { PageData, ActionData } from "./$types";
@@ -328,11 +329,20 @@
 				<span class="text-foreground font-mono">Account · Workers AI · Read</span>.
 			</p>
 
-			<div class="border-hair flex items-center justify-end gap-3 border-t pt-5">
+			<SettingsActions>
+				{#snippet status()}
+					{#if saving}
+						Connecting…
+					{:else if connected}
+						Connected — leave the token blank to keep it.
+					{:else}
+						Not connected yet.
+					{/if}
+				{/snippet}
 				<Cta type="submit" arrow={false} disabled={saving} class="touch-manipulation">
 					{saving ? "Connecting…" : connected ? "Save changes" : "Connect account"}
 				</Cta>
-			</div>
+			</SettingsActions>
 		</form>
 	</SettingsSection>
 
@@ -399,7 +409,7 @@
 					{/each}
 				</ul>
 			{/if}
-			<div class="border-hair flex items-center justify-end gap-3 border-t pt-5">
+			<SettingsActions>
 				<Cta
 					variant="compact"
 					arrow={false}
@@ -411,7 +421,7 @@
 						<Fingerprint class="size-3.5" /> Set up Face ID / Touch ID
 					</span>
 				</Cta>
-			</div>
+			</SettingsActions>
 		{/if}
 	</SettingsSection>
 
