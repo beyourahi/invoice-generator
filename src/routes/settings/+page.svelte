@@ -18,7 +18,6 @@
 		Cta,
 		cn,
 		inputBase,
-		labelBase,
 		bodyBase,
 		helperBase,
 		metaBase,
@@ -173,24 +172,20 @@
 	tabindex="-1"
 	class="mx-auto flex w-full max-w-[var(--settings-max)] grow flex-col gap-10 px-[var(--content-x)] py-10 outline-none sm:py-14"
 >
-	<header class="flex flex-col gap-5">
-		<a
-			href="/"
-			class={cn(
-				helperBase,
-				"hover:text-foreground focus-visible:outline-signal inline-flex w-fit touch-manipulation items-center gap-2 font-mono tracking-[0.18em] whitespace-nowrap uppercase transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
-			)}
-		>
-			<ArrowLeft class="size-3.5" /> Back to invoices
-		</a>
-		<div class="flex flex-col gap-2">
-			<Eyebrow>Settings</Eyebrow>
-			<Heading as="h1" size="title-lg" weight={600}>Settings</Heading>
-			<p class={cn(bodyBase, "max-w-prose text-pretty")}>
-				Connect your own Cloudflare account to power the AI Copilot. This is
-				<span class="text-foreground">required</span> to use the assistant — it runs on your own Cloudflare account.
-			</p>
-		</div>
+	<Cta href="/" variant="secondary" arrow={false} class="bg-card w-fit px-5 py-2.5 text-caption">
+		<span class="inline-flex items-center gap-2">
+			<ArrowLeft class="size-4" aria-hidden="true" />
+			Back to invoices
+		</span>
+	</Cta>
+
+	<header class="flex flex-col gap-2.5">
+		<Eyebrow>Settings</Eyebrow>
+		<Heading as="h1" size="title-lg" weight={600}>Settings</Heading>
+		<p class={cn(bodyBase, "max-w-prose text-pretty")}>
+			Connect your own Cloudflare account to power the AI Copilot. This is
+			<span class="text-foreground">required</span> to use the assistant — it runs on your own Cloudflare account.
+		</p>
 	</header>
 
 	<SettingsSection
@@ -359,10 +354,7 @@
 				{passkeyError}
 			</p>
 		{:else if passkeyMessage}
-			<p
-				class="border-signal/40 text-foreground rounded-xl border px-4 py-3 text-xs text-pretty"
-				role="status"
-			>
+			<p class="border-signal/40 text-foreground rounded-xl border px-4 py-3 text-xs text-pretty" role="status">
 				{passkeyMessage}
 			</p>
 		{/if}

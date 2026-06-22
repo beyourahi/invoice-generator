@@ -26,6 +26,7 @@
 	import InvoicePreview from "$src/components/InvoicePreview.svelte";
 	import Heading from "$lib/components/ui/heading/heading.svelte";
 	import { page } from "$app/state";
+	import Navbar from "$src/components/Navbar.svelte";
 	import User from "$src/components/User.svelte";
 	import SignInButton from "$src/components/SignInButton.svelte";
 	import { migrateGuestToServer } from "$lib/persistence/migrate";
@@ -124,16 +125,18 @@
 	<ToasterComponent theme="dark" position="bottom-right" richColors closeButton />
 {/if}
 
-{#if page.data.user && page.data.currentUser}
-	<User user={page.data.user} currentUser={page.data.currentUser} />
-{:else}
-	<SignInButton />
-{/if}
+<Navbar>
+	{#if page.data.user && page.data.currentUser}
+		<User user={page.data.user} currentUser={page.data.currentUser} />
+	{:else}
+		<SignInButton />
+	{/if}
+</Navbar>
 
 <main
 	id="main"
 	tabindex="-1"
-	class="flex w-full min-w-0 grow flex-col px-[var(--content-x)] py-16 sm:py-20 outline-none"
+	class="flex w-full min-w-0 grow flex-col px-[var(--content-x)] pt-10 pb-16 sm:pt-12 sm:pb-20 outline-none"
 >
 	<div class="m-auto flex w-full min-w-0 flex-col items-center gap-12 sm:gap-16 lg:gap-16">
 		<div use:reveal>
