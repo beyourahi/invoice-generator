@@ -10,8 +10,21 @@
 	import { browser } from "$app/environment";
 	import { invalidateAll } from "$app/navigation";
 	import { authClient } from "$lib/auth-client";
-	import { ArrowLeft, RefreshCw, Fingerprint, Trash2 } from "@lucide/svelte";
-	import { Eyebrow, Heading, Input, Cta, cn, inputBase, labelBase } from "$lib/ds";
+	import { ArrowLeft, RefreshCw, Fingerprint, Trash2, Cloud } from "@lucide/svelte";
+	import {
+		Eyebrow,
+		Heading,
+		Input,
+		Cta,
+		cn,
+		inputBase,
+		labelBase,
+		bodyBase,
+		helperBase,
+		metaBase,
+		SettingsSection,
+		SettingsRow
+	} from "$lib/ds";
 	import * as Select from "$lib/components/ui/select";
 	import type { PageData, ActionData } from "./$types";
 
@@ -157,64 +170,49 @@
 <main
 	id="main"
 	tabindex="-1"
-	class="mx-auto flex w-full max-w-2xl grow flex-col gap-10 px-4 pt-10 pb-16 outline-none sm:px-6 sm:pt-14"
+	class="mx-auto flex w-full max-w-[var(--settings-max)] grow flex-col gap-10 px-[var(--content-x)] py-10 outline-none sm:py-14"
 >
 	<header class="flex flex-col gap-5">
 		<a
 			href="/"
-			class="text-ink-muted hover:text-foreground focus-visible:outline-signal inline-flex w-fit touch-manipulation items-center gap-2 font-mono text-caption tracking-[0.18em] whitespace-nowrap uppercase transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+			class={cn(
+				helperBase,
+				"hover:text-foreground focus-visible:outline-signal inline-flex w-fit touch-manipulation items-center gap-2 font-mono tracking-[0.18em] whitespace-nowrap uppercase transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+			)}
 		>
 			<ArrowLeft class="size-3.5" /> Back to invoices
 		</a>
 		<div class="flex flex-col gap-2">
-			<Eyebrow>Copilot</Eyebrow>
-			<Heading as="h1" size="title-lg">Settings</Heading>
-			<p class="text-ink-muted max-w-prose text-sm text-pretty">
+			<Eyebrow>Settings</Eyebrow>
+			<Heading as="h1" size="title-lg" weight={600}>Settings</Heading>
+			<p class={cn(bodyBase, "max-w-prose text-pretty")}>
 				Connect your own Cloudflare account to power the AI Copilot. This is
 				<span class="text-foreground">required</span> to use the assistant — it runs on your own Cloudflare account.
 			</p>
 		</div>
 	</header>
 
-	<section class="border-hair bg-card overflow-hidden rounded-2xl border">
-		<header class="border-hair flex items-center gap-3 border-b px-5 py-4">
-			<span class="bg-ink-2 border-hair text-ink-muted flex size-8 items-center justify-center rounded-lg border">
-				<svg
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="1.75"
-					class="size-4"
-					aria-hidden="true"
-				>
-					<path
-						d="M17.5 19a4.5 4.5 0 0 0 .9-8.91 5.5 5.5 0 0 0-10.6-1.46A4 4 0 1 0 6.5 19h11Z"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-					/>
-				</svg>
-			</span>
-			<div>
-				<h2 class="text-foreground text-sm font-semibold tracking-tight">Cloudflare account</h2>
-				<p class="text-ink-muted mt-0.5 text-caption">
-					{connected ? "Connected — the Copilot is ready." : "Not connected — the Copilot is disabled."}
-				</p>
-			</div>
+	<SettingsSection
+		title="Cloudflare account"
+		subtitle={connected ? "Connected — the Copilot is ready." : "Not connected — the Copilot is disabled."}
+		icon={Cloud}
+	>
+		{#snippet header()}
 			<span
 				class={cn(
-					"ml-auto inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-mono text-micro tracking-[0.14em] whitespace-nowrap uppercase",
+					"inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-mono text-micro tracking-[0.14em] whitespace-nowrap uppercase",
 					connected ? "border-signal/40 text-foreground" : "border-hair text-ink-muted"
 				)}
 			>
 				<span class={cn("size-1.5 rounded-full", connected ? "bg-signal" : "bg-ink-muted")}></span>
 				{connected ? "Live" : "Off"}
 			</span>
-		</header>
+		{/snippet}
 
 		<form
 			method="POST"
 			action="?/save"
-			class="flex flex-col gap-6 p-5"
+			class="flex flex-col gap-6"
 			use:enhance={() => {
 				saving = true;
 				return async ({ update }) => {
@@ -240,8 +238,7 @@
 				</p>
 			{/if}
 
-			<div>
-				<label class={labelBase} for="cf-token">API token</label>
+			<SettingsRow label="API token" htmlFor="cf-token" stacked>
 				<Input
 					id="cf-token"
 					type="password"
@@ -249,8 +246,9 @@
 					bind:value={token}
 					placeholder={maskedToken || "v1.0-…"}
 					autocomplete="off"
+					class="w-full"
 				/>
-				<p class="text-ink-muted mt-2 text-caption text-pretty">
+				<p class={cn(helperBase, "mt-2")}>
 					{#if connected && maskedToken}
 						Stored: <span class="text-foreground font-mono wrap-break-word">{maskedToken}</span> — leave blank
 						to keep it.
@@ -259,69 +257,65 @@
 						permission. Stored securely. You won't see it again after saving.
 					{/if}
 				</p>
-			</div>
+			</SettingsRow>
 
-			<div>
-				<label class={labelBase} for="cf-account">Account ID</label>
+			<SettingsRow label="Account ID" htmlFor="cf-account" stacked>
 				<Input
 					id="cf-account"
 					name="cloudflareAccountId"
 					bind:value={accountId}
 					placeholder="0123456789abcdef…"
 					autocomplete="off"
+					class="w-full"
 				/>
-				<p class="text-ink-muted mt-2 text-caption text-pretty">
+				<p class={cn(helperBase, "mt-2")}>
 					Found in the right sidebar of any account page in the Cloudflare dashboard.
 				</p>
-			</div>
+			</SettingsRow>
 
-			<div class="border-hair flex flex-col gap-3 border-t pt-5 sm:flex-row sm:items-end sm:justify-between">
-				<div class="min-w-0">
-					<label class={labelBase} for="cf-model">Chat model</label>
-					<p class="text-ink-muted text-caption text-pretty">
-						Kimi K2.6 is recommended. Others are experimental and may be less reliable.
-					</p>
-				</div>
+			<SettingsRow
+				label="Chat model"
+				hint="Kimi K2.6 is recommended. Others are experimental and may be less reliable."
+				htmlFor="cf-model"
+			>
 				<div class="flex items-center gap-2">
+					<Select.Root type="single" name="cloudflareModel" bind:value={model}>
+						<Select.Trigger
+							id="cf-model"
+							aria-label="Chat model"
+							class={cn(
+								inputBase,
+								"flex h-auto w-full items-center justify-between gap-2 text-caption [&>svg]:size-4 [&>svg]:shrink-0 [&>svg]:opacity-60"
+							)}
+						>
+							<span class="min-w-0 truncate text-left">{selectedModelLabel}</span>
+						</Select.Trigger>
+						<Select.Content
+							class="border-hair bg-card max-h-72 w-(--bits-select-anchor-width) rounded-xl p-1 shadow-lg ring-0"
+						>
+							{#each modelOptions as opt (opt.id)}
+								<Select.Item
+									value={opt.id}
+									label={opt.label}
+									class="text-foreground data-highlighted:bg-ink-2 focus:bg-ink-2 ease-[var(--ease)] cursor-pointer rounded-lg px-2.5 py-2 text-caption transition-colors [&_.cn-select-item-indicator-icon]:text-signal"
+								/>
+							{/each}
+						</Select.Content>
+					</Select.Root>
 					<button
 						type="button"
 						onclick={refreshModels}
 						disabled={refreshing || !connected}
 						title="Refresh model list"
 						aria-label="Refresh models"
-						class="text-ink-muted hover:text-foreground focus-visible:outline-signal touch-manipulation rounded-md p-2 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-40"
+						class="text-ink-muted hover:text-foreground focus-visible:outline-signal shrink-0 touch-manipulation rounded-md p-2 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-40"
 					>
 						<RefreshCw class={cn("size-3.5", refreshing && "animate-spin")} />
 					</button>
-					<div class="w-full sm:w-80">
-						<Select.Root type="single" name="cloudflareModel" bind:value={model}>
-							<Select.Trigger
-								id="cf-model"
-								aria-label="Chat model"
-								class={cn(
-									inputBase,
-									"flex h-auto w-full items-center justify-between gap-2 text-caption [&>svg]:size-4 [&>svg]:shrink-0 [&>svg]:opacity-60"
-								)}
-							>
-								<span class="min-w-0 truncate text-left">{selectedModelLabel}</span>
-							</Select.Trigger>
-							<Select.Content
-								class="border-hair bg-card max-h-72 w-(--bits-select-anchor-width) rounded-xl p-1 shadow-lg ring-0"
-							>
-								{#each modelOptions as opt (opt.id)}
-									<Select.Item
-										value={opt.id}
-										label={opt.label}
-										class="text-foreground data-highlighted:bg-ink-2 focus:bg-ink-2 ease-[var(--ease)] cursor-pointer rounded-lg px-2.5 py-2 text-caption transition-colors [&_.cn-select-item-indicator-icon]:text-signal"
-									/>
-								{/each}
-							</Select.Content>
-						</Select.Root>
-					</div>
 				</div>
-			</div>
+			</SettingsRow>
 
-			<p class="text-ink-muted text-caption leading-relaxed text-pretty">
+			<p class={cn(helperBase, "border-hair border-t pt-5")}>
 				Create a token at
 				<a
 					href="https://dash.cloudflare.com/profile/api-tokens"
@@ -334,110 +328,100 @@
 				<span class="text-foreground font-mono">Account · Workers AI · Read</span>.
 			</p>
 
-			<div class="flex items-center justify-end gap-3">
+			<div class="border-hair flex items-center justify-end gap-3 border-t pt-5">
 				<Cta type="submit" arrow={false} disabled={saving} class="touch-manipulation">
 					{saving ? "Connecting…" : connected ? "Save changes" : "Connect account"}
 				</Cta>
 			</div>
 		</form>
-	</section>
+	</SettingsSection>
 
-	<section class="border-hair bg-card overflow-hidden rounded-2xl border">
-		<header class="border-hair flex items-center gap-3 border-b px-5 py-4">
-			<span class="bg-ink-2 border-hair text-ink-muted flex size-8 items-center justify-center rounded-lg border">
-				<Fingerprint class="size-4" aria-hidden="true" />
-			</span>
-			<div>
-				<h2 class="text-foreground text-sm font-semibold tracking-tight">Face ID / Touch ID</h2>
-				<p class="text-ink-muted mt-0.5 text-caption">Sign in with Face ID or Touch ID instead of Google.</p>
-			</div>
-		</header>
+	<SettingsSection
+		title="Face ID / Touch ID"
+		subtitle="Sign in with Face ID or Touch ID instead of Google."
+		icon={Fingerprint}
+	>
+		{#if passkeyError}
+			<p
+				class="border-destructive/40 bg-destructive/10 text-destructive rounded-xl border px-4 py-3 text-xs text-pretty"
+				role="alert"
+			>
+				{passkeyError}
+			</p>
+		{:else if passkeyMessage}
+			<p
+				class="border-signal/40 text-foreground rounded-xl border px-4 py-3 text-xs text-pretty"
+				role="status"
+			>
+				{passkeyMessage}
+			</p>
+		{/if}
 
-		<div class="flex flex-col gap-4 p-5">
-			{#if passkeyError}
-				<p
-					class="border-destructive/40 bg-destructive/10 text-destructive rounded-xl border px-4 py-3 text-xs text-pretty"
-					role="alert"
-				>
-					{passkeyError}
-				</p>
-			{:else if passkeyMessage}
-				<p
-					class="border-signal/40 text-foreground rounded-xl border px-4 py-3 text-xs text-pretty"
-					role="status"
-				>
-					{passkeyMessage}
-				</p>
-			{/if}
-
-			{#if !webauthnAvailable}
-				<p class="text-ink-muted text-xs text-pretty">
-					This browser can't use Face ID or Touch ID. Open the app in Safari, Chrome, or Edge on a device with
-					Face ID or Touch ID.
-				</p>
+		{#if !webauthnAvailable}
+			<p class={helperBase}>
+				This browser can't use Face ID or Touch ID. Open the app in Safari, Chrome, or Edge on a device with
+				Face ID or Touch ID.
+			</p>
+		{:else}
+			{#if passkeysLoading}
+				<p class={helperBase}>Loading…</p>
+			{:else if passkeys.length === 0}
+				<p class={helperBase}>Nothing set up yet. Add Face ID or Touch ID to sign in without Google.</p>
 			{:else}
-				{#if passkeysLoading}
-					<p class="text-ink-muted text-xs">Loading…</p>
-				{:else if passkeys.length === 0}
-					<p class="text-ink-muted text-xs text-pretty">
-						Nothing set up yet. Add Face ID or Touch ID to sign in without Google.
-					</p>
-				{:else}
-					<ul class="flex flex-col gap-2">
-						{#each passkeys as pk (pk.id)}
-							<li
-								class="border-hair bg-ink-2/40 flex items-center justify-between gap-3 rounded-lg border px-3 py-2.5"
-							>
-								<div class="flex min-w-0 items-center gap-2.5">
-									<Fingerprint class="text-signal size-4 shrink-0" />
-									<div class="min-w-0">
-										<p class="text-foreground truncate text-sm font-medium">
-											{pk.name || "Face ID / Touch ID"}
+				<ul class="flex flex-col gap-2">
+					{#each passkeys as pk (pk.id)}
+						<li
+							class="border-hair bg-ink-2/40 flex items-center justify-between gap-3 rounded-lg border px-3 py-2.5"
+						>
+							<div class="flex min-w-0 items-center gap-2.5">
+								<Fingerprint class="text-signal size-4 shrink-0" />
+								<div class="min-w-0">
+									<p class={cn(bodyBase, "truncate font-medium")}>
+										{pk.name || "Face ID / Touch ID"}
+									</p>
+									{#if pk.createdAt && formatDate(pk.createdAt)}
+										<p class={metaBase}>
+											Added {formatDate(pk.createdAt)}
 										</p>
-										{#if pk.createdAt && formatDate(pk.createdAt)}
-											<p class="text-ink-muted text-caption tabular-nums">
-												Added {formatDate(pk.createdAt)}
-											</p>
-										{/if}
-									</div>
+									{/if}
 								</div>
-								<button
-									type="button"
-									onclick={() => removePasskey(pk.id)}
-									disabled={passkeyBusy}
-									aria-label="Remove Face ID / Touch ID"
-									class="text-ink-muted hover:text-destructive focus-visible:outline-signal shrink-0 touch-manipulation rounded-md p-1 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-40"
-								>
-									<Trash2 class="size-3.5" />
-								</button>
-							</li>
-						{/each}
-					</ul>
-				{/if}
-				<div class="flex flex-wrap items-center gap-2 pt-1">
-					<Cta
-						variant="compact"
-						arrow={false}
-						disabled={passkeyBusy}
-						onclick={() => addPasskey()}
-						class="touch-manipulation"
-					>
-						<span class="inline-flex items-center gap-2">
-							<Fingerprint class="size-3.5" /> Set up Face ID / Touch ID
-						</span>
-					</Cta>
-				</div>
+							</div>
+							<button
+								type="button"
+								onclick={() => removePasskey(pk.id)}
+								disabled={passkeyBusy}
+								aria-label="Remove Face ID / Touch ID"
+								class="text-ink-muted hover:text-destructive focus-visible:outline-signal shrink-0 touch-manipulation rounded-md p-1 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-40"
+							>
+								<Trash2 class="size-3.5" />
+							</button>
+						</li>
+					{/each}
+				</ul>
 			{/if}
-		</div>
-	</section>
+			<div class="border-hair flex items-center justify-end gap-3 border-t pt-5">
+				<Cta
+					variant="compact"
+					arrow={false}
+					disabled={passkeyBusy}
+					onclick={() => addPasskey()}
+					class="touch-manipulation"
+				>
+					<span class="inline-flex items-center gap-2">
+						<Fingerprint class="size-3.5" /> Set up Face ID / Touch ID
+					</span>
+				</Cta>
+			</div>
+		{/if}
+	</SettingsSection>
 
 	{#if connected}
 		<section
 			class="border-hair/60 flex flex-col gap-3 rounded-2xl border border-dashed p-5 sm:flex-row sm:items-center sm:justify-between"
 		>
 			<div>
-				<p class="text-foreground text-sm font-medium">Disconnect</p>
-				<p class="text-ink-muted mt-1 text-caption text-pretty">
+				<p class={cn(bodyBase, "font-medium")}>Disconnect</p>
+				<p class={cn(helperBase, "mt-1")}>
 					Removes your token and account ID. The Copilot is disabled until you reconnect.
 				</p>
 			</div>
