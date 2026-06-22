@@ -17,7 +17,7 @@
 	import { ai } from "$lib/stores/ai.svelte";
 	import { getTheme, ACTIVE_THEME_ID } from "$lib/themes/registry";
 	import { Separator } from "$lib/components/ui/separator";
-	import * as Tabs from "$lib/components/ui/tabs";
+	import ViewTabs from "$src/components/ViewTabs.svelte";
 	import AddClientButton from "$src/components/AddClientButton.svelte";
 	import SectionEyebrow from "$src/components/SectionEyebrow.svelte";
 	import ClientCard from "$src/components/ClientCard.svelte";
@@ -32,7 +32,7 @@
 	import { onMount, untrack, type Component } from "svelte";
 	import { fade } from "svelte/transition";
 	import { reveal, motionDuration, flipList } from "$lib/motion";
-	import { ScanLine, SquarePen, UserPlus, Users } from "@lucide/svelte";
+	import { UserPlus, Users } from "@lucide/svelte";
 	import type { PageData } from "./$types";
 
 	let { data }: { data: PageData } = $props();
@@ -141,26 +141,22 @@
 		</div>
 
 		<div class="flex w-full min-w-0 flex-col gap-8 sm:gap-10 lg:gap-12">
-			<Tabs.Root bind:value={activeTab} class="gap-6">
-				<Tabs.List class="w-full self-center group-data-horizontal/tabs:h-auto sm:w-fit">
-					<Tabs.Trigger
-						value="details"
-						class="h-auto min-h-11 gap-2 px-4 py-3 font-mono text-xs tracking-[0.1em] whitespace-nowrap uppercase sm:px-6"
-					>
-						<SquarePen aria-hidden="true" />
-						Details
-					</Tabs.Trigger>
-					<Tabs.Trigger
-						value="preview"
-						class="h-auto min-h-11 gap-2 px-4 py-3 font-mono text-xs tracking-[0.1em] whitespace-nowrap uppercase sm:px-6"
-					>
-						<ScanLine aria-hidden="true" />
-						Preview
-					</Tabs.Trigger>
-				</Tabs.List>
+			<div class="flex flex-col gap-6">
+				<ViewTabs
+					bind:value={activeTab}
+					ariaLabel="Invoice view"
+					class="self-center"
+					tabs={[
+						{ value: "details", label: "Details" },
+						{ value: "preview", label: "Preview" }
+					]}
+				/>
 
-				<Tabs.Content value="details">
+				{#if activeTab === "details"}
 					<div
+						id="panel-details"
+						role="tabpanel"
+						aria-labelledby="tab-details"
 						class="grid w-full min-w-0 grid-cols-1 items-start gap-6"
 						in:fade={{ duration: motionDuration("fast") }}
 					>
@@ -208,14 +204,18 @@
 							{/if}
 						</div>
 					</div>
-				</Tabs.Content>
-
-				<Tabs.Content value="preview">
-					<div class="mx-auto w-full" in:fade={{ duration: motionDuration("fast") }}>
+				{:else if activeTab === "preview"}
+					<div
+						id="panel-preview"
+						role="tabpanel"
+						aria-labelledby="tab-preview"
+						class="mx-auto w-full"
+						in:fade={{ duration: motionDuration("fast") }}
+					>
 						<InvoicePreview html={previewHtml} loading={false} emptyReason={previewEmptyReason} />
 					</div>
-				</Tabs.Content>
-			</Tabs.Root>
+				{/if}
+			</div>
 
 			<Separator />
 			<div use:reveal={{ onScroll: true }}>
