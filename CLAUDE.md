@@ -95,7 +95,7 @@ Route files use `$src/components/...`; library files use `$lib/...`. Never use r
 
 ### Design System (`$lib/ds`)
 
-**Follow the Dropout DS guidelines.** This project vendors `@dropout/ds` at `src/lib/ds/`. The followable law for all UI — tokens, typography, layout shells, the shadcn-svelte primitive layer (pinned `components.json` preset + blessed kit), overlay/glass tokens, motion, a11y — is **`~/Desktop/projects/dropout-design-system/GUIDELINES.md`**. Theme via tokens; never recolor a component; components before custom markup.
+**HARD RULE — the Dropout DS guidelines are binding.** Every UI/design change in this repo MUST obey **`~/Desktop/projects/dropout-design-system/GUIDELINES.md`** — the law for all UI: tokens, typography, layout shells, the shadcn-svelte primitive layer (pinned `components.json` preset + blessed kit), overlay/glass tokens, motion, a11y. Non-negotiable: theme via tokens, **never recolor a component**, components before custom markup. This applies automatically to every UI task whether or not the request mentions it. This project vendors `@dropout/ds` at `src/lib/ds/`.
 
 The frontend runs on the **Dropout Design System** (`@dropout/ds`), **vendored** at `src/lib/ds/` — NOT an npm/`file:`/workspace dependency (a sibling-path dependency breaks Cloudflare git-push auto-deploy). DS is the single source of visual truth: `app.css` imports `ds/styles/tokens.css` + `ds/styles/animations.css` (ink ramp, semantic aliases, type scale, fonts, radius, shadows, `--ease`, base layer, `@custom-variant` set). `app.css` adds only tool-specific token aliases (`--popover`, `--status-*`, `--chat-*`, `--surface`, `--preview-paper`) repointed to DS primitives, plus app keyframes and the invoice-preview stage.
 
