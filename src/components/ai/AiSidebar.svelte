@@ -12,6 +12,7 @@
 	import AiComposer from "./AiComposer.svelte";
 	import AiConversationsPanel from "./AiConversationsPanel.svelte";
 	import { cn } from "$lib/utils";
+	import { ArrowUpRight } from "@lucide/svelte";
 
 	let {
 		bare = false,
@@ -93,18 +94,7 @@
 				class="bg-signal text-background hover:bg-signal/90 focus-visible:outline-signal mt-2.5 inline-flex touch-manipulation items-center gap-1.5 rounded-full px-4 py-2 font-mono text-caption whitespace-nowrap tracking-[0.06em] uppercase transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
 			>
 				Connect in Settings
-				<svg
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="2.25"
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					class="size-3.5"
-					aria-hidden="true"
-				>
-					<path d="M7 17L17 7M7 7H17V17" />
-				</svg>
+				<ArrowUpRight class="size-3.5" strokeWidth={2.25} aria-hidden="true" />
 			</a>
 		</div>
 	{:else if ai.error}
