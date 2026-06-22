@@ -24,9 +24,15 @@ import { describeCloudflareError } from "$lib/server/ai/errors";
  *
  * INVARIANT: this module is the only place that calls `decryptToken` on a settings load.
  */
-export const load: PageServerLoad = async ({ locals, platform }) => {
+export const load: PageServerLoad = async ({ locals, platform, request }) => {
 	const userId = locals.user?.id;
 	if (!userId) throw redirect(303, "/login");
+
+	// OS hint for the device-accurate biometric label (avoids a wrong-name flash on first paint).
+	const platformHint =
+		request.headers.get("sec-ch-ua-platform")?.replace(/^"|"$/g, "") ||
+		request.headers.get("user-agent") ||
+		"";
 
 	const db = platform?.env?.DB ? getDatabase(platform.env.DB) : null;
 	if (!db) {
@@ -35,7 +41,8 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 			accountId: "",
 			maskedToken: "",
 			model: DEFAULT_MODEL,
-			models: [] as CfModel[]
+			models: [] as CfModel[],
+			platformHint
 		};
 	}
 
@@ -74,7 +81,8 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 		accountId: row?.cloudflareAccountId ?? "",
 		maskedToken,
 		model: row?.cloudflareModel ?? DEFAULT_MODEL,
-		models
+		models,
+		platformHint
 	};
 };
 

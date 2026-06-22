@@ -8,17 +8,24 @@
 <script lang="ts">
 	import { authClient } from "$lib/auth-client";
 	import { browser } from "$app/environment";
+	import { onMount } from "svelte";
 	import { page } from "$app/state";
 	import { goto } from "$app/navigation";
 	import { env as publicEnv } from "$env/dynamic/public";
 	import { ArrowLeft, Fingerprint } from "@lucide/svelte";
 	import Heading from "$lib/components/ui/heading/heading.svelte";
-	import { Cta, cn } from "$lib/ds";
+	import { Cta, cn, isPlatformAuthenticatorAvailable, detectPlatform, biometricLabel } from "$lib/ds";
 
 	let isLoading = $state(false);
 	let error = $state<string | null>(null);
-	// Face ID / Touch ID needs WebAuthn; hide the option where the browser can't do it.
-	let webauthnAvailable = $state(browser && typeof window !== "undefined" && !!window.PublicKeyCredential);
+	// Biometric sign-in needs a real platform authenticator (UVPAA); only show it when present,
+	// with the device-accurate label.
+	let webauthnAvailable = $state(false);
+	let biometricName = $state("device biometrics");
+	onMount(async () => {
+		webauthnAvailable = await isPlatformAuthenticatorAvailable();
+		biometricName = biometricLabel(detectPlatform());
+	});
 
 	const redirectUrl = $derived(page.url.searchParams.get("redirect") ?? "/");
 	// One Tap only fires when a public Google client id is configured (see auth-client.ts).
@@ -62,12 +69,12 @@
 		try {
 			const res = await authClient.signIn.passkey();
 			if (res?.error) {
-				error = "Face ID / Touch ID sign-in failed or was cancelled.";
+				error = biometricName + " sign-in failed or was cancelled.";
 			} else {
 				goto(redirectUrl);
 			}
 		} catch (e) {
-			error = "Face ID / Touch ID sign-in failed. Please try again.";
+			error = biometricName + " sign-in failed. Please try again.";
 			console.error(e);
 		} finally {
 			isLoading = false;
@@ -143,7 +150,7 @@
 			>
 				<span class="inline-flex items-center gap-2.5">
 					<Fingerprint class="size-4" aria-hidden="true" />
-					<span>Sign in with Face ID / Touch ID</span>
+					<span>Sign in with {biometricName}</span>
 				</span>
 			</Cta>
 		{/if}
