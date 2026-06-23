@@ -171,7 +171,13 @@
 	class="mx-auto flex w-full max-w-[var(--settings-max)] grow flex-col gap-10 px-[var(--content-pad)] py-10 outline-none sm:py-14"
 >
 	<div class="flex justify-end">
-		<Cta href="/" variant="secondary" size="sm" arrow={false} class="bg-card">
+		<Cta
+			href="/"
+			variant="secondary"
+			size="sm"
+			arrow={false}
+			class="bg-card w-full justify-center whitespace-nowrap sm:w-auto"
+		>
 			<span class="inline-flex items-center gap-2">
 				<ArrowLeft class="size-4" aria-hidden="true" /> Back to app
 			</span>
@@ -325,7 +331,14 @@
 						<span class="text-foreground font-mono">Account · Workers AI · Read</span>.
 					</p>
 				{/snippet}
-				<Cta type="submit" size="sm" variant="primary" arrow={false} disabled={saving}>
+				<Cta
+					type="submit"
+					size="sm"
+					variant="primary"
+					arrow={false}
+					disabled={saving}
+					class="w-full justify-center whitespace-nowrap sm:w-auto"
+				>
 					{saving ? "Saving…" : "Save"}
 				</Cta>
 			</SettingsActions>
@@ -360,7 +373,7 @@
 						size="sm"
 						variant="secondary"
 						arrow={false}
-						class="text-destructive hover:border-destructive"
+						class="text-destructive hover:border-destructive w-full justify-center whitespace-nowrap sm:w-auto"
 					>
 						<span class="inline-flex items-center gap-2">
 							<Trash2 class="size-3.5" aria-hidden="true" /> Disconnect
@@ -436,7 +449,7 @@
 					arrow={false}
 					disabled={passkeyBusy}
 					onclick={() => addPasskey()}
-					class="touch-manipulation"
+					class="touch-manipulation w-full justify-center whitespace-nowrap sm:w-auto"
 				>
 					<span class="inline-flex items-center gap-2">
 						<Fingerprint class="size-3.5" /> Set up {biometricName}
