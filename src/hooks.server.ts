@@ -13,7 +13,7 @@ import { building } from "$app/environment";
 import { drizzle } from "drizzle-orm/d1";
 import { createAuth } from "$lib/server/auth";
 import { users } from "$lib/server/schema";
-import { getCurrentUser } from "$lib/hooks";
+import { getCurrentUser } from "$lib/hooks/use-current-user";
 
 // Google One Tap loads the GSI script + renders a FedCM iframe from accounts.google.com, so
 // script-src/style-src/frame-src must allow it. Passkey/WebAuthn needs no CSP change.
