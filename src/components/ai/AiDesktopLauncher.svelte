@@ -22,7 +22,7 @@
 			class="group border-chat-border bg-chat-surface hover:border-chat-text-muted hover:bg-chat-surface-hover relative z-10 flex h-14 touch-manipulation items-center justify-center gap-2.5 rounded-full border border-solid pr-6 pl-5 shadow-[var(--chat-shadow)] transition-all duration-300 ease-out active:scale-95"
 			aria-label="Open AI chat"
 		>
-			<AiLauncherIcon variant="grid" class="size-6" />
+			<AiLauncherIcon class="size-6" />
 			<span class="text-chat-text-primary font-mono text-micro tracking-[0.18em] whitespace-nowrap uppercase">
 				AI Assistant
 			</span>

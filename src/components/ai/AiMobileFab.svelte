@@ -20,7 +20,7 @@
 			class="group border-chat-border bg-chat-surface hover:border-chat-text-muted hover:bg-chat-surface-hover relative z-10 flex size-14 touch-manipulation items-center justify-center rounded-full border border-solid shadow-[var(--chat-shadow)] transition-all duration-300 ease-out active:scale-95"
 			aria-label="Open AI chat"
 		>
-			<AiLauncherIcon variant="grid" class="size-6" />
+			<AiLauncherIcon class="size-6" />
 		</button>
 	</div>
 {/if}
