@@ -198,7 +198,7 @@
 			<Button
 				variant="ghost"
 				size="icon-sm"
-				class="text-muted-foreground pointer-fine:hover:text-foreground h-9 w-9 shrink-0 sm:h-7 sm:w-7"
+				class="text-muted-foreground pointer-fine:hover:text-foreground size-11 shrink-0 sm:size-7"
 				onclick={e => {
 					e.stopPropagation();
 					session.toggleClientExpanded(client.id);

@@ -45,7 +45,7 @@
 		aria-label={label}
 		onclick={(e: MouseEvent) => e.stopPropagation()}
 		class={cn(
-			"text-ink-muted pointer-fine:hover:bg-ink-2 pointer-fine:hover:text-foreground focus-visible:outline-signal inline-flex h-9 w-9 shrink-0 touch-manipulation items-center justify-center rounded-full transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50",
+			"text-ink-muted pointer-fine:hover:bg-ink-2 pointer-fine:hover:text-foreground focus-visible:outline-signal inline-flex size-11 shrink-0 touch-manipulation items-center justify-center rounded-full transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50",
 			className
 		)}
 	>

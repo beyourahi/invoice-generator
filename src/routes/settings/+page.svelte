@@ -286,7 +286,7 @@
 						disabled={refreshing || !connected}
 						title="Refresh model list"
 						aria-label="Refresh models"
-						class="text-ink-muted hover:text-foreground focus-visible:outline-signal shrink-0 touch-manipulation rounded-md p-2 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-40"
+						class="text-ink-muted hover:text-foreground focus-visible:outline-signal grid shrink-0 touch-manipulation place-items-center rounded-md p-2 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 pointer-coarse:size-11 disabled:opacity-40"
 					>
 						<RefreshCw class={cn("size-3.5", refreshing && "animate-spin")} />
 					</button>
@@ -434,7 +434,7 @@
 								onclick={() => removePasskey(pk.id)}
 								disabled={passkeyBusy}
 								aria-label={"Remove " + biometricName}
-								class="text-ink-muted hover:text-destructive focus-visible:outline-signal shrink-0 touch-manipulation rounded-md p-1 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-40"
+								class="text-ink-muted hover:text-destructive focus-visible:outline-signal grid shrink-0 touch-manipulation place-items-center rounded-md p-1 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 pointer-coarse:size-11 disabled:opacity-40"
 							>
 								<Trash2 class="size-3.5" />
 							</button>
