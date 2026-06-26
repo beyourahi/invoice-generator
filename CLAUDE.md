@@ -99,7 +99,7 @@ Route files use `$src/components/...`; library files use `$lib/...`. Never use r
 
 The frontend runs on the **Dropout Design System** (`@dropout/ds`), **vendored** at `src/lib/ds/` — NOT an npm/`file:`/workspace dependency (a sibling-path dependency breaks Cloudflare git-push auto-deploy). DS is the single source of visual truth: `app.css` imports `ds/styles/tokens.css` + `ds/styles/animations.css` (ink ramp, semantic aliases, type scale, fonts, radius, shadows, `--ease`, base layer, `@custom-variant` set). `app.css` adds only tool-specific token aliases (`--popover`, `--status-*`, `--chat-*`, `--surface`, `--preview-paper`) repointed to DS primitives, plus app keyframes and the invoice-preview stage.
 
-`$lib/ds` exports `cn` and editorial components — `Cta`, `Heading`, `Eyebrow`, `Input`, `Tile` — plus style-string helpers (`inputBase`, `tileBase`, `pillBase`, …). shadcn-svelte primitives in `$lib/components/ui/` coexist and resolve to DS token values with no per-component re-theming. The app is **dark-only** — `app.html` hardcodes `<html class="dark">` (the DS canonical theme). Note `cn()` is imported from `$lib/utils` app-wide, not from DS.
+`$lib/ds` exports `cn`, biometric-label helpers (`detectPlatform`, `biometricLabel`, …), editorial components — `Cta`, `IconButton`, `Heading`, `Eyebrow`, `Input`, `Tile` — the settings-section primitives (`SettingsSection`, `SettingsRow`, `SettingsActions`, `SettingsSaveBar`), plus style-string helpers (`inputBase`, `tileBase`, `pillBase`, …). shadcn-svelte primitives in `$lib/components/ui/` coexist and resolve to DS token values with no per-component re-theming. The app is **dark-only** — `app.html` hardcodes `<html class="dark">` (the DS canonical theme). Note `cn()` is imported from `$lib/utils` app-wide, not from DS.
 
 Refresh DS with `bun run sync-ds`. **Never hand-edit files under `src/lib/ds/`** — edit upstream in the DS repo (`../../dropout-design-system`), then re-sync.
 
@@ -399,7 +399,7 @@ The bar is high-signal only: every comment must carry information not already ob
 
 Components in `$lib/components/ui/` are auto-generated. Never modify them. Create wrappers elsewhere. The sole hand-authored exception is `footer/footer.svelte` (a plain app component that happens to live there).
 Add components: `bunx shadcn-svelte@latest add <component>`
-Editorial components (`Cta`, `Heading`, `Eyebrow`, `Input`, `Tile`) come from `$lib/ds`, not this directory — see the Design System section.
+Editorial components (`Cta`, `IconButton`, `Heading`, `Eyebrow`, `Input`, `Tile`) come from `$lib/ds`, not this directory — see the Design System section.
 
 ---
 
