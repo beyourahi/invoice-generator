@@ -11,7 +11,6 @@
 	import { downloadInvoicesZip } from "$lib/pdf/zip";
 	import { fixed } from "$lib/stores/fixed.svelte";
 	import { session } from "$lib/stores/session.svelte";
-	import { ACTIVE_THEME_ID, getTheme } from "$lib/themes/registry";
 	import type { GeneratedInvoice } from "$lib/types";
 	import { cn } from "$lib/utils";
 	import Button from "$lib/components/ui/button.svelte";
@@ -90,13 +89,12 @@
 		session.setGenerating();
 		progress = 0;
 
-		const theme = getTheme(ACTIVE_THEME_ID);
 		const results: GeneratedInvoice[] = [];
 		let completed = 0;
 
 		for (const { client, entry } of queue) {
 			try {
-				const html = buildInvoiceHtml(client, entry, fixed.value, theme);
+				const html = buildInvoiceHtml(client, entry, fixed.value);
 				const pdfBlob = await generatePdf(html);
 				results.push({
 					clientId: client.id,

@@ -15,7 +15,6 @@
 	import { fixed } from "$lib/stores/fixed.svelte";
 	import { session } from "$lib/stores/session.svelte";
 	import { ai } from "$lib/stores/ai.svelte";
-	import { getTheme, ACTIVE_THEME_ID } from "$lib/themes/registry";
 	import { Separator } from "$lib/components/ui/separator";
 	import ViewTabs from "$src/components/ViewTabs.svelte";
 	import AddClientButton from "$src/components/AddClientButton.svelte";
@@ -88,7 +87,7 @@
 		if (!client) return null;
 		const entry = firstGeneratableInvoice(client);
 		if (!entry) return null;
-		return buildInvoiceHtml(client, entry, fixed.value, getTheme(ACTIVE_THEME_ID));
+		return buildInvoiceHtml(client, entry, fixed.value);
 	});
 	const previewEmptyReason = $derived.by((): "no-client" | "no-entries" | "no-active" => {
 		const client = previewClient;

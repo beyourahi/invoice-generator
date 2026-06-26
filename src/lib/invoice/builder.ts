@@ -8,7 +8,7 @@
  * supports a literal `{MONTH}` token (case-sensitive, single replace).
  */
 import type { Client, Fixed, InvoiceEntry, SavedPaymentMethod } from "$lib/types";
-import type { Theme } from "$lib/themes/registry";
+import { defaultTheme as theme } from "$lib/themes/default";
 import { getMethodDef } from "$lib/payments/registry";
 import { formatAmount } from "$lib/format/currency";
 import { MONTH_TO_NUMBER } from "./months";
@@ -22,7 +22,7 @@ const escapeHtml = (value: string): string =>
 		.replaceAll('"', "&quot;")
 		.replaceAll("'", "&#39;");
 
-const renderPaymentMethod = (method: SavedPaymentMethod, theme: Theme): string => {
+const renderPaymentMethod = (method: SavedPaymentMethod): string => {
 	const def = getMethodDef(method.kind);
 	const label = escapeHtml(method.label.trim() || def.name);
 
@@ -64,22 +64,17 @@ const renderPaymentMethod = (method: SavedPaymentMethod, theme: Theme): string =
 
 // Renders methods in the client's selected order; method IDs with no matching
 // saved method (e.g. deleted) are silently dropped. Empty methods render "".
-const renderPaymentSection = (client: Client, fixed: Fixed, theme: Theme): string => {
+const renderPaymentSection = (client: Client, fixed: Fixed): string => {
 	const methodsById = new Map(fixed.paymentMethods.map((m) => [m.id, m]));
 	return client.payment.methodIds
 		.map((id) => methodsById.get(id))
 		.filter((m): m is SavedPaymentMethod => Boolean(m))
-		.map((m) => renderPaymentMethod(m, theme))
+		.map((m) => renderPaymentMethod(m))
 		.filter(Boolean)
 		.join("");
 };
 
-export const buildInvoiceHtml = (
-	client: Client,
-	entry: InvoiceEntry,
-	fixed: Fixed,
-	theme: Theme
-): string => {
+export const buildInvoiceHtml = (client: Client, entry: InvoiceEntry, fixed: Fixed): string => {
 	const mm = MONTH_TO_NUMBER[entry.month];
 	const invoiceId = `${client.invoicePrefix}-${mm}${entry.issueDay}-${client.year}`;
 	const amount = formatAmount(client.service.amount, client.service.currency);
@@ -94,7 +89,7 @@ export const buildInvoiceHtml = (
 		.filter(Boolean)
 		.join("");
 
-	const paymentSection = renderPaymentSection(client, fixed, theme);
+	const paymentSection = renderPaymentSection(client, fixed);
 
 	return resolveTokens(theme.html, {
 		INVOICE_ID: invoiceId,
