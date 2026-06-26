@@ -1,7 +1,7 @@
 <!--
 	Settings — the BYO Cloudflare connection for the AI Copilot. Signed-in only (the
 	loader redirects guests to /login). Built entirely from the vendored Dropout DS:
-	Eyebrow/Heading/Input/Cta + inputBase/labelBase, dark-canonical, editorial.
+	Eyebrow/Heading/Input/Select/StatusBadge/Cta + bodyBase/helperBase, dark-canonical, editorial.
 	Connecting an account is REQUIRED to use the Copilot; inference is billed to the user.
 -->
 <script lang="ts">
@@ -9,14 +9,15 @@
 	import { enhance } from "$app/forms";
 	import { invalidateAll } from "$app/navigation";
 	import { authClient } from "$lib/auth-client";
-	import { ArrowLeft, RefreshCw, Fingerprint, Trash2, Cloud } from "@lucide/svelte";
+	import { ArrowLeft, RefreshCw, Fingerprint, Trash2, Cloud, Check } from "@lucide/svelte";
 	import {
 		Eyebrow,
 		Heading,
 		Input,
+		Select,
+		StatusBadge,
 		Cta,
 		cn,
-		inputBase,
 		bodyBase,
 		helperBase,
 		metaBase,
@@ -27,10 +28,9 @@
 		detectPlatform,
 		biometricLabel
 	} from "$lib/ds";
-	import * as Select from "$lib/components/ui/select";
-	import type { PageData, ActionData } from "./$types";
+	import type { PageData } from "./$types";
 
-	let { data, form }: { data: PageData; form: ActionData } = $props();
+	let { data }: { data: PageData } = $props();
 
 	const DEFAULT_MODEL = "@cf/moonshotai/kimi-k2.6";
 
@@ -43,6 +43,8 @@
 	let accountId = $state(untrack(() => data.accountId ?? ""));
 	let model = $state(untrack(() => data.model ?? DEFAULT_MODEL));
 	let saving = $state(false);
+	let saved = $state(false);
+	let saveError = $state<string | null>(null);
 
 	// Picker options from the account's cached chat models. Always surfaces the
 	// recommended default first and the currently-selected id, even if the live list omits it.
@@ -65,7 +67,7 @@
 		return opts;
 	});
 
-	const selectedModelLabel = $derived(modelOptions.find(o => o.id === model)?.label ?? "Select a model");
+	const modelItems = $derived(modelOptions.map(o => ({ value: o.id, label: o.label })));
 
 	let refreshing = $state(false);
 	const refreshModels = async () => {
@@ -85,7 +87,6 @@
 	let passkeyBusy = $state(false);
 	let bioSupported = $state(false);
 	let passkeyError = $state<string | null>(null);
-	let passkeyMessage = $state<string | null>(null);
 
 	// Device-accurate biometric name, seeded from the server platform hint (no label flash).
 	const biometricName = biometricLabel(detectPlatform(untrack(() => data.platformHint)));
@@ -123,17 +124,13 @@
 	const addPasskey = async () => {
 		passkeyBusy = true;
 		passkeyError = null;
-		passkeyMessage = null;
 		try {
 			const res = await authClient.passkey.addPasskey({
 				name: deviceLabel(),
 				authenticatorAttachment: "platform"
 			});
 			if (res?.error) passkeyError = res.error.message || `Couldn't add ${biometricName}.`;
-			else {
-				passkeyMessage = `${biometricName} added.`;
-				await loadPasskeys();
-			}
+			else await loadPasskeys();
 		} catch {
 			passkeyError = "Setup was cancelled.";
 		} finally {
@@ -145,14 +142,10 @@
 		if (!confirm(`Remove this ${biometricName}? You won't be able to sign in with it anymore.`)) return;
 		passkeyBusy = true;
 		passkeyError = null;
-		passkeyMessage = null;
 		try {
 			const res = await authClient.passkey.deletePasskey({ id });
 			if (res?.error) passkeyError = res.error.message || "Couldn't remove it.";
-			else {
-				passkeyMessage = `${biometricName} removed.`;
-				await loadPasskeys();
-			}
+			else await loadPasskeys();
 		} catch {
 			passkeyError = "Couldn't remove it.";
 		} finally {
@@ -176,18 +169,19 @@
 			variant="secondary"
 			size="sm"
 			arrow={false}
-			class="bg-card w-full justify-center whitespace-nowrap sm:w-auto"
+			class="w-full justify-center whitespace-nowrap sm:w-auto"
 		>
 			<span class="inline-flex items-center gap-2">
-				<ArrowLeft class="size-4" aria-hidden="true" /> Back to app
+				<ArrowLeft class="size-4" aria-hidden="true" />
+				Back to app
 			</span>
 		</Cta>
 	</div>
 
 	<header class="flex flex-col gap-2.5">
 		<Eyebrow>Settings</Eyebrow>
-		<Heading as="h1" size="title-lg" weight={600} class="whitespace-nowrap lg:text-title">Settings</Heading>
-		<p class={cn(bodyBase, "max-w-prose text-pretty")}>
+		<Heading as="h1" size="title-lg" weight={600} class="lg:text-title">Settings</Heading>
+		<p class={cn(bodyBase, "max-w-prose")}>
 			Connect your own Cloudflare account to power the AI Copilot. This is
 			<span class="text-foreground">required</span> to use the assistant — it runs on your own Cloudflare account.
 		</p>
@@ -199,15 +193,7 @@
 		icon={Cloud}
 	>
 		{#snippet header()}
-			<span
-				class={cn(
-					"inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-mono text-micro tracking-[0.14em] whitespace-nowrap uppercase",
-					connected ? "border-signal/40 text-foreground" : "border-hair text-ink-muted"
-				)}
-			>
-				<span class={cn("size-1.5 rounded-full", connected ? "bg-signal" : "bg-ink-muted")}></span>
-				{connected ? "Connected" : "Not connected"}
-			</span>
+			<StatusBadge {connected} />
 		{/snippet}
 
 		<form
@@ -216,43 +202,35 @@
 			class="flex flex-col gap-6"
 			use:enhance={() => {
 				saving = true;
-				return async ({ update }) => {
+				saved = false;
+				saveError = null;
+				return async ({ result, update }) => {
 					saving = false;
-					token = "";
+					if (result.type === "success") {
+						saved = true;
+						token = "";
+					} else if (result.type === "failure") {
+						saveError = (result.data as { error?: string } | undefined)?.error ?? "Couldn't save.";
+					}
 					await update({ reset: false });
 				};
 			}}
 		>
-			{#if form?.error}
-				<p
-					class="border-destructive/40 bg-destructive/10 text-destructive rounded-xl border px-4 py-3 text-xs text-pretty"
-					role="alert"
-				>
-					{form.error}
-				</p>
-			{:else if form?.success}
-				<p
-					class="border-signal/40 text-foreground rounded-xl border px-4 py-3 text-xs text-pretty"
-					role="status"
-				>
-					{form.message}
-				</p>
-			{/if}
-
 			<SettingsRow label="API token" htmlFor="cf-token" stacked>
 				<Input
 					id="cf-token"
-					type="password"
 					name="cloudflareToken"
+					type="password"
 					bind:value={token}
 					placeholder={maskedToken || "v1.0-…"}
 					autocomplete="off"
+					spellcheck="false"
 					class="w-full"
 				/>
 				<p class={cn(helperBase, "mt-2")}>
-					{#if connected && maskedToken}
-						Stored: <span class="text-foreground font-mono wrap-break-word">{maskedToken}</span> — leave blank
-						to keep it.
+					{#if connected}
+						Stored: <span class="text-foreground font-mono break-all">{maskedToken}</span> — leave blank to keep
+						it.
 					{:else}
 						An API token with the <span class="text-foreground">Account · Workers AI · Read</span>
 						permission. Stored securely. You won't see it again after saving.
@@ -267,6 +245,7 @@
 					bind:value={accountId}
 					placeholder="0123456789abcdef…"
 					autocomplete="off"
+					spellcheck="false"
 					class="w-full"
 				/>
 				<p class={cn(helperBase, "mt-2")}>
@@ -274,47 +253,39 @@
 				</p>
 			</SettingsRow>
 
-			<SettingsRow
-				label="Model"
-				hint="Kimi K2.6 is recommended. Others are experimental and may be less reliable."
-				htmlFor="cf-model"
-			>
-				<div class="flex items-center gap-2">
+			<SettingsRow label="Model" htmlFor="cf-model" stacked>
+				<div class="flex min-w-0 items-center gap-2">
 					<button
 						type="button"
 						onclick={refreshModels}
 						disabled={refreshing || !connected}
 						title="Refresh model list"
 						aria-label="Refresh models"
-						class="text-ink-muted hover:text-foreground focus-visible:outline-signal grid shrink-0 touch-manipulation place-items-center rounded-md p-2 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 pointer-coarse:size-11 disabled:opacity-40"
+						class="text-ink-muted hover:text-foreground grid size-9 shrink-0 touch-manipulation place-items-center rounded-[9px] transition-colors disabled:opacity-40 pointer-coarse:size-11"
 					>
-						<RefreshCw class={cn("size-3.5", refreshing && "animate-spin")} />
+						<RefreshCw class={cn("size-4", refreshing && "animate-spin")} aria-hidden="true" />
 					</button>
-					<Select.Root type="single" name="cloudflareModel" bind:value={model}>
-						<Select.Trigger
-							id="cf-model"
-							aria-label="Model"
-							class={cn(
-								inputBase,
-								"flex h-auto w-full items-center justify-between gap-2 text-caption [&>svg]:size-4 [&>svg]:shrink-0 [&>svg]:opacity-60"
-							)}
-						>
-							<span class="min-w-0 truncate text-left">{selectedModelLabel}</span>
-						</Select.Trigger>
-						<Select.Content
-							class="border-hair bg-card max-h-72 w-(--bits-select-anchor-width) rounded-xl p-1 shadow-lg ring-0"
-						>
-							{#each modelOptions as opt (opt.id)}
-								<Select.Item
-									value={opt.id}
-									label={opt.label}
-									class="text-foreground data-highlighted:bg-ink-2 focus:bg-ink-2 ease-[var(--ease)] cursor-pointer rounded-lg px-2.5 py-2 text-caption transition-colors [&_.cn-select-item-indicator-icon]:text-signal"
-								/>
-							{/each}
-						</Select.Content>
-					</Select.Root>
+					<Select
+						id="cf-model"
+						name="cloudflareModel"
+						bind:value={model}
+						items={modelItems}
+						placeholder="Select a model"
+						class="w-full"
+					/>
 				</div>
+				<p class={cn(helperBase, "mt-2")}>
+					Kimi K2.6 is recommended. Others are experimental and may be less reliable.
+				</p>
 			</SettingsRow>
+
+			{#if saved}
+				<p class="text-status-connected inline-flex items-center gap-1.5 text-caption" role="status">
+					<Check class="size-3.5" aria-hidden="true" /> Saved.
+				</p>
+			{:else if saveError}
+				<p class="text-destructive text-caption text-pretty" role="alert">{saveError}</p>
+			{/if}
 
 			<SettingsActions>
 				{#snippet status()}
@@ -324,10 +295,11 @@
 							href="https://dash.cloudflare.com/profile/api-tokens"
 							target="_blank"
 							rel="noreferrer"
-							class="text-foreground underline underline-offset-2 wrap-break-word"
-							>dash.cloudflare.com/profile/api-tokens</a
+							class="text-foreground underline underline-offset-2 break-all"
 						>
-						-> Create Custom Token -> permission
+							dash.cloudflare.com/profile/api-tokens
+						</a>
+						→ Create Custom Token → permission
 						<span class="text-foreground font-mono">Account · Workers AI · Read</span>.
 					</p>
 				{/snippet}
@@ -356,9 +328,17 @@
 					method="POST"
 					action="?/reset"
 					class="shrink-0"
-					use:enhance={() =>
-						async ({ update }) =>
-							update({ reset: false })}
+					use:enhance={() => {
+						saved = false;
+						saveError = null;
+						return async ({ result, update }) => {
+							if (result.type === "failure") {
+								saveError =
+									(result.data as { error?: string } | undefined)?.error ?? "Couldn't disconnect.";
+							}
+							await update({ reset: false });
+						};
+					}}
 					onsubmit={e => {
 						if (
 							!confirm(
@@ -373,10 +353,11 @@
 						size="sm"
 						variant="secondary"
 						arrow={false}
-						class="text-destructive hover:border-destructive w-full justify-center whitespace-nowrap sm:w-auto"
+						class="text-destructive w-full justify-center whitespace-nowrap sm:w-auto"
 					>
 						<span class="inline-flex items-center gap-2">
-							<Trash2 class="size-3.5" aria-hidden="true" /> Disconnect
+							<Trash2 class="size-3.5" aria-hidden="true" />
+							Disconnect
 						</span>
 					</Cta>
 				</form>
@@ -390,26 +371,12 @@
 			subtitle={"Sign in with " + biometricName + " instead of Google."}
 			icon={Fingerprint}
 		>
-			{#if passkeyError}
-				<p
-					class="border-destructive/40 bg-destructive/10 text-destructive rounded-xl border px-4 py-3 text-xs text-pretty"
-					role="alert"
-				>
-					{passkeyError}
-				</p>
-			{:else if passkeyMessage}
-				<p
-					class="border-signal/40 text-foreground rounded-xl border px-4 py-3 text-xs text-pretty"
-					role="status"
-				>
-					{passkeyMessage}
-				</p>
-			{/if}
-
 			{#if passkeysLoading}
 				<p class={helperBase}>Loading…</p>
 			{:else if passkeys.length === 0}
-				<p class={helperBase}>Nothing set up yet. Add {biometricName} to sign in without Google.</p>
+				<p class={cn(helperBase, "max-w-prose")}>
+					Not set up yet. Add {biometricName} to sign in without Google.
+				</p>
 			{:else}
 				<ul class="flex flex-col gap-2">
 					{#each passkeys as pk (pk.id)}
@@ -417,15 +384,13 @@
 							class="border-hair bg-ink-2/40 flex items-center justify-between gap-3 rounded-lg border px-3 py-2.5"
 						>
 							<div class="flex min-w-0 items-center gap-2.5">
-								<Fingerprint class="text-signal size-4 shrink-0" />
+								<Fingerprint size={15} class="text-signal shrink-0" aria-hidden="true" />
 								<div class="min-w-0">
-									<p class={cn(bodyBase, "truncate font-medium")}>
+									<p class="text-foreground truncate text-sm font-medium">
 										{pk.name || biometricName}
 									</p>
 									{#if pk.createdAt && formatDate(pk.createdAt)}
-										<p class={metaBase}>
-											Added {formatDate(pk.createdAt)}
-										</p>
+										<p class={metaBase}>Added {formatDate(pk.createdAt)}</p>
 									{/if}
 								</div>
 							</div>
@@ -434,14 +399,19 @@
 								onclick={() => removePasskey(pk.id)}
 								disabled={passkeyBusy}
 								aria-label={"Remove " + biometricName}
-								class="text-ink-muted hover:text-destructive focus-visible:outline-signal grid shrink-0 touch-manipulation place-items-center rounded-md p-1 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 pointer-coarse:size-11 disabled:opacity-40"
+								class="text-ink-muted hover:text-destructive grid size-9 shrink-0 touch-manipulation place-items-center rounded-[9px] transition-colors disabled:opacity-40 pointer-coarse:size-11"
 							>
-								<Trash2 class="size-3.5" />
+								<Trash2 size={14} aria-hidden="true" />
 							</button>
 						</li>
 					{/each}
 				</ul>
 			{/if}
+
+			{#if passkeyError}
+				<p class="text-destructive text-caption text-pretty" role="alert">{passkeyError}</p>
+			{/if}
+
 			<SettingsActions>
 				<Cta
 					size="sm"
@@ -449,10 +419,11 @@
 					arrow={false}
 					disabled={passkeyBusy}
 					onclick={() => addPasskey()}
-					class="touch-manipulation w-full justify-center whitespace-nowrap sm:w-auto"
+					class="w-full justify-center whitespace-nowrap sm:w-auto"
 				>
 					<span class="inline-flex items-center gap-2">
-						<Fingerprint class="size-3.5" /> Set up {biometricName}
+						<Fingerprint size={14} aria-hidden="true" />
+						Set up {biometricName}
 					</span>
 				</Cta>
 			</SettingsActions>
