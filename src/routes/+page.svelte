@@ -15,6 +15,7 @@
 	import { fixed } from "$lib/stores/fixed.svelte";
 	import { session } from "$lib/stores/session.svelte";
 	import { ai } from "$lib/stores/ai.svelte";
+	import { cn } from "$lib/utils";
 	import { Separator } from "$lib/components/ui/separator";
 	import ViewTabs from "$src/components/ViewTabs.svelte";
 	import AddClientButton from "$src/components/AddClientButton.svelte";
@@ -96,6 +97,9 @@
 		return "no-active";
 	});
 
+	// Slide the builder left when the copilot rail opens — same shift the profile row (Navbar) uses.
+	const copilotOpen = $derived(ai.desktopOpen);
+
 	onMount(async () => {
 		ToasterComponent = (await import("$lib/components/ui/sonner")).Toaster;
 
@@ -135,7 +139,13 @@
 <main
 	id="main"
 	tabindex="-1"
-	class="flex w-full min-w-0 grow flex-col px-[var(--content-x)] pt-10 pb-16 sm:pt-12 sm:pb-20 outline-none"
+	class={cn(
+		"flex w-full min-w-0 grow flex-col px-[var(--content-x)] pt-10 pb-16 sm:pt-12 sm:pb-20 outline-none",
+		"transition-[padding] duration-300 ease-[var(--ease)] motion-reduce:transition-none",
+		copilotOpen
+			? "lg:pr-[calc(var(--copilot-rail-width)+1.5rem)] xl:pr-[calc(var(--copilot-rail-width-xl)+1.5rem)]"
+			: "lg:pr-[var(--content-x)]"
+	)}
 >
 	<div class="m-auto flex w-full min-w-0 flex-col items-center gap-12 sm:gap-16 lg:gap-16">
 		<div use:reveal>
