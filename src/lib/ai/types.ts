@@ -95,6 +95,7 @@ export type Frame =
 			t: "end";
 			turnId: string;
 			conversationId: string;
+			messageId: string | null;
 			inputTokens: number;
 			outputTokens: number;
 	  }

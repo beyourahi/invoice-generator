@@ -79,8 +79,8 @@ const projectPaymentMethod = (method: SavedPaymentMethod, index: number): Contex
 	};
 };
 
-const projectInvoice = (entry: InvoiceEntry, index: number): ContextInvoice => ({
-	token: `ent_${index + 1}`,
+const projectInvoice = (entry: InvoiceEntry, token: string): ContextInvoice => ({
+	token,
 	id: entry.id,
 	month: entry.month,
 	issueDay: entry.issueDay,
@@ -91,10 +91,13 @@ const projectInvoice = (entry: InvoiceEntry, index: number): ContextInvoice => (
 const projectClient = (
 	client: Client,
 	clientIndex: number,
-	tokenMap: Record<string, string>
+	tokenMap: Record<string, string>,
+	nextEntryToken: () => string
 ): ContextClient => {
-	const invoices = client.invoices.map((entry, idx) => {
-		const projected = projectInvoice(entry, idx);
+	const invoices = client.invoices.map((entry) => {
+		// Entry tokens come from a single global counter (not a per-client index)
+		// so ent_N never collides across clients in the shared tokenMap.
+		const projected = projectInvoice(entry, nextEntryToken());
 		tokenMap[projected.token] = entry.id;
 		return projected;
 	});
@@ -134,7 +137,9 @@ const renderSummary = (payload: Omit<ContextPayload, "summaryText" | "tokenMap">
 		for (const c of payload.clients) {
 			const total = c.invoices.length;
 			const active = c.invoices.filter((i) => i.isActive).length;
-			const monthList = c.invoices.map((i) => `${i.month}${i.isActive ? "" : "·off"}`).join(", ");
+			const monthList = c.invoices
+				.map((i) => `${i.token}=${i.month}${i.isActive ? "" : "·off"}`)
+				.join(", ");
 			const amountLabel = formatAmount(c.amount, c.currency as Currency);
 			lines.push(
 				`  ${c.token} "${c.name || "(unnamed)"}" prefix=${c.invoicePrefix || "(none)"} year=${c.year} active=${c.isActive} amount=${amountLabel}/mo entries=${active}/${total}${c.createdAt ? ` created=${c.createdAt}` : ""}${total > 0 ? ` [${monthList}]` : ""}`
@@ -196,8 +201,10 @@ export const projectAppState = (appState: AppState): ContextPayload => {
 		return projected;
 	});
 
+	let entryCounter = 0;
+	const nextEntryToken = (): string => `ent_${++entryCounter}`;
 	const clients = appState.clients.map((c, i) => {
-		const projected = projectClient(c, i, tokenMap);
+		const projected = projectClient(c, i, tokenMap, nextEntryToken);
 		tokenMap[projected.token] = c.id;
 		return projected;
 	});

@@ -104,6 +104,20 @@ export const listMessages = async (
 	return rows.map(toRow);
 };
 
+/**
+ * Persists tool-call outcomes onto an already-appended assistant message. The
+ * chat route appends the assistant turn with toolResults:null (tools run on the
+ * client AFTER streaming), so the client PATCHes the real applied/rejected/failed
+ * results here — without this a reloaded conversation can't know any tool's fate.
+ */
+export const updateMessageToolResults = async (
+	db: Database,
+	messageId: string,
+	toolResults: AiMessageToolResult[]
+): Promise<void> => {
+	await db.update(aiMessages).set({ toolResults }).where(eq(aiMessages.id, messageId)).run();
+};
+
 export const getMessage = async (db: Database, id: string): Promise<AiMessageRow | null> => {
 	const row = await db.select().from(aiMessages).where(eq(aiMessages.id, id)).get();
 	return row ? toRow(row) : null;

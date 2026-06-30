@@ -102,7 +102,7 @@ const correctiveMessage = (invalid: ValidatedCall[]): string =>
 		"Your previous tool call(s) failed schema validation:",
 		...invalid.map((v) => `- "${v.call.name}": ${v.error}`),
 		"",
-		"Re-issue the corrected tool call(s) now. Argument names and types must exactly match each tool's argument schema. If you cannot produce a valid call, reply with a short plain-text explanation instead."
+		"Re-issue ONLY the corrected version(s) of the failed call(s) listed above. Do NOT repeat any other tool calls from your previous turn — those already ran. Argument names and types must exactly match each tool's argument schema. If you cannot produce a valid call, reply with a short plain-text explanation instead."
 	].join("\n");
 
 /** Retry prompt when the model should have acted on an instruction but called no tool. */
@@ -117,13 +117,22 @@ const ACTION_RETRY_MESSAGE =
  */
 const IMPERATIVE_RE =
 	/\b(set|add|change|update|delete|remove|edit|fix|make|apply|append|insert|rename|clear|replace|assign|move|undo|revert|create|correct|adjust|drop|fill|put|toggle|activate|deactivate|enable|disable|select|reorder|polish|rewrite)\b/i;
+/** Read-only/interrogative lead words: a message starting with one is a question, not a command. */
+const READONLY_LEAD_RE =
+	/^(how|what|when|where|which|why|who|is|are|do|does|did|can|could|would|show|tell|list|remind|give)\b/i;
 const looksImperative = (text: string): boolean => {
 	const t = text.trim();
-	return t.length > 0 && !t.endsWith("?") && IMPERATIVE_RE.test(t);
+	if (t.length === 0 || t.endsWith("?")) return false;
+	// Don't force a retry on read-only questions phrased without a "?".
+	if (READONLY_LEAD_RE.test(t.toLowerCase())) return false;
+	return IMPERATIVE_RE.test(t);
 };
 /** A genuine refusal/clarification we must NOT suppress as a false action narration. */
 const REFUSAL_RE =
 	/\b(can'?t|cannot|can not|unable|won'?t|not able|out of scope|outside|only help|only assist|don'?t|do not|which|could you|do you want|no client|no invoice)\b/i;
+/** A completion claim ("Done", "Updated 5 rows", "I've added…"); only these are blanked when no tool ran. */
+const AFFIRMATION_RE =
+	/\b(done|updated?|set|added?|applied|appended|inserted|changed|removed|deleted|cleared|renamed|replaced|fixed|marked|created|adjusted|corrected|archived|restored|reordered|shared|i'?ve|i have|i'?ll|all set|here you go)\b/i;
 
 /**
  * POST /api/ai/chat — runs one Copilot turn and streams the result as SSE.
@@ -252,6 +261,7 @@ export const POST: RequestHandler = async (event) => {
 		let retried = false;
 		let finalCalls: ParsedToolCall[] = [];
 		let successCount = 0;
+		let assistantMessageId: string | null = null;
 
 		const consume = async (
 			gen: AsyncGenerator<Frame, RawChatResult>,
@@ -306,6 +316,9 @@ export const POST: RequestHandler = async (event) => {
 			let validated = validateToolCalls(decodeCallTokens(firstCalls, context.tokenMap));
 			let replyText = firstText;
 			const invalid = validated.filter((v) => !v.valid);
+			// Turn-1 calls that already passed — kept across an invalid-args retry so a
+			// mixed valid+invalid turn doesn't silently drop the user's valid action.
+			const firstValid = validated.filter((v) => v.valid);
 			const userImperative = looksImperative(parsed.message);
 			// Model failed to act: an imperative instruction produced no tool call,
 			// and the reply isn't a clarifying question.
@@ -347,12 +360,22 @@ export const POST: RequestHandler = async (event) => {
 				inputTokens += retry.inputTokens;
 				outputTokens += retry.outputTokens;
 				let retryCalls = retry.toolCalls;
-				if (retryCalls.length === 0 && retry.text.trim().length > 0) {
-					const salvaged = salvageTextToolCalls(retry.text);
-					if (salvaged.calls.length > 0) retryCalls = salvaged.calls;
+				let retryText = retry.text;
+				// Strip salvaged inline-JSON from the reply on the retry path too, so
+				// raw tool-call JSON never reaches the chat bubble or persisted history.
+				if (retryCalls.length === 0 && retryText.trim().length > 0) {
+					const salvaged = salvageTextToolCalls(retryText);
+					if (salvaged.calls.length > 0) {
+						retryCalls = salvaged.calls;
+						retryText = salvaged.cleanedText;
+					}
 				}
-				validated = validateToolCalls(decodeCallTokens(retryCalls, context.tokenMap));
-				replyText = retry.text;
+				const retryValidated = validateToolCalls(decodeCallTokens(retryCalls, context.tokenMap));
+				// Invalid-args retry: merge the preserved turn-1 valid calls with the
+				// retry's calls (the corrective prompt told the model not to repeat them).
+				// The no-tool-call branch had no valid turn-1 calls, so it just replaces.
+				validated = invalid.length > 0 ? [...firstValid, ...retryValidated] : retryValidated;
+				replyText = retryText;
 			}
 
 			// Only valid calls reach the client/D1.
@@ -366,7 +389,8 @@ export const POST: RequestHandler = async (event) => {
 				successCount === 0 &&
 				userImperative &&
 				!outText.includes("?") &&
-				!REFUSAL_RE.test(outText)
+				!REFUSAL_RE.test(outText) &&
+				AFFIRMATION_RE.test(outText)
 			) {
 				outText = "";
 			}
@@ -387,7 +411,7 @@ export const POST: RequestHandler = async (event) => {
 				name: c.name,
 				args: c.args
 			}));
-			await appendMessage(db, activeConversationId, {
+			const assistantMessage = await appendMessage(db, activeConversationId, {
 				role: "assistant",
 				content: assistantText,
 				toolCalls: toolCalls.length > 0 ? toolCalls : null,
@@ -395,6 +419,8 @@ export const POST: RequestHandler = async (event) => {
 				inputTokens,
 				outputTokens
 			});
+			// Surface the persisted id so the client can PATCH tool outcomes back.
+			assistantMessageId = assistantMessage.id;
 			await touchUpdatedAt(db, activeConversationId);
 			await recordSpend(env.AI_QUOTA_KV, userId, inputTokens, outputTokens);
 		} catch (err) {
@@ -420,6 +446,7 @@ export const POST: RequestHandler = async (event) => {
 			t: "end",
 			turnId,
 			conversationId: activeConversationId,
+			messageId: assistantMessageId,
 			inputTokens,
 			outputTokens
 		});

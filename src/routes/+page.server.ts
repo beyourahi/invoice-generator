@@ -81,16 +81,21 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 					id: m.id,
 					role: m.role,
 					content: m.content,
-					toolCalls: (m.toolCalls ?? []).map((tc) => ({
-						id: tc.id,
-						name: tc.name,
-						args: tc.args,
-						status: "applied" as const,
-						actionId: null,
-						error: null,
-						anomalies: [],
-						undone: false
-					})),
+					toolCalls: (m.toolCalls ?? []).map((tc) => {
+						// Join the persisted tool result; a missing one (legacy/mid-flight
+						// turn) defaults to neutral "pending", never a false "applied".
+						const result = m.toolResults?.find((r) => r.id === tc.id);
+						return {
+							id: tc.id,
+							name: tc.name,
+							args: tc.args,
+							status: result?.status ?? ("pending" as const),
+							actionId: result?.actionId ?? null,
+							error: result?.error ?? null,
+							anomalies: [],
+							undone: false
+						};
+					}),
 					createdAt: m.createdAt.toISOString(),
 					streaming: false
 				})),

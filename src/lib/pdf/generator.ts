@@ -62,48 +62,52 @@ export const generatePdf = async (html: string): Promise<Blob> => {
 
 	document.body.appendChild(iframe);
 
-	await new Promise<void>((resolve, reject) => {
-		iframe.addEventListener("load", () => resolve(), { once: true });
-		iframe.addEventListener("error", () => reject(new Error("iframe load failed")), {
-			once: true
+	try {
+		await new Promise<void>((resolve, reject) => {
+			iframe.addEventListener("load", () => resolve(), { once: true });
+			iframe.addEventListener("error", () => reject(new Error("iframe load failed")), {
+				once: true
+			});
+			iframe.setAttribute("srcdoc", html);
 		});
-		iframe.setAttribute("srcdoc", html);
-	});
 
-	const iframeDoc = iframe.contentDocument;
-	if (!iframeDoc) throw new Error("iframe document unavailable");
+		const iframeDoc = iframe.contentDocument;
+		if (!iframeDoc) throw new Error("iframe document unavailable");
 
-	// Fonts must be loaded and one frame painted before capture, or html2canvas
-	// snapshots fallback metrics / pre-layout state.
-	await iframeDoc.fonts.ready;
-	await waitForFrame();
+		// Fonts must be loaded and one frame painted before capture, or html2canvas
+		// snapshots fallback metrics / pre-layout state.
+		await iframeDoc.fonts.ready;
+		await waitForFrame();
 
-	const linkAnnotations = extractLinks(iframeDoc);
+		const linkAnnotations = extractLinks(iframeDoc);
 
-	const canvas = await html2canvas(iframeDoc.body, {
-		scale: 2,
-		useCORS: true,
-		allowTaint: false,
-		logging: false,
-		width: A4_WIDTH_PX,
-		height: A4_HEIGHT_PX,
-		windowWidth: A4_WIDTH_PX,
-		windowHeight: A4_HEIGHT_PX
-	});
+		const canvas = await html2canvas(iframeDoc.body, {
+			scale: 2,
+			useCORS: true,
+			allowTaint: false,
+			logging: false,
+			width: A4_WIDTH_PX,
+			height: A4_HEIGHT_PX,
+			windowWidth: A4_WIDTH_PX,
+			windowHeight: A4_HEIGHT_PX
+		});
 
-	document.body.removeChild(iframe);
+		const pdf = new jsPDF({
+			orientation: "portrait",
+			unit: "mm",
+			format: "a4"
+		});
 
-	const pdf = new jsPDF({
-		orientation: "portrait",
-		unit: "mm",
-		format: "a4"
-	});
+		pdf.addImage(canvas.toDataURL("image/png", 1.0), "PNG", 0, 0, 210, 297);
 
-	pdf.addImage(canvas.toDataURL("image/png", 1.0), "PNG", 0, 0, 210, 297);
+		for (const { x, y, w, h, url } of linkAnnotations) {
+			pdf.link(x, y, w, h, { url });
+		}
 
-	for (const { x, y, w, h, url } of linkAnnotations) {
-		pdf.link(x, y, w, h, { url });
+		return pdf.output("blob");
+	} finally {
+		// Tear down the iframe on every exit path so a generation failure does
+		// not leak a fully-loaded invoice iframe into the DOM.
+		document.body.removeChild(iframe);
 	}
-
-	return pdf.output("blob");
 };

@@ -43,7 +43,7 @@ interface ToolArgs {
 	patch?: { amount?: number; serviceAmount?: number; currency?: string; serviceCurrency?: string };
 	amount?: number;
 	currency?: string;
-	data?: { paymentMethodIds?: string[]; methodIds?: string[] };
+	templateId?: string | null;
 }
 
 /** Flags an updateClient amount outside 0.5×–2× the client's current amount; needs ≥3 existing invoices as a baseline. */
@@ -87,17 +87,22 @@ const detectVolumeSurge = (toolName: string, args: ToolArgs): AnomalyResult | nu
 	return null;
 };
 
-const detectMissingPaymentMethods = (toolName: string, args: ToolArgs): AnomalyResult | null => {
+// createClient cannot attach payment methods via args — methods are only ever
+// inherited from a template client. So the detector checks the template's real
+// state (not phantom args) and stays quiet when the template already has methods.
+const detectMissingPaymentMethods = (
+	toolName: string,
+	args: ToolArgs,
+	appState: AppState
+): AnomalyResult | null => {
 	if (toolName !== "createClient") return null;
-	const ids = args.data?.paymentMethodIds ?? args.data?.methodIds ?? [];
-	if (ids.length === 0) {
-		return {
-			key: "MissingPaymentMethods",
-			reason:
-				"New client has no payment methods selected — invoices will render without payment instructions."
-		};
-	}
-	return null;
+	const tpl = args.templateId ? findClient(appState, args.templateId) : undefined;
+	if (tpl && tpl.payment.methodIds.length > 0) return null;
+	return {
+		key: "MissingPaymentMethods",
+		reason:
+			"New client has no payment methods selected — invoices will render without payment instructions."
+	};
 };
 
 const detectStalePeriod = (
@@ -163,7 +168,7 @@ export const detectAnomalies = (
 		if (r) out.push(r);
 	}
 	if (settings.missingPaymentMethods) {
-		const r = detectMissingPaymentMethods(toolName, typed);
+		const r = detectMissingPaymentMethods(toolName, typed, appState);
 		if (r) out.push(r);
 	}
 	if (settings.stalePeriod) {

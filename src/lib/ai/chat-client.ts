@@ -100,6 +100,7 @@ export const sendMessage = async (message: string, options: SendOptions = {}): P
 
 	const collectedToolCalls: ParsedToolCall[] = [];
 	let assignedConversationId: string | null = conversationId;
+	let assistantMessageId: string | null = null;
 
 	try {
 		const response = await fetch("/api/ai/chat", {
@@ -163,6 +164,7 @@ export const sendMessage = async (message: string, options: SendOptions = {}): P
 					}))
 				});
 			} else if (frame.t === "end") {
+				assistantMessageId = frame.messageId;
 				if (!assignedConversationId) {
 					assignedConversationId = frame.conversationId;
 					ai.setActiveConversation(assignedConversationId);
@@ -200,6 +202,12 @@ export const sendMessage = async (message: string, options: SendOptions = {}): P
 	};
 
 	let needsReload = false;
+	const persistedResults: Array<{
+		id: string;
+		status: "applied" | "rejected" | "failed";
+		error?: string;
+		actionId?: string;
+	}> = [];
 	for (const call of collectedToolCalls) {
 		const outcome = await executeToolCall(call, {
 			conversationId: assignedConversationId,
@@ -208,6 +216,12 @@ export const sendMessage = async (message: string, options: SendOptions = {}): P
 			requestConfirmation,
 			requestPolishApproval: requestPolishApproval(assistantId),
 			onResult
+		});
+		persistedResults.push({
+			id: outcome.toolCallId,
+			status: outcome.status,
+			...(outcome.actionId ? { actionId: outcome.actionId } : {}),
+			...(outcome.error ? { error: outcome.error } : {})
 		});
 		if (outcome.status === "applied") {
 			needsReload = true;
@@ -218,6 +232,20 @@ export const sendMessage = async (message: string, options: SendOptions = {}): P
 			});
 		} else if (outcome.status === "failed") {
 			fireToast({ type: "error", message: friendlyErrorMessage(outcome.error ?? "Tool failed") });
+		}
+	}
+
+	// Persist tool outcomes onto the assistant message so a later reload shows the
+	// real applied/rejected/failed status instead of guessing.
+	if (assistantMessageId && persistedResults.length > 0) {
+		try {
+			await fetch(`/api/ai/messages/${assistantMessageId}`, {
+				method: "PATCH",
+				headers: { "content-type": "application/json" },
+				body: JSON.stringify({ toolResults: persistedResults })
+			});
+		} catch (err) {
+			console.error("[ai] failed to persist tool results", err);
 		}
 	}
 
@@ -310,7 +338,9 @@ export const createNewConversation = async (): Promise<void> => {
 };
 
 // Loads a conversation's persisted messages and reconstructs tool-call display state by
-// joining stored toolCalls with their toolResults (status/actionId); defaults missing results to "applied".
+// joining stored toolCalls with their toolResults (status/actionId). A missing result
+// (legacy/mid-flight message never PATCHed) defaults to the neutral "pending" — never
+// "applied", which would falsely claim a tool succeeded.
 export const switchConversation = async (id: string): Promise<void> => {
 	if (ai.activeConversationId === id) return;
 	ai.setActiveConversation(id);
@@ -332,7 +362,13 @@ export const switchConversation = async (id: string): Promise<void> => {
 						id: tc.id,
 						name: tc.name,
 						args: tc.args,
-						status: (result?.status as "applied" | "rejected" | "failed" | undefined) ?? "applied",
+						status:
+							(result?.status as
+								| "applied"
+								| "rejected"
+								| "failed"
+								| "pending_confirmation"
+								| undefined) ?? "pending",
 						actionId: result?.actionId ?? null,
 						error: result?.error ?? null,
 						anomalies: [],

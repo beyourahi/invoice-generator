@@ -49,6 +49,28 @@ export const INVOICES_ROOT_FOLDER = "invoices";
 
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
+/**
+ * Returns a name unique within `used` (which it mutates): on collision it appends
+ * " (2)", " (3)", … to `base` before re-attaching `ext`. Prevents two clients
+ * that share a file or folder name from overwriting/merging in the same directory.
+ */
+export const uniqueKey = (used: Set<string>, base: string, ext = ""): string => {
+	let candidate = `${base}${ext}`;
+	let n = 2;
+	while (used.has(candidate)) {
+		candidate = `${base} (${n})${ext}`;
+		n++;
+	}
+	used.add(candidate);
+	return candidate;
+};
+
+/** Splits a file name into [base, ext], preserving a single trailing extension (".pdf"). */
+export const splitFileName = (fileName: string): [string, string] => {
+	const dot = fileName.lastIndexOf(".");
+	return dot > 0 ? [fileName.slice(0, dot), fileName.slice(dot)] : [fileName, ""];
+};
+
 const supportsDirectoryPicker = (): boolean =>
 	typeof window !== "undefined" &&
 	typeof (window as unknown as Partial<DirectoryPickerWindow>).showDirectoryPicker === "function";
@@ -81,19 +103,27 @@ const writeGroupsToDirectory = async (
 	groups: DownloadGroup[]
 ): Promise<void> => {
 	const invoicesRoot = await root.getDirectoryHandle(INVOICES_ROOT_FOLDER, { create: true });
+	// Files and subfolders share one namespace under invoicesRoot, so dedup both
+	// against the same set to avoid overwrite/merge across same-named clients.
+	const rootUsed = new Set<string>();
 
 	for (const group of groups) {
 		if (group.invoices.length === 0) continue;
 
 		if (group.invoices.length === 1) {
 			const [invoice] = group.invoices;
-			await writeFile(invoicesRoot, invoice.fileName, invoice.pdfBlob);
+			const [base, ext] = splitFileName(invoice.fileName);
+			await writeFile(invoicesRoot, uniqueKey(rootUsed, base, ext), invoice.pdfBlob);
 			continue;
 		}
 
-		const folder = await invoicesRoot.getDirectoryHandle(group.folderName, { create: true });
+		const folder = await invoicesRoot.getDirectoryHandle(uniqueKey(rootUsed, group.folderName), {
+			create: true
+		});
+		const folderUsed = new Set<string>();
 		for (const invoice of group.invoices) {
-			await writeFile(folder, invoice.fileName, invoice.pdfBlob);
+			const [base, ext] = splitFileName(invoice.fileName);
+			await writeFile(folder, uniqueKey(folderUsed, base, ext), invoice.pdfBlob);
 		}
 	}
 };

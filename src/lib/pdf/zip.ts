@@ -7,7 +7,13 @@
  * compressed, so deflating wastes CPU for ~no size win.
  */
 import { zipSync, type Zippable } from "fflate";
-import { countFiles, INVOICES_ROOT_FOLDER, type DownloadGroup } from "$lib/pdf/sequential-download";
+import {
+	countFiles,
+	INVOICES_ROOT_FOLDER,
+	splitFileName,
+	uniqueKey,
+	type DownloadGroup
+} from "$lib/pdf/sequential-download";
 import { downloadBlob } from "$lib/utils";
 
 const ZIP_FILE_NAME = "invoices.zip";
@@ -17,21 +23,27 @@ const blobToBytes = async (blob: Blob): Promise<Uint8Array> =>
 
 const buildZippable = async (groups: DownloadGroup[]): Promise<Zippable> => {
 	const root: Zippable = {};
+	// Object keys collide silently — dedup files and subfolders against one set
+	// (they share the root namespace) so same-named clients aren't dropped.
+	const rootUsed = new Set<string>();
 
 	for (const group of groups) {
 		if (group.invoices.length === 0) continue;
 
 		if (group.invoices.length === 1) {
 			const [invoice] = group.invoices;
-			root[invoice.fileName] = await blobToBytes(invoice.pdfBlob);
+			const [base, ext] = splitFileName(invoice.fileName);
+			root[uniqueKey(rootUsed, base, ext)] = await blobToBytes(invoice.pdfBlob);
 			continue;
 		}
 
 		const folder: Zippable = {};
+		const folderUsed = new Set<string>();
 		for (const invoice of group.invoices) {
-			folder[invoice.fileName] = await blobToBytes(invoice.pdfBlob);
+			const [base, ext] = splitFileName(invoice.fileName);
+			folder[uniqueKey(folderUsed, base, ext)] = await blobToBytes(invoice.pdfBlob);
 		}
-		root[group.folderName] = folder;
+		root[uniqueKey(rootUsed, group.folderName)] = folder;
 	}
 
 	return { [INVOICES_ROOT_FOLDER]: root };
