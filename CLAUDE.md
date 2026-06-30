@@ -117,7 +117,7 @@ The server layer handles authentication, data persistence, and AI Copilot infere
 
 - **`$lib/server/dto.ts`** — Pure row-to-domain mappers: `toSavedPaymentMethod`, `toInvoiceEntry`, `toClient`, `toFixed`. Also exports `AppState` interface: `{ fixed, clients, selectedClientId, expandedClients }`.
 
-- **`$lib/server/repositories/`** — Seven repository files: `fixed.ts`, `clients.ts`, `payment-methods.ts`, `state.ts`, `ai-conversations.ts`, `ai-messages.ts`, `ai-actions.ts`. `state.ts` exports `loadAppState(db, userId)` → `AppState` used in `+page.server.ts`.
+- **`$lib/server/repositories/`** — Eight repository files: `fixed.ts`, `clients.ts`, `payment-methods.ts`, `state.ts`, `import.ts`, `ai-conversations.ts`, `ai-messages.ts`, `ai-actions.ts`. `state.ts` exports `loadAppState(db, userId)` → `AppState` used in `+page.server.ts`; `import.ts` performs the atomic first-sign-in guest import in one D1 batch (backs `POST /api/import`).
 
 - **`$lib/server/validation.ts`** — Shared Zod schemas for API request bodies.
 
@@ -159,7 +159,9 @@ The server layer handles authentication, data persistence, and AI Copilot infere
 
 - **`src/routes/api/clients/[id]/payment-methods/+server.ts`** — `PUT` updates the ordered list of payment method IDs for a client.
 
-- **`src/routes/api/ai/`** — AI Copilot endpoints: `chat/+server.ts` (SSE streaming turn), `conversations/+server.ts` and `[id]/+server.ts` (conversation CRUD), `messages/+server.ts` (message list), `actions/+server.ts` and `[id]/+server.ts` (action history), `undo/[id]/+server.ts` (reverse an applied action), `seed/+server.ts` (embeds `KNOWLEDGE_CORPUS` into Vectorize; `POST` guarded by the `x-seed-secret` header matching `SEED_SECRET`). See the AI Copilot section.
+- **`src/routes/api/import/+server.ts`** — `POST` ingests a guest's full localStorage snapshot (sender, payment methods, clients, entries, links) in one atomic D1 batch with server-side id remapping; backs the first-sign-in guest import (`migrateGuestToServer`). Refuses (409) if the account already holds data.
+
+- **`src/routes/api/ai/`** — AI Copilot endpoints: `chat/+server.ts` (SSE streaming turn), `conversations/+server.ts` and `[id]/+server.ts` (conversation CRUD), `messages/+server.ts` (message list) and `messages/[id]/+server.ts` (`PATCH` a message's persisted tool-call status so reloaded chats show true outcomes, not always "applied"), `actions/+server.ts` and `[id]/+server.ts` (action history), `undo/[id]/+server.ts` (reverse an applied action), `seed/+server.ts` (embeds `KNOWLEDGE_CORPUS` into Vectorize; `POST` guarded by the `x-seed-secret` header matching `SEED_SECRET`). See the AI Copilot section.
 
 **Authorization flow**: no gate on the builder — guests use it fully (localStorage-backed). Signing in (Google OAuth/One Tap or a passkey) scopes all data to `userId` (D1) and unlocks the AI Copilot. The AI Copilot additionally requires the signed-in user to connect their own Cloudflare account at `/settings`; `/api/ai/chat` returns **HTTP 412** until they do.
 
@@ -185,7 +187,7 @@ The signed-out workspace is backed by localStorage:
 
 - **`keys.ts`** — versioned keys `GUEST_FIXED_KEY` / `GUEST_SESSION_KEY` (`invoice-generator:guest:{fixed,session}:v1`) and the `GuestSessionSnapshot` type.
 - **`local.ts`** — SSR-safe `readLocal` / `writeLocal` / `clearLocal` (no-op on server; swallow quota/parse errors; synchronous, not debounced).
-- **`migrate.ts`** — `migrateGuestToServer(accountEmpty)`: one-time replay of the guest snapshot into D1 via the REST API on first sign-in (PATCH `/api/fixed` → POST/PATCH each payment method capturing new ids → POST/PATCH each client + its entries with remapped methodIds → PUT `selectedClientId`), then clears both keys and returns `true` so `+page.svelte` reloads to re-hydrate from D1. Aborts silently (returns `false`, retains guest data) if the account already has data or any call fails.
+- **`migrate.ts`** — `migrateGuestToServer(accountEmpty)`: one-time first-sign-in import. POSTs the whole guest snapshot to `/api/import` (one atomic D1 batch, server-side id remapping), then clears both keys and returns `true` so `+page.svelte` reloads to re-hydrate from D1. Returns `false` (retaining guest data) if the account already has data or the call fails — because the import is atomic, a failure commits nothing, so the retry never duplicates rows. Also exports `hasGuestData()`.
 
 ### Payment Methods System
 
@@ -199,7 +201,7 @@ Currencies: `BDT` and `USD`. `$lib/format/currency.ts` exports `formatAmount` an
 
 2. **`$lib/invoice/builder.ts`** — `buildInvoiceHtml(client, entry, fixed)` assembles a complete HTML document string (it imports `defaultTheme` directly — no theme parameter). `renderPaymentMethod` uses the payment method's `display` style to select the correct theme template. Invoice ID format: `{PREFIX}-{MM}{ISSUE_DAY}-{YEAR}` (e.g. `ACME-0101-2026`). Service description supports a `{MONTH}` token substituted via `String.prototype.replace`. Exports `getInvoiceId(client, entry)` and `getFileName(client, entry)` → `invoice-{PREFIX}-{MM}{ISSUE_DAY}-{YEAR}.pdf`.
 
-3. **`$lib/invoice/resolver.ts`** — `resolveTokens(template, tokens)`: single pure function, string template + token map → resolved string via `replaceAll`.
+3. **`$lib/invoice/resolver.ts`** — `resolveTokens(template, tokens)`: single pure function. One-pass regex (`/\{([A-Z_]+)\}/g`) over the original template — inserted values are never re-scanned (so user text containing a token name like `{CSS}` is left alone), unknown tokens pass through verbatim, case-sensitive.
 
 4. **`$lib/invoice/months.ts`** — `MONTHS` array and `MONTH_TO_NUMBER` map (`"January" → "01"`, etc.).
 
@@ -573,7 +575,7 @@ When encountering unfamiliar patterns, check in this order:
 
 3. **iframe positioning is intentional — do not change it** — `generator.ts` uses `position: fixed; top: -9999px; left: -9999px; visibility: hidden` on the iframe wrapper. `visibility: hidden` is intentional: it hides the wrapper while `html2canvas` captures `iframeDoc.body` directly. Do not use `display: none` on the iframe or its body — that prevents `html2canvas` from rendering content.
 
-4. **Token substitution is `replaceAll`, not regex** — `resolver.ts` uses `String.prototype.replaceAll`. Tokens like `{MONTH}` only resolve if the exact literal is present. Case-sensitive.
+4. **Token substitution is a single-pass regex** — `resolver.ts` resolves `{[A-Z_]+}` tokens in one pass with `String.prototype.replace(/.../g, …)`, so inserted values are never re-scanned (a value containing a token name is not re-substituted); unknown tokens pass through; case-sensitive. (Separately, `builder.ts` substitutes the `{MONTH}` literal in the service description with a plain `String.prototype.replace("{MONTH}", …)`.)
 
 5. **`allClientsValid` gates generation** — the generate button is disabled unless all clients have `name` and `invoicePrefix`. If generation appears broken, check client validation state.
 
