@@ -32,7 +32,7 @@
 
 	let { data }: { data: PageData } = $props();
 
-	const DEFAULT_MODEL = "@cf/moonshotai/kimi-k2.6";
+	const DEFAULT_MODEL = "@cf/moonshotai/kimi-k2.7-code";
 
 	const connected = $derived(data.connected);
 	const maskedToken = $derived(data.maskedToken ?? "");
@@ -59,7 +59,7 @@
 					: `${m.label} · experimental${m.deprecated ? " (deprecated)" : ""}`
 		}));
 		if (!ids.has(DEFAULT_MODEL)) {
-			opts.unshift({ id: DEFAULT_MODEL, label: "moonshotai/kimi-k2.6 · recommended" });
+			opts.unshift({ id: DEFAULT_MODEL, label: "moonshotai/kimi-k2.7-code · recommended" });
 		}
 		if (model && model !== DEFAULT_MODEL && !ids.has(model)) {
 			opts.push({ id: model, label: `${model.replace(/^@cf\//, "")} · experimental` });
@@ -275,7 +275,7 @@
 					/>
 				</div>
 				<p class={cn(helperBase, "mt-2")}>
-					Kimi K2.6 is recommended. Others are experimental and may be less reliable.
+					Kimi K2.7 Code is recommended. Others are experimental and may be less reliable.
 				</p>
 			</SettingsRow>
 

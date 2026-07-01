@@ -43,6 +43,12 @@ const bodySchema = z.object({
 	images: z.array(z.string().min(1).max(8_000_000)).max(3).optional()
 });
 
+// Vision model for image-bearing turns (supports function-calling, so tools stay
+// attached and the copilot still tool-calls off a pasted screenshot). Text-only
+// turns keep the user's chosen brain model. To disable vision routing, point this
+// constant at the brain — the single branch below then never diverges.
+const VISION_MODEL = "@cf/mistralai/mistral-small-3.1-24b-instruct";
+
 // A tool-only assistant turn persists with empty content; convey what it did
 // (from its tool calls) so the model doesn't re-fire the prior instruction.
 const summarizeToolOnlyTurn = (m: AiMessageRow): string => {
@@ -192,6 +198,9 @@ export const POST: RequestHandler = async (event) => {
 		);
 	}
 	const { creds, model } = resolved;
+	// Route image-bearing turns to the vision model; text-only turns keep the brain.
+	// The corrective retry (also below) reuses this so a vision turn stays on one model.
+	const turnModel = parsed.images && parsed.images.length > 0 ? VISION_MODEL : model;
 
 	const quota = await checkAndIncrementQuota(env.AI_QUOTA_KV, userId);
 	if (!quota.allowed) {
@@ -238,7 +247,7 @@ export const POST: RequestHandler = async (event) => {
 	if (env.VECTORIZE) {
 		try {
 			knowledgeText = formatKnowledge(
-				await retrieveAppKnowledge({ VECTORIZE: env.VECTORIZE }, creds, parsed.message)
+				await retrieveAppKnowledge({ VECTORIZE: env.VECTORIZE, AI: env.AI }, creds, parsed.message)
 			);
 		} catch {
 			knowledgeText = "";
@@ -295,7 +304,7 @@ export const POST: RequestHandler = async (event) => {
 					tools: TOOLS_CATALOG,
 					cacheKey,
 					creds,
-					model
+					model: turnModel
 				}),
 				false
 			);
@@ -353,7 +362,7 @@ export const POST: RequestHandler = async (event) => {
 						conversationId: activeConversationId,
 						tools: TOOLS_CATALOG,
 						creds,
-						model
+						model: turnModel
 					}),
 					false
 				);
