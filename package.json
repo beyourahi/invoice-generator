@@ -24,7 +24,8 @@
 		"db:check": "drizzle-kit check",
 		"db:migrate": "wrangler d1 migrations apply invoice_generator --remote",
 		"db:migrate:local": "wrangler d1 migrations apply invoice_generator --local",
-		"db:migrate:list": "wrangler d1 migrations list invoice_generator --local"
+		"db:migrate:list": "wrangler d1 migrations list invoice_generator --local",
+		"seed": "wrangler d1 execute invoice_generator --local --file ./seed/seed.sql"
 	},
 	"devDependencies": {
 		"@cloudflare/workers-types": "^4.20260625.1",
