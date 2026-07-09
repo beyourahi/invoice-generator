@@ -553,6 +553,17 @@ rm -rf node_modules/ .wrangler/ .svelte-kit/ && bun install
 
 ---
 
+## Test auth & mock data (dev only)
+
+**Reach the signed-in builder locally without Google OAuth** — for manual, Playwright, and curl checks. (email/password is disabled, so there is no password to seed; the bypass injects a session directly.)
+
+- **Test user:** `e2e-test-user` / `e2e@test.local` — synthesized into `event.locals.{user,session,currentUser}` by `hooks.server.ts`, which also upserts the `users` row so FK-bound app data has a real owner.
+- **Activate:** already on — `.dev.vars` (gitignored) carries `E2E_BYPASS_AUTH=true`. The bypass is **double-gated (defense in depth)**: the flag **AND** a `localhost`/`127.0.0.1` request host, so it is inert on the prod domain even if the flag ever leaked. Primary safety is still flag-absence — Cloudflare never uploads `.dev.vars`. Works under `bun run dev` (Vite) and `bun run preview` (Wrangler, 8787).
+- **Seed the workspace:** `bun run db:migrate:local` (once) → `bun run seed`. Idempotent (`seed/seed.sql`, fixed ids + `INSERT OR REPLACE`); inserts realistic app data for the test user — a sender identity (`fixed_settings`), two payment methods, and two clients (a Dhaka creative agency billed in BDT + an e-commerce brand billed in USD), each with a couple of monthly `invoice_entries` (mixed `is_active` — this schema has no explicit paid/unpaid status). Evergreen (`unixepoch('now')` timestamps + `strftime('%Y','now')` year), so it never expires.
+- **⚠️ NEVER enable in production.** `E2E_BYPASS_AUTH` must never appear in `wrangler.jsonc` `vars` or secrets — it grants full unauthenticated access. The real Google OAuth / passkey path is byte-for-byte unchanged; the bypass is an additive, double-gated branch.
+
+---
+
 ## Documentation References
 
 When encountering unfamiliar patterns, check in this order:
