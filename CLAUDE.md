@@ -1,29 +1,8 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository. Workspace-wide conventions (git/worktree workflow, Conventional Commits, visual verification, shared SvelteKit/Workers/Better-Auth/BYO-AI stack) live in the parent `tools/` and `projects/` CLAUDE.md files — not repeated here.
 
----
-
-## Always Do First
-
-**Invoke the `frontend-design` skill** before writing any frontend code, every session, no exceptions.
-
----
-
-## Git Workflow
-
-**NEVER CREATE BRANCHES.** Use git worktrees for parallel work:
-
-```bash
-git worktree add ../invoice-generator-<feature>
-git worktree list
-git worktree remove ../invoice-generator-<feature>
-git worktree prune
-```
-
-All commits go directly to `main`. No feature branches. Worktrees allow parallel development without branch switching or stashing.
-
-**Always break large tasks into focused scopes** — run parallel agents with git worktrees, each with a narrow, well-defined goal.
+**Always run the `frontend-design` skill before writing any frontend code** — every session, no exceptions.
 
 ---
 
@@ -47,7 +26,7 @@ A SvelteKit app that generates batches of PDF invoices. Users configure a fixed 
 | UI Components   | Dropout Design System (`@dropout/ds`, vendored) + shadcn-svelte                     |
 | Authentication  | Better Auth (Google OAuth + One Tap + passkeys, optional sign-in)                   |
 | Database        | Cloudflare D1 (SQLite via Drizzle ORM)                                              |
-| AI              | Bring-your-own Cloudflare Workers AI (REST, user's account) + qwen3 RAG (Vectorize) |
+| AI              | Bring-your-own Cloudflare Workers AI (REST, user's account) + RAG (qwen3 embeddings → bge reranker on owner's Vectorize) |
 | Validation      | Zod                                                                                 |
 | PDF Rendering   | html2canvas + jsPDF                                                                 |
 | ZIP Packaging   | fflate (`zipSync`, `level: 0`)                                                      |
@@ -193,7 +172,7 @@ The signed-out workspace is backed by localStorage:
 
 **`$lib/payments/registry.ts`** — Defines all supported payment method types as `PAYMENT_METHOD_DEFS: Record<PaymentMethodKind, PaymentMethodDef>`. Supported kinds: `bank`, `bkash`, `nagad`, `rocket`, `wise`, `payoneer`, `paypal`, `custom`. Each `PaymentMethodDef` has `display: "fields" | "link"`. Link methods (wise, payoneer, paypal) show a payment link button in the PDF. Field methods (bank, mobile wallets, custom) show labeled key-value rows. Exports `getMethodDef`, `createSavedMethod`, `isMethodComplete`.
 
-Currencies: `BDT` and `USD`. `$lib/format/currency.ts` exports `formatAmount` and `currencySymbol`.
+Currencies: `BDT` (৳) and `USD` ($). `$lib/format/currency.ts` exports `formatAmount` only (symbol prefix + en-US grouping, sign hoisted ahead of symbol); `currencySymbol` is module-private.
 
 ### Invoice Pipeline
 
@@ -285,13 +264,13 @@ GSAP-driven motion lives entirely under `$lib/motion/`. Surface code imports onl
 
 ### AI Copilot
 
-An optional natural-language assistant for managing clients, invoices, and payment methods. Inference runs on the **signed-in user's own Cloudflare account** (bring-your-own, billed to them) via the Cloudflare REST API — the owner's `AI` binding is used only to seed Vectorize. Tool execution happens client-side against the same REST API as the manual UI. Gated by the `AI_COPILOT_ENABLED` var (`"false"` disables) **and** by the user having connected their Cloudflare account at `/settings` (chat returns 412 otherwise).
+An optional natural-language assistant for managing clients, invoices, and payment methods. Inference runs on the **signed-in user's own Cloudflare account** (bring-your-own, billed to them) via the Cloudflare REST API — the owner's `AI` binding is used only to seed Vectorize and to run the RAG reranker per query. Tool execution happens client-side against the same REST API as the manual UI. Gated by the `AI_COPILOT_ENABLED` var (`"false"` disables) **and** by the user having connected their Cloudflare account at `/settings` (chat returns 412 otherwise).
 
 - **`$lib/ai/`** — Client-side AI layer:
   - `types.ts` — shared types: `Frame`, tool-call shapes, `InverseRecord`, `AnomalyResult`, `SafetyTier`.
   - `client.ts` — `runChatFrames(params)` async generator runs a turn via `runChatViaRest(params.creds, params.model, …)` (temperature 0.2, `max_tokens` 1536) on the user's Cloudflare account; buffers the whole response (Workers AI REST is non-streaming) then yields `Frame`s. Builds multimodal user content (`image_url` parts) when `images` are present. (The old `gateway.ts` / AI Gateway dynamic route is deleted.)
   - `embeddings.ts` — `embedDocuments` calls the qwen3 embedding model (`@cf/qwen/qwen3-embedding-0.6b`, 1024 dims) via the owner's `AI` binding — used **only** by the seed endpoint to build the index. Per-query RAG embeddings instead run on the user's account via `runEmbeddingViaRest` (see `rag.ts`).
-  - `rag.ts` — `retrieveAppKnowledge(env, creds, query)` embeds the message on the user's account via `runEmbeddingViaRest(creds, …)`, queries the owner's `VECTORIZE` index (topK 4, `MIN_SCORE` 0.4), and `formatKnowledge()` renders matches as a numbered list. Fails open (returns `[]`) so chat never breaks.
+  - `rag.ts` — `retrieveAppKnowledge(env, creds, query)` is two-stage: embed the message on the user's account (`runEmbeddingViaRest`), run a wide qwen3 cosine search on the owner's `VECTORIZE` index (`CANDIDATE_K` 12, cosine floor `MIN_COSINE` 0.3), then rerank the pool with `bge-reranker-base` (`@cf/baai/bge-reranker-base`) on the owner's `env.AI` and keep the top `FINAL_K` 4 above sigmoid-mapped score `MIN_RERANK_SCORE` 0.5; `formatKnowledge()` renders matches as a numbered list. The reranker fails open to cosine order; the whole step fails open (returns `[]`) so chat never breaks.
   - `knowledge.ts` — `KNOWLEDGE_CORPUS`: the static app-help passages embedded into Vectorize by the seed endpoint.
   - `window.ts` — `windowHistory()` keeps the last `WINDOW_SIZE` (12) messages for sliding-window context.
   - `streaming.ts` — SSE frame encode/decode (`encodeFrame`, `decodeFrame`, `streamFrames`, `sseStream`).
@@ -310,7 +289,7 @@ An optional natural-language assistant for managing clients, invoices, and payme
   - `chat-client.ts` — `sendMessage`, `triggerUndo`, conversation CRUD, confirmation responses. On a 412 from `/api/ai/chat` it flips `ai.setConnectRequired(true)` (the sidebar then shows a "connect your Cloudflare account in Settings" CTA).
 - **`$lib/server/`** — AI server layer:
   - `ai/cloudflare-config.ts` — `loadCloudflareConfig(db, userId)` reads the `userSettings` row; `isCloudflareConnected(cfg)`; `resolveCloudflareCreds(encryptionKey, cfg)` decrypts the token (via `TOKEN_ENCRYPTION_KEY`) → `{ creds, model } | null`.
-  - `ai/run-rest.ts` — direct account-scoped Cloudflare REST calls (no binding): `runChatViaRest(creds, model, input)` (POST `/accounts/{id}/ai/run/{model}`), `runEmbeddingViaRest`, `listChatModels(creds)`. `DEFAULT_MODEL = "@cf/moonshotai/kimi-k2.6"`, `EMBEDDING_MODEL = "@cf/qwen/qwen3-embedding-0.6b"`. Throws `CfInferenceError(status, kind, …)` (`kind: "auth" | "rate_limit" | "model_unavailable" | "transport"`).
+  - `ai/run-rest.ts` — direct account-scoped Cloudflare REST calls (no binding): `runChatViaRest(creds, model, input)` (POST `/accounts/{id}/ai/run/{model}`), `runEmbeddingViaRest`, `listChatModels(creds)`. `DEFAULT_MODEL = "@cf/moonshotai/kimi-k2.7-code"`, `EMBEDDING_MODEL = "@cf/qwen/qwen3-embedding-0.6b"`. Throws `CfInferenceError(status, kind, …)` (`kind: "auth" | "rate_limit" | "model_unavailable" | "transport"`).
   - `ai/errors.ts` — `CloudflareNotConnectedError`, `describeCloudflareError(err)` (user-facing messages), `CF_TOKEN_HELP`.
   - `crypto.ts` — AES-GCM-256 token encryption keyed by `TOKEN_ENCRYPTION_KEY` (base64 32-byte): `deriveTokenKey`, `encryptToken` (IV‖ciphertext+tag → `Uint8Array`), `decryptToken`, `maskToken`.
   - `ai-quota.ts` — `checkAndIncrementQuota(kv, userId)`: per-user daily turn limit (default 200) tracked in `AI_QUOTA_KV`; disabled when the KV binding is absent.
@@ -460,29 +439,6 @@ When adding tests:
 
 ---
 
-## Repository Etiquette
-
-### Conventional Commits
-
-```
-feat:     new feature
-fix:      bug fix
-refactor: code restructuring without behavior change
-style:    visual/UI changes only
-chore:    tooling, config, dependencies
-docs:     documentation changes
-perf:     performance improvements
-```
-
-### Commit Discipline
-
-- Atomic commits — one logical change per commit
-- Never commit `.env`, `.dev.vars`, or any file with secrets
-- Run `bun run lint` and `bun run check` before every commit
-- Each commit must build successfully
-
----
-
 ## Development Environment
 
 ### Prerequisites
@@ -507,7 +463,7 @@ Configured in `wrangler.jsonc`:
 
 - **ASSETS**: static SvelteKit output
 - **DB**: D1 database binding (required for auth and data at runtime)
-- **AI**: Workers AI binding (owner's account; used **only** to seed the Vectorize index via `/api/ai/seed` and build-time `embedDocuments` — Copilot chat + per-query embeddings run on each user's own Cloudflare account via REST, not this binding)
+- **AI**: Workers AI binding (owner's account; used to seed the Vectorize index via `/api/ai/seed` + `embedDocuments`, **and** to run the RAG reranker `@cf/baai/bge-reranker-base` per query — Copilot chat + per-query embeddings run on each user's own Cloudflare account via REST, not this binding)
 - **VECTORIZE**: Vectorize index `invoice-generator-kb` backing RAG app-knowledge retrieval (optional — RAG is skipped if absent; required by the seed endpoint)
 - **AI_QUOTA_KV**: KV namespace backing the AI Copilot per-user daily turn quota, monthly USD spend cap, and the `cf-models:{accountId}` model-list cache (optional — quota/cap disabled if absent)
 - **`remote: true`** is set on `AI`, `VECTORIZE`, and `AI_QUOTA_KV` so local `wrangler dev` / `bun run preview` reach real Workers AI, the seeded Vectorize index, and KV. Wrangler cannot emulate these locally — without the flag seeding, RAG, and quota all silently fail in local preview.
@@ -564,20 +520,6 @@ rm -rf node_modules/ .wrangler/ .svelte-kit/ && bun install
 
 ---
 
-## Documentation References
-
-When encountering unfamiliar patterns, check in this order:
-
-1. **Svelte 5 docs** — runes, snippets
-2. **SvelteKit docs** — routing, hooks, adapters, `event.platform`
-3. **Better Auth docs** — session management, OAuth, Drizzle adapter
-4. **Drizzle ORM docs** — D1 adapter, query builder
-5. **jsPDF docs** — PDF generation API
-6. **html2canvas docs** — canvas capture options, `scale`, iframe rendering
-7. **fflate docs** — `zipSync`, compression levels
-
----
-
 ## Project-Specific Warnings
 
 1. **Store hydration uses `untrack`** — `+page.svelte` calls `fixed.hydrate()` and `session.hydrate()` inside `untrack()`. This prevents triggering reactive side effects during initialization. Do not add a second hydrate call anywhere else.
@@ -620,7 +562,7 @@ When encountering unfamiliar patterns, check in this order:
 
 20. **Never nest a `<button>` inside a `<button>` in collapsible cards** — a native `<button>` wrapping inner `<Button>` actions is invalid HTML; SSR auto-closes the outer button early and desyncs Svelte's hydration walker, causing the client to append a second copy of the entire app (the whole page renders twice — only when content is present). Use `div[role="button"]` with `tabindex="0"` + Enter/Space `onkeydown`, matching `ClientCard`/`PaymentMethodCard`; inner actions `stopPropagation`.
 
-21. **The chat model is the user's choice, set at `/settings`** — there is no fallback chain or AI Gateway anymore (`gateway.ts` is deleted). `run-rest.ts` calls the single selected model directly (`DEFAULT_MODEL = "@cf/moonshotai/kimi-k2.6"`); the picker is populated from the user's own account via `/api/cf/models`. The chosen model must support tool-calling and vision.
+21. **The chat model is the user's choice, set at `/settings`** — there is no fallback chain or AI Gateway anymore (`gateway.ts` is deleted). `run-rest.ts` calls the single selected model directly (`DEFAULT_MODEL = "@cf/moonshotai/kimi-k2.7-code"`); the picker is populated from the user's own account via `/api/cf/models`. The chosen model must support tool-calling and vision.
 
 22. **RAG returns nothing until the index is seeded** — `VECTORIZE` (`invoice-generator-kb`) must be populated by `POST /api/ai/seed` (with the `x-seed-secret` header) before `retrieveAppKnowledge` returns matches. The chat turn degrades silently to no app-knowledge context if the index is empty or unbound. Re-seed whenever `KNOWLEDGE_CORPUS` changes.
 
@@ -631,86 +573,3 @@ When encountering unfamiliar patterns, check in this order:
 25. **Don't reintroduce an auth guard on `/` or `/changelog`** — both are intentionally reachable signed-out; the builder runs as a localStorage-backed guest. Only `/settings` and `/api/*` (via `requireApiContext`) require a session. Adding `redirect(302, "/login")` to `+page.server.ts` would break the guest workspace and its sign-in migration.
 
 26. **`src/lib/ds/` is vendored — never hand-edit it** — it is an rsync mirror of `@dropout/ds` (`bun run sync-ds` from `../../dropout-design-system`, `--delete` overwrites local changes). Edit the DS upstream repo, then re-sync. It is deliberately NOT an npm/`file:` dependency — a sibling-path dependency breaks Cloudflare git-push auto-deploy. DS owns the visual tokens; do not redefine the semantic palette in `app.css`.
-
----
-
-## Cross-Codebase Consistency
-
-This project shares conventions with the broader `~/Desktop/projects` ecosystem:
-
-- Same Svelte 5 rune patterns as `nordcycle`, `order-processor`, `beyourahi.com`, `enscented`
-- Same Tailwind CSS v4 CSS-first config as all SvelteKit projects
-- Same git worktree workflow as all projects in the workspace
-- Same Conventional Commits format as all projects
-- Same ESLint flat config + Prettier as all projects
-
-If a pattern is unclear here, the most detailed reference implementations are `order-processor/CLAUDE.md` (TypeScript patterns, store design) and `nordcycle/CLAUDE.md` (Svelte 5 + Tailwind conventions).
-
----
-
-## Frontend UI Visual Verification (REQUIRED)
-
-**During any frontend UI or design work, you MUST use Playwright MCP to visually verify your changes.**
-
-### Workflow
-
-1. **Determine the active port** for this project before taking screenshots (see Port Detection below)
-2. **Take screenshots** via Playwright MCP targeting the correct `http://localhost:<port>`
-3. **Save to `tmp_screenshots/`** at the root of this repository
-4. **Analyze each screenshot** against the plan or requirements to verify accuracy
-5. **Iterate** — fix discrepancies, re-screenshot, re-analyze until requirements are met
-
-### Rules
-
-- **ALWAYS** take at least one screenshot per UI change before considering it done
-- **NEVER** mark frontend work as complete without visual verification
-- Screenshots go in `tmp_screenshots/` at the project root (create the directory if it doesn't exist)
-- Name screenshots descriptively: `tmp_screenshots/generation-panel.png`, `tmp_screenshots/client-card-filled.png`
-- Take screenshots at multiple viewport sizes when responsive behavior matters (mobile + desktop)
-- After each batch of changes, compare the screenshots against the original requirements or design spec and explicitly state what matches and what still needs work
-- **MANDATORY CLEANUP**: After every successful task implementation, if the `tmp_screenshots/` directory was created during the work, it must be deleted before the task is considered complete. Do not skip this step — it is a hard requirement.
-- **MANDATORY CLEANUP**: After every successful task implementation, if the `.playwright-mcp/` directory exists in the project root, it must be deleted before the task is considered complete. This directory is created by the Playwright MCP server during browser automation and is a transient artifact that must not persist in the codebase. Do not skip this step — it is a hard requirement.
-
-### Port Detection
-
-Multiple dev servers may be running simultaneously across projects. **Always identify the correct port before screenshotting.**
-
-Detection order (use the first that works):
-
-1. **Check dev server output** — the terminal running `bun run dev` prints the active URL (e.g. `Local: http://localhost:5173`)
-2. **Check `vite.config.ts`** — look for an explicit `server.port` value
-3. **Check `package.json`** — some scripts hardcode a port via `--port` flag
-4. **Scan active ports** — run `lsof -i :3000-5999 | grep LISTEN` to see what's bound, then match the process to this project's directory
-
-**Never assume port 3000.** If multiple Vite servers are running, confirm you're screenshotting the right one.
-
-### What to Check in Screenshots
-
-- `Details` / `Preview` tabs switch cleanly; the AI Copilot overlay drawer opens/closes from `AiDesktopLauncher` without reflowing the page
-- Dark theme renders consistently (no light-mode bleed)
-- Spacing, typography, and color tokens are correct
-- `FixedSenderPanel`, `ClientCard` list, and `GenerationPanel` are in expected positions; the AI drawer overlays cleanly when open; signed-out shows `SignInButton` (not `User`)
-- Interactive states (hover, focus, expanded cards) render properly
-- Mobile: AI uses `AiMobileFab` + `AiMobileSheet`; tabs reflow without overflow
-
-### Commit Message Rules
-
-- **Never include AI agent co-authors** — commit messages must not reference any AI agent (Claude, ChatGPT, Gemini, GitHub Copilot, or similar) in `Co-Authored-By` trailers or any other form.
-
-For Cloudflare work, prefer the installed Cloudflare skills and Code Mode MCP over your own knowledge.
-
----
-
-## ⚙️ Autonomy directive — do actionable work yourself, never hand it back (highest operational priority) <!-- AUTONOMY-DIRECTIVE-v2 -->
-
-**Default: do it, don't delegate it back to Rahi.** Any step you are technically able to perform, you perform — autonomously, in the same turn. Never tell Rahi to run something, and never end a turn asking him to do a step you could have done yourself.
-
-- **Database migrations specifically:** generate AND apply them yourself — local and remote. Run `bun run db:generate`, `bun run db:migrate:local`, and `bun run db:migrate` (remote) yourself. NEVER say "run the migration", "you'll need to migrate", or "say the word and I'll run it" — just run it.
-- **Any comparable actionable / setup / maintenance step:** dependency installs, type generation (`cf-typegen`), builds, `format`/`lint`/`check`, seeding, codegen, cache clears, config regeneration, dev-server starts for verification, etc. — do them yourself without asking.
-- **Only surface to Rahi when it is genuinely impossible for you:** it requires a credential/secret you don't hold, or a physical/external action you truly cannot perform (a login in his browser, a third-party dashboard toggle, a purchase). Even then, do everything you can first and hand him only the smallest irreducible remaining step.
-- **Never** finish by presenting a menu of actionable steps for Rahi to trigger ("say migrate / commit / both"). Get it done, then report what you did.
-- **Scripts — full standing authority.** Run ANY script or command yourself the moment it's useful — dev, build, lint, format, check, typecheck, test, codegen, installs, migrations, seeds, cache clears, dev-server starts, everything — autonomously, without asking or waiting for Rahi. Rahi does no manual work and is not a bottleneck. This **supersedes any older rule anywhere in this file** that says to ask permission before running scripts / `package.json` commands, or that tells Claude never to run scripts.
-- **Visual verification — full standing authority.** Run Playwright MCP yourself to verify UI — navigate, screenshot at mobile + desktop viewports, and interact with the affected flows — autonomously, without asking or waiting.
-- **Carve-out (this preserves an existing rule, it does not override it):** the git-safety protocol still stands — where a project requires explicit permission before `git commit` / `git push`, keep asking for that. Autonomy means doing the *work*; it does not mean publishing/committing on his behalf without the permission that project already requires.
-
-- **Deployment is the ONE carve-out to the directive above — you neither run it NOR hand it back.** This project auto-deploys on `git commit` + `git push` via **Cloudflare Workers Builds ↔ GitHub**. **The push IS the deploy** — no manual deploy needed. NEVER output manual-deploy steps and NEVER run a deploy command (the project's own documented one, e.g. `bun run deploy` / `wrangler deploy`) as a routine deploy step — it starts automatically once the push succeeds. (That command stays a documented manual escape hatch, not the normal path.) This does **not** loosen the git-safety carve-out above — auto-deploy after a push ≠ license to push; where commit/push needs explicit permission, keep asking.
