@@ -57,6 +57,7 @@ bun run db:migrate:local # Apply pending migrations to local D1
 bun run db:migrate:list  # List applied migrations
 bun run db:check         # Check migration consistency
 bun run db:studio        # Launch Drizzle Studio GUI
+bun run seed             # Idempotent local D1 fixtures for e2e-test-user
 ```
 
 ---
@@ -78,7 +79,7 @@ Route files use `$src/components/...`; library files use `$lib/...`. Never use r
 
 The frontend runs on the **Dropout Design System** (`@dropout/ds`), **vendored** at `src/lib/ds/` — NOT an npm/`file:`/workspace dependency (a sibling-path dependency breaks Cloudflare git-push auto-deploy). DS is the single source of visual truth: `app.css` imports `ds/styles/tokens.css` + `ds/styles/animations.css` (ink ramp, semantic aliases, type scale, fonts, radius, shadows, `--ease`, base layer, `@custom-variant` set). `app.css` adds only tool-specific token aliases (`--popover`, `--status-*`, `--chat-*`, `--surface`, `--preview-paper`) repointed to DS primitives, plus app keyframes and the invoice-preview stage.
 
-`$lib/ds` exports `cn`, biometric-label helpers (`detectPlatform`, `biometricLabel`, …), editorial components — `Cta`, `IconButton`, `Heading`, `Eyebrow`, `Input`, `Tile` — the settings-section primitives (`SettingsSection`, `SettingsRow`, `SettingsActions`, `SettingsSaveBar`), plus style-string helpers (`inputBase`, `tileBase`, `pillBase`, …). shadcn-svelte primitives in `$lib/components/ui/` coexist and resolve to DS token values with no per-component re-theming. The app is **dark-only** — `app.html` hardcodes `<html class="dark">` (the DS canonical theme). Note `cn()` is imported from `$lib/utils` app-wide, not from DS.
+`$lib/ds` exports `cn`, biometric-label helpers (`detectPlatform`, `biometricLabel`, …), editorial components — `Cta`, `IconButton`, `Heading`, `Eyebrow`, `Input`, `Tile`, `Select`, `StatusBadge` — the settings-section primitives (`SettingsSection`, `SettingsRow`, `SettingsActions`, `SettingsSaveBar`), plus style-string helpers (`inputBase`, `tileBase`, `pillBase`, …). shadcn-svelte primitives in `$lib/components/ui/` coexist and resolve to DS token values with no per-component re-theming. The app is **dark-only** — `app.html` hardcodes `<html class="dark">` (the DS canonical theme). Note `cn()` is imported from `$lib/utils` app-wide, not from DS.
 
 Refresh DS with `bun run sync-ds`. **Never hand-edit files under `src/lib/ds/`** — edit upstream in the DS repo (`../../dropout-design-system`), then re-sync.
 
@@ -482,7 +483,6 @@ Set via `wrangler secret put` or in the Cloudflare dashboard:
 | Secret                 | Description                                                       |
 | ---------------------- | ----------------------------------------------------------------- |
 | `BETTER_AUTH_SECRET`   | Random secret (e.g. `openssl rand -base64 32`)                    |
-| `BETTER_AUTH_URL`      | Deployed URL (`https://invoice-generator.dropoutstudio.co`)       |
 | `GOOGLE_CLIENT_ID`     | Google OAuth client ID                                            |
 | `GOOGLE_CLIENT_SECRET` | Google OAuth client secret                                        |
 | `TOKEN_ENCRYPTION_KEY` | base64 32-byte AES-GCM key; encrypts users' BYO Cloudflare tokens |
