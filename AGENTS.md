@@ -2,7 +2,8 @@
 
 This file provides guidance to AI coding agent (the coding-agent platform) when working with code in this repository. Workspace-wide conventions (git/worktree workflow, Conventional Commits, visual verification, shared SvelteKit/Workers/Better-Auth/BYO-AI stack) live in the parent `tools/` and `projects/` AGENTS.md files — not repeated here.
 
-**Always run the `frontend-design` skill before writing any frontend code** — every session, no exceptions.
+Follow the workspace `frontend-design` selection rule. The existing Dropout DS and invoice-tool
+visual language win during constrained work.
 
 ---
 

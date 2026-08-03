@@ -2,7 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository. Workspace-wide conventions (git/worktree workflow, Conventional Commits, visual verification, shared SvelteKit/Workers/Better-Auth/BYO-AI stack) live in the parent `tools/` and `projects/` CLAUDE.md files — not repeated here.
 
-**Always run the `frontend-design` skill before writing any frontend code** — every session, no exceptions.
+Follow the workspace `frontend-design` selection rule. The existing Dropout DS and invoice-tool
+visual language win during constrained work.
 
 ---
 
