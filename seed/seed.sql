@@ -11,7 +11,7 @@ VALUES ('e2e-test-user', 'e2e@test.local', 1, 'E2E Test User', NULL, unixepoch('
 
 -- Sender identity (one row per user).
 INSERT OR REPLACE INTO fixed_settings (user_id, from_name, from_phone, from_email, from_address, selected_client_id, updated_at)
-VALUES ('e2e-test-user', 'Dropout Studio', '+8801711000000', 'billing@dropoutstudio.co', 'House 7, Road 27, Banani, Dhaka 1213', 'seed-client-1', unixepoch('now'));
+VALUES ('e2e-test-user', 'Dropout Studio', '+8801711000000', 'support@dropoutstudio.co', 'House 7, Road 27, Banani, Dhaka 1213', 'seed-client-1', unixepoch('now'));
 
 -- Payment methods (owner-scoped, reused across clients via client_payment_methods links).
 INSERT OR REPLACE INTO payment_methods (id, user_id, kind, label, "values", position, created_at, updated_at)
