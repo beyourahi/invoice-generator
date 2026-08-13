@@ -3,14 +3,7 @@ export type Currency = "BDT" | "USD";
 export type GenerationState = "idle" | "generating" | "done" | "error";
 
 export type PaymentMethodKind =
-	| "bank"
-	| "bkash"
-	| "nagad"
-	| "rocket"
-	| "wise"
-	| "payoneer"
-	| "paypal"
-	| "custom";
+	"bank" | "bkash" | "nagad" | "rocket" | "wise" | "payoneer" | "paypal" | "custom";
 
 export type PaymentDisplayStyle = "fields" | "link";
 
@@ -22,7 +15,6 @@ export interface PaymentFieldDef {
 	placeholder?: string;
 	type?: PaymentFieldType;
 	optional?: boolean;
-	monospace?: boolean;
 }
 
 export interface PaymentMethodDef {

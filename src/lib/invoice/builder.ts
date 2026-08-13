@@ -41,14 +41,10 @@ const renderPaymentMethod = (method: SavedPaymentMethod): string => {
 			const raw = method.values[field.key]?.trim() ?? "";
 			if (!raw) return "";
 			const isMultiline = field.type === "textarea";
-			const valueClass = [
-				field.monospace ? " is-mono" : "",
-				isMultiline ? " is-multiline" : ""
-			].join("");
 			return resolveTokens(theme.paymentField, {
 				FIELD_LABEL: escapeHtml(field.label),
 				FIELD_VALUE: escapeHtml(raw),
-				FIELD_VALUE_CLASS: valueClass
+				FIELD_VALUE_CLASS: isMultiline ? " is-multiline" : ""
 			});
 		})
 		.filter(Boolean)

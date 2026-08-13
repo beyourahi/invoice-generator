@@ -61,19 +61,19 @@
 		<Dialog.Trigger
 			{disabled}
 			onclick={() => (pending = [])}
-			class="border-hair text-ink-muted pointer-fine:hover:border-white/30 pointer-fine:hover:bg-ink-2 pointer-fine:hover:text-foreground focus-visible:outline-signal h-auto min-h-20 w-full cursor-pointer touch-manipulation rounded-xl border border-dashed transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+			class="border-hair text-ink-muted pointer-fine:hover:bg-ink-2 pointer-fine:hover:text-foreground focus-visible:outline-signal h-auto min-h-20 w-full cursor-pointer touch-manipulation rounded-xl border border-dashed transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50 pointer-fine:hover:border-white/30"
 			aria-label="Add months"
 		>
 			<div class="flex flex-col items-center gap-2 py-3">
 				<Plus size={16} aria-hidden="true" />
-				<span class="font-mono text-xs tracking-wider uppercase">Add months</span>
+				<span class=" text-xs tracking-wider uppercase">Add months</span>
 			</div>
 		</Dialog.Trigger>
 	{:else}
 		<Dialog.Trigger
 			{disabled}
 			onclick={() => (pending = [])}
-			class="border-hair text-foreground pointer-fine:hover:border-signal pointer-fine:hover:bg-ink-2 focus-visible:outline-signal inline-flex h-10 w-full cursor-pointer touch-manipulation items-center justify-center gap-2 rounded-full border bg-transparent px-5 font-mono text-xs whitespace-nowrap uppercase transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+			class="border-hair text-foreground pointer-fine:hover:border-signal pointer-fine:hover:bg-ink-2 focus-visible:outline-signal inline-flex h-10 w-full cursor-pointer touch-manipulation items-center justify-center gap-2 rounded-full border bg-transparent px-5  text-xs whitespace-nowrap uppercase transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
 			aria-label="Add months"
 		>
 			<Plus size={14} aria-hidden="true" />
@@ -103,12 +103,12 @@
 					disabled={isScheduled}
 					onclick={() => toggleMonth(month)}
 					class={cn(
-						"focus-visible:outline-signal relative flex h-10 touch-manipulation items-center justify-center rounded-lg border font-mono text-xs tracking-wider whitespace-nowrap uppercase transition-colors focus-visible:outline-2 focus-visible:outline-offset-2",
+						"focus-visible:outline-signal relative flex h-10 touch-manipulation items-center justify-center rounded-lg border  text-xs tracking-wider whitespace-nowrap uppercase transition-colors focus-visible:outline-2 focus-visible:outline-offset-2",
 						isScheduled
 							? "border-hair text-ink-muted cursor-not-allowed line-through opacity-30"
 							: isSelected
 								? "border-signal bg-ink-2 text-foreground cursor-pointer"
-								: "border-hair text-ink-muted pointer-fine:hover:border-white/30 pointer-fine:hover:bg-ink-2 pointer-fine:hover:text-foreground cursor-pointer"
+								: "border-hair text-ink-muted pointer-fine:hover:bg-ink-2 pointer-fine:hover:text-foreground cursor-pointer pointer-fine:hover:border-white/30"
 					)}
 					aria-pressed={isSelected}
 					aria-disabled={isScheduled}
@@ -123,7 +123,7 @@
 
 		<div class="border-hair flex items-center justify-between border-t px-4 py-3">
 			{#if pending.length > 0}
-				<span class="text-ink-muted font-mono text-micro tracking-wider whitespace-nowrap tabular-nums">
+				<span class="text-ink-muted text-micro tracking-wider whitespace-nowrap tabular-nums">
 					{pending.length} selected
 				</span>
 			{:else}

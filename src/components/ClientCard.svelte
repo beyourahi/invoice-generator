@@ -124,7 +124,7 @@
 		>
 			<span
 				class={cn(
-					"status-transition text-muted-foreground text-caption w-6 shrink-0 font-mono whitespace-nowrap tabular-nums",
+					"status-transition text-muted-foreground text-caption w-6 shrink-0  whitespace-nowrap tabular-nums",
 					!client.isActive && "opacity-70"
 				)}
 			>
@@ -145,9 +145,7 @@
 					!client.isActive && "opacity-70"
 				)}
 			>
-				<span
-					class="bg-muted text-muted-foreground text-caption rounded-md px-1.5 py-0.5 font-mono whitespace-nowrap"
-				>
+				<span class="bg-muted text-muted-foreground text-caption rounded-md px-1.5 py-0.5 whitespace-nowrap">
 					{client.service.currency}
 				</span>
 				<span
@@ -300,7 +298,7 @@
 						/>
 						<Field.FieldDescription>
 							Insert
-							<code class="bg-muted text-foreground text-caption rounded px-1 py-0.5 font-mono">
+							<code class="bg-muted text-foreground text-caption rounded px-1 py-0.5">
 								{"{MONTH}"}
 							</code>
 							to auto-fill each invoice's month name (e.g. January).
@@ -351,9 +349,7 @@
 					<div class="flex items-center justify-between gap-3">
 						<SectionEyebrow icon={Wallet} label="Payment methods" />
 						{#if savedMethods.length > 0}
-							<p
-								class="text-ink-muted font-mono text-micro tracking-wider whitespace-nowrap tabular-nums"
-							>
+							<p class="text-ink-muted text-micro tracking-wider whitespace-nowrap tabular-nums">
 								{client.payment.methodIds.length} of {savedMethods.length} selected
 							</p>
 						{/if}
@@ -392,7 +388,7 @@
 									<span class="font-medium whitespace-nowrap">{method.label || def.name}</span>
 									<span
 										class={cn(
-											"text-caption font-mono whitespace-nowrap uppercase",
+											"text-caption  whitespace-nowrap uppercase",
 											active ? "text-success/80" : "text-muted-foreground"
 										)}
 									>
@@ -410,7 +406,7 @@
 					<div class="flex items-center justify-between gap-3">
 						<SectionEyebrow icon={ReceiptText} label="Invoice schedule" />
 						{#if client.invoices.length > 0}
-							<p class="text-ink-muted font-mono text-micro tracking-wider whitespace-nowrap">
+							<p class="text-ink-muted text-micro tracking-wider whitespace-nowrap">
 								{client.invoices.length} rows
 							</p>
 						{/if}
@@ -473,7 +469,7 @@
 							<span class="whitespace-nowrap">
 								{client.invoices.length} invoice{client.invoices.length !== 1 ? "s" : ""}
 							</span>
-							<span class="font-mono whitespace-nowrap tabular-nums">
+							<span class=" whitespace-nowrap tabular-nums">
 								{totalAmount} × {client.invoices.length}
 							</span>
 						</div>

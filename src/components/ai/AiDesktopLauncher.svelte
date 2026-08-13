@@ -23,7 +23,7 @@
 			aria-label="Open AI chat"
 		>
 			<AiLauncherIcon class="size-6" />
-			<span class="text-chat-text-primary font-mono text-micro tracking-[0.18em] whitespace-nowrap uppercase">
+			<span class="text-chat-text-primary text-micro tracking-[0.18em] whitespace-nowrap uppercase">
 				AI Assistant
 			</span>
 		</button>

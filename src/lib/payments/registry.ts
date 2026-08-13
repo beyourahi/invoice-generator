@@ -17,10 +17,10 @@ import type {
 const bankFields: PaymentFieldDef[] = [
 	{ key: "holder", label: "Account holder", placeholder: "e.g., Albus Dumbledore" },
 	{ key: "bankName", label: "Bank name", placeholder: "e.g., Gringotts Wizarding Bank" },
-	{ key: "account", label: "Account number", placeholder: "0000000000000", monospace: true },
+	{ key: "account", label: "Account number", placeholder: "0000000000000" },
 	{ key: "branch", label: "Branch", placeholder: "e.g., Diagon Alley", optional: true },
-	{ key: "routing", label: "Routing", placeholder: "000000000", monospace: true, optional: true },
-	{ key: "swift", label: "SWIFT / BIC", placeholder: "DBBLBDDH", optional: true, monospace: true }
+	{ key: "routing", label: "Routing", placeholder: "000000000", optional: true },
+	{ key: "swift", label: "SWIFT / BIC", placeholder: "DBBLBDDH", optional: true }
 ];
 
 const mobileWalletFields = (provider: string): PaymentFieldDef[] => [
@@ -29,8 +29,7 @@ const mobileWalletFields = (provider: string): PaymentFieldDef[] => [
 		key: "number",
 		label: `${provider} number`,
 		placeholder: "01XXXXXXXXX",
-		type: "tel",
-		monospace: true
+		type: "tel"
 	},
 	{
 		key: "accountType",

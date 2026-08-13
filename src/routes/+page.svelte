@@ -140,7 +140,7 @@
 	id="main"
 	tabindex="-1"
 	class={cn(
-		"flex w-full min-w-0 grow flex-col px-[var(--content-x)] pt-10 pb-16 sm:pt-12 sm:pb-20 outline-none",
+		"flex w-full min-w-0 grow flex-col px-[var(--content-x)] pt-10 pb-16 outline-none sm:pt-12 sm:pb-20",
 		"transition-[padding] duration-300 ease-[var(--ease)] motion-reduce:transition-none",
 		copilotOpen
 			? "lg:pr-[calc(var(--copilot-rail-width)+1.5rem)] xl:pr-[calc(var(--copilot-rail-width-xl)+1.5rem)]"
@@ -179,9 +179,7 @@
 						<div class="min-w-0 space-y-3" use:reveal={{ delay: 0.1 }}>
 							<div class="flex items-center justify-between">
 								<SectionEyebrow icon={Users} label="Clients" />
-								<p
-									class="text-ink-muted font-mono text-micro tracking-wider whitespace-nowrap tabular-nums"
-								>
+								<p class="text-ink-muted text-micro tracking-wider whitespace-nowrap tabular-nums">
 									{session.clients.length} total
 								</p>
 							</div>

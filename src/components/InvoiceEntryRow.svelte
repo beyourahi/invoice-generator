@@ -170,10 +170,7 @@
 		</div>
 		<div class="grid grid-cols-3 gap-2">
 			<div class="space-y-1">
-				<label
-					for="issue-{entry.id}"
-					class="text-ink-muted text-micro block font-mono tracking-[0.12em] uppercase"
-				>
+				<label for="issue-{entry.id}" class="text-ink-muted text-micro block tracking-[0.12em] uppercase">
 					Issue
 				</label>
 				<Input
@@ -189,10 +186,7 @@
 				/>
 			</div>
 			<div class="space-y-1">
-				<label
-					for="due-{entry.id}"
-					class="text-ink-muted text-micro block font-mono tracking-[0.12em] uppercase"
-				>
+				<label for="due-{entry.id}" class="text-ink-muted text-micro block tracking-[0.12em] uppercase">
 					Due
 				</label>
 				<Input
@@ -208,7 +202,7 @@
 				/>
 			</div>
 			<div class="space-y-1">
-				<span class="text-ink-muted text-micro block font-mono tracking-[0.12em] uppercase"> Active </span>
+				<span class="text-ink-muted text-micro block tracking-[0.12em] uppercase"> Active </span>
 				<div class="flex h-10 items-center justify-center">
 					{@render activeSwitch("default")}
 				</div>

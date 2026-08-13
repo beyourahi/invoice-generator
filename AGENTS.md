@@ -1,5 +1,9 @@
 # AGENTS.md
 
+## Branch Policy (Strict)
+
+**All work must be done on `main`. Never create a new branch unless Rahi explicitly instructs you to do so.**
+
 This file provides guidance to AI coding agent (the coding-agent platform) when working with code in this repository. Workspace-wide conventions (git/worktree workflow, Conventional Commits, visual verification, shared SvelteKit/Workers/Better-Auth/BYO-AI stack) live in the parent `tools/` and `projects/` AGENTS.md files — not repeated here.
 
 Follow the workspace `frontend-design` selection rule. The existing Dropout DS and invoice-tool
@@ -19,22 +23,22 @@ A SvelteKit app that generates batches of PDF invoices. Users configure a fixed 
 
 ## Tech Stack
 
-| Layer           | Technology                                                                          |
-| --------------- | ----------------------------------------------------------------------------------- |
-| Framework       | SvelteKit 2.x (Svelte 5 with runes)                                                 |
-| Language        | TypeScript (strict mode)                                                            |
-| Styling         | Tailwind CSS v4 (CSS-first; tokens from `@dropout/ds`)                              |
-| UI Components   | Dropout Design System (`@dropout/ds`, vendored) + shadcn-svelte                     |
-| Authentication  | Better Auth (Google OAuth + One Tap + passkeys, optional sign-in)                   |
-| Database        | Cloudflare D1 (SQLite via Drizzle ORM)                                              |
+| Layer           | Technology                                                                                                               |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Framework       | SvelteKit 2.x (Svelte 5 with runes)                                                                                      |
+| Language        | TypeScript (strict mode)                                                                                                 |
+| Styling         | Tailwind CSS v4 (CSS-first; tokens from `@dropout/ds`)                                                                   |
+| UI Components   | Dropout Design System (`@dropout/ds`, vendored) + shadcn-svelte                                                          |
+| Authentication  | Better Auth (Google OAuth + One Tap + passkeys, optional sign-in)                                                        |
+| Database        | Cloudflare D1 (SQLite via Drizzle ORM)                                                                                   |
 | AI              | Bring-your-own Cloudflare Workers AI (REST, user's account) + RAG (qwen3 embeddings → bge reranker on owner's Vectorize) |
-| Validation      | Zod                                                                                 |
-| PDF Rendering   | html2canvas + jsPDF                                                                 |
-| ZIP Packaging   | fflate (`zipSync`, `level: 0`)                                                      |
-| Animations      | GSAP 3 (motion, view transitions); shadcn Progress/Skeleton                         |
-| Deployment      | Cloudflare Workers                                                                  |
-| Package Manager | Bun                                                                                 |
-| Linting         | ESLint 10 flat config + Prettier                                                    |
+| Validation      | Zod                                                                                                                      |
+| PDF Rendering   | html2canvas + jsPDF                                                                                                      |
+| ZIP Packaging   | fflate (`zipSync`, `level: 0`)                                                                                           |
+| Animations      | GSAP 3 (motion, view transitions); shadcn Progress/Skeleton                                                              |
+| Deployment      | Cloudflare Workers                                                                                                       |
+| Package Manager | Bun                                                                                                                      |
+| Linting         | ESLint 10 flat config + Prettier                                                                                         |
 
 ---
 
@@ -174,7 +178,7 @@ The signed-out workspace is backed by localStorage:
 
 **`$lib/payments/registry.ts`** — Defines all supported payment method types as `PAYMENT_METHOD_DEFS: Record<PaymentMethodKind, PaymentMethodDef>`. Supported kinds: `bank`, `bkash`, `nagad`, `rocket`, `wise`, `payoneer`, `paypal`, `custom`. Each `PaymentMethodDef` has `display: "fields" | "link"`. Link methods (wise, payoneer, paypal) show a payment link button in the PDF. Field methods (bank, mobile wallets, custom) show labeled key-value rows. Exports `getMethodDef`, `createSavedMethod`, `isMethodComplete`.
 
-Currencies: `BDT` (৳) and `USD` ($). `$lib/format/currency.ts` exports `formatAmount` only (symbol prefix + en-US grouping, sign hoisted ahead of symbol); `currencySymbol` is module-private.
+Currencies: `BDT` (৳) and `USD` ($). `$lib/format/currency.ts`exports`formatAmount`only (symbol prefix + en-US grouping, sign hoisted ahead of symbol);`currencySymbol` is module-private.
 
 ### Invoice Pipeline
 
@@ -574,3 +578,9 @@ rm -rf node_modules/ .wrangler/ .svelte-kit/ && bun install
 25. **Don't reintroduce an auth guard on `/` or `/changelog`** — both are intentionally reachable signed-out; the builder runs as a localStorage-backed guest. Only `/settings` and `/api/*` (via `requireApiContext`) require a session. Adding `redirect(302, "/login")` to `+page.server.ts` would break the guest workspace and its sign-in migration.
 
 26. **`src/lib/ds/` is vendored — never hand-edit it** — it is an rsync mirror of `@dropout/ds` (`bun run sync-ds` from `../../dropout-design-system`, `--delete` overwrites local changes). Edit the DS upstream repo, then re-sync. It is deliberately NOT an npm/`file:` dependency — a sibling-path dependency breaks Cloudflare git-push auto-deploy. DS owns the visual tokens; do not redefine the semantic palette in `app.css`.
+
+<!-- SWISS-DESIGN-GLOBAL -->
+
+## Swiss Design — mandatory for all frontend/UI work
+
+For every website and web application, **always apply Swiss International Style principles to all frontend UI and design work, without exception. This is the required structural baseline, not an optional aesthetic direction.** Before creating, editing, reviewing, or auditing UI, read and follow `/Users/beyourahi/.agents/skills/swiss-design/SKILL.md`; when the stack is not Tailwind, translate the implementation syntax while preserving the principles. Enforce its grid-first, mobile-first, typographic, whitespace, hierarchy, restrained-color, responsive, and accessibility rules. Express project and client branding inside this system; brand requirements do not waive the Swiss principles. This directive supersedes conflicting optional style defaults elsewhere.

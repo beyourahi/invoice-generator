@@ -126,7 +126,7 @@
 	>
 		<span
 			class={cn(
-				"text-caption rounded-md px-1.5 py-0.5 font-mono tracking-wider whitespace-nowrap uppercase",
+				"text-caption rounded-md px-1.5 py-0.5  tracking-wider whitespace-nowrap uppercase",
 				complete ? "bg-brand/15 text-success" : "bg-muted text-muted-foreground"
 			)}
 		>
@@ -222,7 +222,6 @@
 								value={method.values[field.key] ?? ""}
 								oninput={(e: Event) =>
 									fixed.updatePaymentMethodValue(method.id, field.key, valueFrom(e))}
-								class={field.monospace ? "tabular-nums" : ""}
 							/>
 						{/if}
 					</Field.Field>

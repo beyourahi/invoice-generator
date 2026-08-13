@@ -90,7 +90,7 @@
 	role="tablist"
 	aria-label={ariaLabel}
 	class={cn(
-		"bg-ink-2 relative flex w-full max-w-full [scrollbar-width:none] flex-nowrap gap-[4px] overflow-x-auto rounded-full border border-hair p-[4px] [-ms-overflow-style:none] sm:w-fit [&::-webkit-scrollbar]:hidden",
+		"bg-ink-2 border-hair relative flex w-full max-w-full [scrollbar-width:none] flex-nowrap gap-[4px] overflow-x-auto rounded-full border p-[4px] [-ms-overflow-style:none] sm:w-fit [&::-webkit-scrollbar]:hidden",
 		className
 	)}
 >
@@ -112,7 +112,7 @@
 			role="tab"
 			aria-selected={active}
 			onclick={() => (value = tab.value)}
-			class="relative z-[1] flex min-h-[40px] flex-1 cursor-pointer items-center justify-center rounded-full px-[16px] py-[10px] font-mono text-caption whitespace-nowrap uppercase transition-colors duration-[350ms] ease-[var(--ease)] max-[720px]:min-h-[44px] max-[360px]:px-[12px] sm:flex-none sm:px-[30px] {active
+			class="text-caption relative z-[1] flex min-h-[40px] flex-1 cursor-pointer items-center justify-center rounded-full px-[16px] py-[10px] whitespace-nowrap uppercase transition-colors duration-[350ms] ease-[var(--ease)] max-[720px]:min-h-[44px] max-[360px]:px-[12px] sm:flex-none sm:px-[30px] {active
 				? 'text-background font-semibold'
 				: 'text-ink-muted hover:text-foreground'}"
 		>

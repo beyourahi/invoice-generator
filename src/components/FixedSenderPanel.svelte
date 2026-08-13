@@ -151,7 +151,7 @@
 				<div class="flex items-center justify-between gap-3">
 					<SectionEyebrow icon={Wallet} label="Payment methods" />
 					{#if methods.length > 0}
-						<p class="text-ink-muted font-mono text-micro tracking-wider whitespace-nowrap tabular-nums">
+						<p class="text-ink-muted text-micro tracking-wider whitespace-nowrap tabular-nums">
 							{methods.length} saved
 						</p>
 					{/if}

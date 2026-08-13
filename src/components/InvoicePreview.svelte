@@ -236,7 +236,7 @@
 							{/each}
 						</div>
 						<span
-							class="border-hair text-ink-muted hidden rounded-full border px-2.5 py-1 font-mono text-micro tracking-wider whitespace-nowrap uppercase sm:inline"
+							class="border-hair text-ink-muted text-micro hidden rounded-full border px-2.5 py-1 tracking-wider whitespace-nowrap uppercase sm:inline"
 						>
 							A4
 						</span>
