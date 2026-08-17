@@ -193,7 +193,10 @@
 		icon={Cloud}
 	>
 		{#snippet header()}
-			<StatusBadge {connected} />
+			<StatusBadge
+				label={connected ? "Connected" : "Not connected"}
+				tone={connected ? "connected" : "disconnected"}
+			/>
 		{/snippet}
 
 		<form
