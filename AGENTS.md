@@ -539,7 +539,7 @@ rm -rf node_modules/ .wrangler/ .svelte-kit/ && bun install
 
 6. **One hardcoded theme, no registry** — `builder.ts` imports `defaultTheme` from `$lib/themes/default.ts` directly; there is no runtime switcher and no `registry.ts`/`ACTIVE_THEME_ID`. Changing the look means editing `defaultTheme` (or swapping the `builder.ts` import).
 
-7. **Never commit `tmp_screenshots/` or `.playwright-mcp/`** — visual verification artifacts. Clean up before committing.
+7. **Never commit `tmp_screenshots/` or `.playwright-cli/`** — visual verification artifacts. Clean up before committing.
 
 8. **shadcn-svelte components in `$lib/components/ui/` are auto-generated** — never modify them by hand. Use the CLI to update.
 
