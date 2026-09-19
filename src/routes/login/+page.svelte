@@ -14,7 +14,8 @@
 	import { env as publicEnv } from "$env/dynamic/public";
 	import { ArrowLeft, Fingerprint } from "@lucide/svelte";
 	import Heading from "$lib/components/ui/heading/heading.svelte";
-	import { Cta, cn, isPlatformAuthenticatorAvailable, detectPlatform, biometricLabel } from "$lib/ds";
+	import { Cta, cn } from "$lib/ds";
+	import { isPlatformAuthenticatorAvailable, detectPlatform, biometricLabel } from "$lib/ds/adapters";
 
 	let isLoading = $state(false);
 	let error = $state<string | null>(null);
